@@ -1,11 +1,7 @@
+import Main from './pages/Main'
 
 function App() {
-
-  return (
-    <>
-      <p className="text-3xl font-bold underline"> INIT </p>
-    </>
-  )
+  return <Main />
 }
 
 export default App

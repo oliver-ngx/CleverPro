@@ -1,1 +1,126 @@
+/* Geist stands in for SF Pro Display, which the source design uses but cannot ship.
+   Instrument Serif is the project wordmark face. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&display=swap");
 @import "tailwindcss";
+
+/* Clever Pro — Compiler design tokens. Values are literal transcriptions from the
+   design system; nothing here is a generated scale. */
+@theme {
+  --color-cp-white: #ffffff;
+  --color-cp-black: #000000;
+
+  --color-cp-desktop: #e6e6e6;
+  --color-cp-window: #ffffff;
+  --color-cp-sidebar: #ededed;
+  --color-cp-panel: #f4f4f4;
+  --color-cp-popover: #e5e5e5;
+  --color-cp-selected: #e1e1e1;
+  --color-cp-pill-wide: rgb(233 233 233 / 0.47);
+  --color-cp-hover: rgb(0 0 0 / 0.035);
+
+  --color-cp-text-primary: #000000;
+  --color-cp-text-tertiary: #ababab;
+  --color-cp-text-label: #6a6a6a;
+  --color-cp-text-muted: #8f8f8f;
+  --color-cp-text-branch: #9c9c9c;
+
+  --color-cp-hairline: #e3e3e3;
+  --color-cp-accent: #2781ff;
+  --color-cp-presence: #008cff;
+  --color-cp-link: #1f84ff;
+  --color-cp-link-alt: #0090ff;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Geist",
+    "Segoe UI", Roboto, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+
+  --radius-cp-checkbox: 6px;
+  --radius-cp-nav: 11px;
+  --radius-cp-thumb: 9px;
+  --radius-cp-popover: 12px;
+  --radius-cp-panel: 30px;
+  --radius-cp-window: 29px;
+  --radius-cp-pill: 200px;
+
+  --shadow-cp-window: 0 4px 70px 0 rgb(0 0 0 / 0.25);
+  --shadow-cp-pill: 0 4px 27px -29px rgb(0 0 0 / 0.25);
+  --shadow-cp-popover: 0 4px 27px -8px rgb(0 0 0 / 0.25);
+  --shadow-cp-checkbox-off: inset 0 0 0 1px #e3e3e3;
+
+  /* The source specifies no transitions; these are the house defaults that make
+     states feel native-macOS rather than webby. */
+  --ease-cp: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* The branch popover grows out of the value it replaces, so it scales from the
+     corner nearest the trigger rather than fading in place.
+     The fade and the pop are separate animations on purpose: --ease-cp is very
+     front-loaded (77% travelled by a quarter of the way through), which suits the
+     movement but would make a fade on the same curve read as an instant switch. */
+  --animate-cp-popover-in:
+    cp-popover-fade 200ms ease-out both,
+    cp-popover-pop 260ms var(--ease-cp) both;
+
+  /* Reduced motion drops the movement but keeps the cross-fade: an opacity change
+     is not a vestibular trigger, and removing it outright leaves the menu appearing
+     with no transition at all. */
+  --animate-cp-popover-in-reduced: cp-popover-fade 200ms ease-out both;
+
+  @keyframes cp-popover-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes cp-popover-pop {
+    from {
+      transform: scale(0.85) translateY(-10px);
+    }
+    to {
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  /* Leaving is quicker than arriving and runs as a single keyframe, so exactly one
+     animationend fires and the component knows when it is safe to unmount. */
+  --animate-cp-popover-out: cp-popover-out 140ms ease-in both;
+  --animate-cp-popover-out-reduced: cp-popover-fade-out 140ms ease-in both;
+
+  @keyframes cp-popover-out {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.9) translateY(-6px);
+    }
+  }
+
+  @keyframes cp-popover-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  body {
+    background: var(--color-cp-desktop);
+    font-family: var(--font-ui);
+  }
+
+  a {
+    color: var(--color-cp-link);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-cp-link-alt);
+  }
+}
