@@ -56,7 +56,7 @@ export function VersionRow({
       type="button"
       onClick={onClick}
       aria-current={selected ? 'true' : undefined}
-      className={`flex w-full shrink-0 cursor-pointer items-center gap-[16px] border-none pr-[13px] pl-[16px] text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${
+      className={`flex w-full shrink-0 cursor-pointer items-center gap-[16px] border-none pr-[13px] pl-[16px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${
         tall ? 'h-[50px] rounded-cp-attachment' : 'h-[41px] rounded-cp-pill'
       } ${fill}`}
     >

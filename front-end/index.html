@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Geist stands in for SF Pro Display, which the source design uses but cannot
+         ship. Instrument Serif is the project wordmark face, and Roboto Mono is used
+         in exactly one place: the code the version view opens.
+
+         Linked here rather than @import-ed from index.css so the browser can start
+         fetching the fonts straight away. An @import cannot be discovered until the
+         stylesheet holding it has itself been downloaded and parsed, which puts the
+         font request a whole round trip behind the first paint that needs it. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&family=Roboto+Mono:wght@500&display=swap"
+    />
+
     <title>Clever Pro</title>
   </head>
   <body>

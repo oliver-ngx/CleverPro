@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactElement } from 'react'
+import { memo } from 'react'
 
 /**
  * Every glyph in Compiler is an Apple SF Symbol exported from the source file.
@@ -320,7 +321,13 @@ interface IconProps {
   style?: CSSProperties
 }
 
-export function Icon({ name, className, style }: IconProps) {
+/**
+ * Memoised because almost every screen is mostly glyphs: a state change anywhere in
+ * App walks fifty-odd of these, and a glyph can only have changed if its name or its
+ * classes did. The few call sites that size a glyph from data pass a fresh `style`
+ * object and so re-render anyway, which is correct — that object is what changed.
+ */
+export const Icon = memo(function Icon({ name, className, style }: IconProps) {
   if (isRaster(name)) {
     return (
       <img
@@ -344,4 +351,4 @@ export function Icon({ name, className, style }: IconProps) {
       {glyph.body}
     </svg>
   )
-}
+})

@@ -33,7 +33,7 @@ export function BranchMenu({ current, branches, onSelect, onAdd }: BranchMenuPro
               onClick={() => {
                 onSelect(branch)
               }}
-              className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px]/[130%] font-normal text-cp-text-branch hover:text-cp-text-primary"
+              className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px]/[130%] font-normal text-cp-text-branch transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-cp-text-primary"
             >
               {branch}
             </button>
@@ -42,7 +42,7 @@ export function BranchMenu({ current, branches, onSelect, onAdd }: BranchMenuPro
           <button
             type="button"
             onClick={onAdd}
-            className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px] font-normal text-cp-text-branch hover:text-cp-text-primary"
+            className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px] font-normal text-cp-text-branch transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-cp-text-primary"
           >
             + Add Branches
           </button>

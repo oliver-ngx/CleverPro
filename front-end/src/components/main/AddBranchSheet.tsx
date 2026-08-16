@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BRANCH_ATTACHMENTS, DEPLOY_SUFFIX } from '../../data/compiler'
+import { BRANCH_ATTACHMENTS, DEPLOY_SUFFIX } from '../../data/project'
 import { useOverlayDismiss } from '../../hooks/useOverlayDismiss'
 import { AttachmentTile } from '../ui/AttachmentTile'
 import { Button } from '../ui/Button'
@@ -15,8 +15,10 @@ interface AddBranchSheetProps {
   /** Names already taken, so the sheet can refuse a duplicate before it is made. */
   branches: string[]
   onConfirm: (name: string) => void
-  /** Closes the sheet: it unmounts as soon as this is called. */
+  /** Closes the sheet, which then plays its exit animation before it unmounts. */
   onDismiss: () => void
+  /** True while that exit is running. */
+  closing?: boolean
 }
 
 /**
@@ -45,6 +47,7 @@ export function AddBranchSheet({
   branches,
   onConfirm,
   onDismiss,
+  closing = false,
 }: AddBranchSheetProps) {
   const [name, setName] = useState('')
   const [deploy, setDeploy] = useState('')
@@ -63,6 +66,7 @@ export function AddBranchSheet({
   return (
     <Sheet
       title="Add Branch"
+      closing={closing}
       onSubmit={(event) => {
         event.preventDefault()
         if (!submittable) return

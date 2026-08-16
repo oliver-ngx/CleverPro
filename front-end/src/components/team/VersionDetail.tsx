@@ -1,5 +1,6 @@
-import type { PaneEntry } from '../../data/compiler'
-import { VERSION_NOTES, VERSION_SOURCE, VERSION_STAMP } from '../../data/compiler'
+import { memo } from 'react'
+import type { PaneEntry } from '../../data/team'
+import { VERSION_NOTES, VERSION_SOURCE, VERSION_STAMP } from '../../data/versionSource'
 import { CodeViewer } from '../ui/CodeViewer'
 import { CommentBlock } from '../ui/CommentBlock'
 
@@ -16,8 +17,13 @@ interface VersionDetailProps {
  * The source draws one version open — Eden's ContentView.swift v3 — so every version
  * shows that file. Only the name and glyph in the viewer's header change with the row
  * you pick, because the file itself is the one piece of content the frame gives.
+ *
+ * Memoised because that file is several hundred elements and both props are stable —
+ * the entry is the very object the pane was handed. Without this, every unrelated
+ * change in App (the rail collapsing, a branch being picked) would rebuild the whole
+ * listing behind the panel.
  */
-export function VersionDetail({ entry, author }: VersionDetailProps) {
+export const VersionDetail = memo(function VersionDetail({ entry, author }: VersionDetailProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto pt-[13px] pr-[11px] pb-[24px] pl-[14px]">
       <span className="mb-[8px] shrink-0 self-end text-[11px] font-normal text-cp-text-stamp">
@@ -33,4 +39,4 @@ export function VersionDetail({ entry, author }: VersionDetailProps) {
       </div>
     </div>
   )
-}
+})

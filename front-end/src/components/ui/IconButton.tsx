@@ -21,7 +21,7 @@ export function IconButton({ icon, label, iconClassName, className, onClick }: I
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 active:opacity-[0.55] ${className ?? ''}`}
+      className={`inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] ${className ?? ''}`}
     >
       <Icon name={icon} className={iconClassName} />
     </button>

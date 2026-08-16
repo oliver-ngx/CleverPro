@@ -23,11 +23,11 @@ export function Checkbox({
       aria-label={label}
       onClick={onChange}
       style={{ background: checked ? accentColor : undefined }}
-      className={`inline-flex size-[14px] shrink-0 cursor-pointer items-center justify-center rounded-cp-checkbox border-none p-0 ${
+      className={`inline-flex size-[14px] shrink-0 cursor-pointer items-center justify-center rounded-cp-checkbox border-none p-0 transition-colors duration-150 ease-out motion-reduce:transition-none ${
         checked ? '' : 'bg-cp-white shadow-cp-checkbox-off'
       }`}
     >
-      {checked && <Icon name="checkmark" className="size-[7px]" />}
+      {checked && <Icon name="checkmark" className="size-[7px] animate-cp-check-in motion-reduce:animate-none" />}
     </button>
   )
 }

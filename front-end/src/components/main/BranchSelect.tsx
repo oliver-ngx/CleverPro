@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+import { useOverlayDismiss } from '../../hooks/useOverlayDismiss'
+import { usePresence } from '../../hooks/usePresence'
+import { POPOVER_EXIT_MS } from '../../lib/motion'
 import { Icon } from '../ui/Icon'
 import { Popover } from '../ui/Popover'
 import { BranchMenu } from './BranchMenu'
@@ -24,24 +27,19 @@ export function BranchSelect({
   menuPosition = 'top-[9px] right-[9px] md:right-[37px]',
 }: BranchSelectProps) {
   const [open, setOpen] = useState(false)
+  // The trigger stays hidden for as long as the menu is on screen, exit included —
+  // the two are the same control in two states, so they must never both be visible.
+  const present = usePresence(open, POPOVER_EXIT_MS)
 
   const close = useCallback(() => {
     setOpen(false)
   }, [])
 
-  useEffect(() => {
-    if (!open) return
+  // Only while it is genuinely open: a closing menu has already given up its
+  // selection, and Escape then belongs to whatever is underneath it.
+  useOverlayDismiss(close, open)
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open, close])
-
-  if (!open) {
+  if (!present) {
     return (
       <button
         type="button"
@@ -60,17 +58,25 @@ export function BranchSelect({
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Close branch menu"
-        onClick={close}
-        className="fixed inset-0 z-5 cursor-default border-none bg-transparent p-0"
-      />
+      {/* Only while the menu is genuinely open: a closing menu has nothing left to
+          dismiss, and a full-window click catcher outliving it would swallow the
+          first click aimed at whatever is underneath. */}
+      {open && (
+        <button
+          type="button"
+          aria-label="Close branch menu"
+          onClick={close}
+          className="fixed inset-0 z-5 cursor-default border-none bg-transparent p-0"
+        />
+      )}
       {/* Radius sits on the same box as the shadow so the drop follows the popover's
           silhouette rather than casting from a square. The offsets land the menu's
           header directly over the trigger it replaces. */}
       <div
-        className={`absolute ${menuPosition} z-10 overflow-hidden rounded-cp-popover shadow-cp-popover`}
+        inert={!open}
+        className={`absolute ${menuPosition} z-10 origin-top-right overflow-hidden rounded-cp-popover shadow-cp-popover motion-reduce:animate-none ${
+          open ? 'animate-cp-popover-in' : 'animate-cp-popover-out'
+        }`}
       >
         <Popover>
           <BranchMenu

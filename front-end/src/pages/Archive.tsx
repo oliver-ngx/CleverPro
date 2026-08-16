@@ -1,6 +1,10 @@
+import { PageBody } from '../components/layout/PageBody'
 import type { DataTableColumn } from '../components/ui/DataTable'
 import { DataTable } from '../components/ui/DataTable'
-import { ARCHIVE } from '../data/compiler'
+import { ARCHIVE } from '../data/logs'
+
+/** The same inset Activity takes — the two log screens are drawn from one margin. */
+const PADDING = 'px-[16px] pt-[20px] pb-[35px] md:pt-[28px] md:pr-[36px] md:pl-[30px]'
 
 /**
  * The same three-column geometry as Activity, measured off the archive frame: the
@@ -16,8 +20,8 @@ const COLUMNS: DataTableColumn[] = [
 /** Every version of the project, newest first, each one undoable. */
 export default function Archive() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto px-[16px] pt-[20px] pb-[35px] md:pt-[28px] md:pr-[36px] md:pl-[30px]">
+    <PageBody className={PADDING}>
       <DataTable columns={COLUMNS} rows={ARCHIVE} minWidth={560} />
-    </div>
+    </PageBody>
   )
 }

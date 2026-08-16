@@ -15,6 +15,8 @@ interface SheetProps {
   size?: string
   /** Passed through to the root, which becomes a form so Enter submits. */
   onSubmit?: SubmitEventHandler<HTMLFormElement>
+  /** True while the sheet is playing its exit animation and about to unmount. */
+  closing?: boolean
   /**
    * A click on the scrim. Omitted where a stray click outside must not discard what
    * is inside — a part-filled form, in practice.
@@ -49,12 +51,15 @@ export function Sheet({
   children,
   footer,
   size = 'max-w-[977px] md:h-[578px]',
+  closing = false,
   onSubmit,
   onScrimClick,
 }: SheetProps) {
   const titleId = useId()
 
-  const shell = `pointer-events-auto relative flex max-h-full w-full flex-col overflow-hidden rounded-cp-overlay bg-cp-window pb-[19px] shadow-cp-window ${size}`
+  const shell = `pointer-events-auto relative flex ${
+    closing ? 'animate-cp-sheet-out' : 'animate-cp-sheet-in'
+  } motion-reduce:animate-none max-h-full w-full flex-col overflow-hidden rounded-cp-overlay bg-cp-window pb-[19px] shadow-cp-window ${size}`
 
   const inner = (
     <>
@@ -93,7 +98,16 @@ export function Sheet({
     // Scoped to the pane rather than the viewport: the source blurs the page behind an
     // overlay but leaves the rail sharp, so this resolves against App's content column,
     // which is `relative` for exactly that reason.
-    <div className="absolute inset-0 z-30 overflow-auto bg-cp-scrim backdrop-blur-[14px]">
+    //
+    // On the way out the sheet is a picture of itself: `inert` takes it off the tab
+    // order and out of the accessibility tree the moment it is dismissed, so nothing
+    // can be typed into or submitted from a form that is already leaving.
+    <div
+      inert={closing}
+      className={`absolute inset-0 z-30 overflow-auto bg-cp-scrim backdrop-blur-[14px] motion-reduce:animate-none ${
+        closing ? 'animate-cp-fade-out' : 'animate-cp-fade-in'
+      }`}
+    >
       {/* A click target and nothing more: hidden from assistive tech and not
           focusable, because Escape already closes from the keyboard and a labelled
           full-pane button would compete with the real close control — the two ended

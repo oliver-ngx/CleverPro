@@ -12,7 +12,7 @@ export function SidebarPerson({ name, online, selected, onSelect }: SidebarPerso
       type="button"
       aria-current={selected ? 'page' : undefined}
       onClick={onSelect}
-      className={`flex h-[30px] w-full cursor-pointer items-center justify-between rounded-cp-nav border-none pr-[12px] pl-[13px] text-left ${
+      className={`flex h-[30px] w-full cursor-pointer items-center justify-between rounded-cp-nav border-none pr-[12px] pl-[13px] text-left transition-colors duration-150 ease-out motion-reduce:transition-none ${
         selected ? 'bg-cp-selected' : 'bg-transparent hover:bg-cp-hover'
       }`}
     >

@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { PageBody } from '../components/layout/PageBody'
 import { AddBranchSheet } from '../components/main/AddBranchSheet'
 import { BranchSelect } from '../components/main/BranchSelect'
 import { DetailRow } from '../components/main/DetailRow'
 import { ProjectThumbnail } from '../components/main/ProjectThumbnail'
 import { VersionPanel } from '../components/main/VersionPanel'
-import { PROJECT, PROJECT_FILES } from '../data/compiler'
+import { PROJECT, PROJECT_FILES } from '../data/project'
+import { usePresence } from '../hooks/usePresence'
+import { SHEET_EXIT_MS } from '../lib/motion'
 
 const ALL_FILE_NAMES = new Set(PROJECT_FILES.map((file) => file.name))
 
@@ -25,6 +28,9 @@ interface MainProps {
 export default function Main({ branch, branches, onSelectBranch, onAddBranch }: MainProps) {
   const [addingBranch, setAddingBranch] = useState(false)
   const [checked, setChecked] = useState<ReadonlySet<string>>(ALL_FILE_NAMES)
+  // The sheet outlives `addingBranch` by the length of its exit, then unmounts and
+  // takes the half-typed branch name with it.
+  const sheetPresent = usePresence(addingBranch, SHEET_EXIT_MS)
 
   const toggleFile = (name: string) => {
     setChecked((current) => {
@@ -37,7 +43,7 @@ export default function Main({ branch, branches, onSelectBranch, onAddBranch }: 
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-[24px] overflow-auto pt-[20px] pr-[16px] pl-[16px] md:gap-[35px] md:pt-[27px] md:pr-[48px] md:pl-[56px] xl:pr-[79px] xl:pl-[95px]">
+      <PageBody className="gap-[24px] pt-[20px] pr-[16px] pl-[16px] md:gap-[35px] md:pt-[27px] md:pr-[48px] md:pl-[56px] xl:pr-[79px] xl:pl-[95px]">
         <div className="pt-[5px] pb-[9px]">
           <DetailRow label="Preview" height={102}>
             <ProjectThumbnail name={PROJECT.name} src={PROJECT.previewSrc} />
@@ -74,12 +80,13 @@ export default function Main({ branch, branches, onSelectBranch, onAddBranch }: 
           checked={checked}
           onToggleFile={toggleFile}
         />
-      </div>
+      </PageBody>
 
       {/* Outside the scroll container: the sheet covers the pane, it does not ride
           along with the content underneath it. */}
-      {addingBranch && (
+      {sheetPresent && (
         <AddBranchSheet
+          closing={!addingBranch}
           sourceBranch={branch}
           branches={branches}
           onConfirm={onAddBranch}

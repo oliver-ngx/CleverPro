@@ -9,6 +9,12 @@ interface DetailRowProps {
   divider?: boolean
 }
 
+/**
+ * A labelled line on Main: the label at the left, its value at the right, a hairline
+ * under it. The four of them stack into the page's one detail group.
+ *
+ * `relative` because the Branches row's popover anchors to it.
+ */
 export function DetailRow({ label, height, children, divider = true }: DetailRowProps) {
   return (
     <>

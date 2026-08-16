@@ -1,4 +1,5 @@
-import type { CodeToken } from '../../data/compiler'
+import { useMemo } from 'react'
+import type { CodeToken } from '../../data/versionSource'
 import type { IconName } from './Icon'
 import { Icon } from './Icon'
 
@@ -39,6 +40,13 @@ interface CodeViewerProps {
  * own gutter slips a line behind the code from the fourth line down.
  */
 export function CodeViewer({ filename, icon = 'swift', lines, startLine = 1 }: CodeViewerProps) {
+  // One text node for the whole gutter rather than an element per line, and rebuilt
+  // only when the file does — the numbers are the same string on every render.
+  const gutter = useMemo(
+    () => lines.map((_, index) => startLine + index).join('\n'),
+    [lines, startLine],
+  )
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-cp-code bg-cp-field px-[8px] pt-[10px] pb-[10px]">
       <div className="flex shrink-0 items-center gap-[8px] pb-[11px] pl-[11px]">
@@ -49,7 +57,7 @@ export function CodeViewer({ filename, icon = 'swift', lines, startLine = 1 }: C
       <div className="flex min-h-0 flex-1 gap-[7px] overflow-auto rounded-cp-code bg-cp-white px-[14px] py-[8px] font-mono text-[10px]/[122%] font-medium text-cp-code">
         {/* Decorative: a screen reader reading "1 2 3" before the code helps nobody. */}
         <pre aria-hidden="true" className="m-0 w-[18px] shrink-0 text-right select-none">
-          {lines.map((_, index) => startLine + index).join('\n')}
+          {gutter}
         </pre>
         <pre className="m-0 min-w-0 flex-1 whitespace-pre-wrap">
           {lines.map((line, index) => (

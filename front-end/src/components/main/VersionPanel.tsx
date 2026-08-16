@@ -1,4 +1,4 @@
-import type { ProjectFile } from '../../data/compiler'
+import type { ProjectFile } from '../../data/project'
 import { IconButton } from '../ui/IconButton'
 import { FileTree } from './FileTree'
 

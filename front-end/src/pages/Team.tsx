@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { ActionComposer } from '../components/team/ActionComposer'
 import { VersionDetail } from '../components/team/VersionDetail'
 import { VersionToolbar } from '../components/team/VersionToolbar'
 import { DiffStat } from '../components/ui/DiffStat'
 import { VersionRow } from '../components/ui/VersionRow'
-import type { PaneEntry, TeamMember } from '../data/compiler'
-import { TEAM_PANES } from '../data/compiler'
+import type { PaneEntry, TeamMember } from '../data/team'
+import { TEAM_PANES } from '../data/team'
+import { usePresence } from '../hooks/usePresence'
+import { SHEET_EXIT_MS } from '../lib/motion'
 
 interface TeamProps {
   person: TeamMember
@@ -58,6 +61,13 @@ export default function Team({
 }: TeamProps) {
   const entries = TEAM_PANES[person.id]
   const split = version !== undefined
+  // Closing clears the selection at once, but the panel needs 300ms to get off the
+  // pane. Held here, the last version stays on screen until the panel has gone;
+  // without it the editor would blank out first and an empty white panel would
+  // slide away after it.
+  const [shownVersion, setShownVersion] = useState(version)
+  if (version !== undefined && version !== shownVersion) setShownVersion(version)
+  const composerPresent = usePresence(actionOpen, SHEET_EXIT_MS)
   // The rail spells your own name "Oliver (You)"; a byline should not.
   const [author] = person.name.split(' (')
 
@@ -67,7 +77,8 @@ export default function Team({
         {/* Padding and spacing are identical in both states on purpose: the only
             thing that may change here is the column's width. */}
         <div
-          className={`flex shrink-0 flex-col gap-[9px] overflow-x-hidden overflow-y-auto px-[16px] pt-[20px] pb-[35px] md:pt-[27px] md:pr-[25px] md:pl-[22px] ${
+          key={person.id}
+          className={`flex shrink-0 flex-col gap-[9px] overflow-x-hidden overflow-y-auto px-[16px] pt-[20px] pb-[35px] animate-cp-page-in transition-[width] duration-300 ease-cp motion-reduce:animate-none motion-reduce:transition-none md:pt-[27px] md:pr-[25px] md:pl-[22px] ${
             split ? 'w-[420px] @max-[860px]:hidden' : 'w-full'
           }`}
         >
@@ -97,8 +108,8 @@ export default function Team({
           instead of being chased into place separately. The window clips whatever
           hangs off the right, which is where this sits when it is shut. */}
       <div
-        className={`absolute inset-y-0 right-0 left-[420px] z-10 flex flex-col border-l border-cp-hairline bg-cp-window @max-[860px]:top-[41px] @max-[860px]:left-0 @max-[860px]:border-l-0 ${
-          split ? 'translate-x-0' : 'translate-x-full'
+        className={`absolute inset-y-0 right-0 left-[420px] z-10 flex flex-col border-l border-cp-hairline bg-cp-window transition-transform duration-300 ease-cp motion-reduce:transition-none @max-[860px]:top-[41px] @max-[860px]:left-0 @max-[860px]:border-l-0 ${
+          split ? '[transform:translateX(0)]' : '[transform:translateX(100%)]'
         }`}
       >
         {/* Shut, the panel is merely parked off the edge — it would still take tab
@@ -111,13 +122,16 @@ export default function Team({
               }}
             />
           </div>
-          {version !== undefined && <VersionDetail entry={version} author={author} />}
+          {shownVersion !== undefined && (
+            <VersionDetail entry={shownVersion} author={author} />
+          )}
         </div>
       </div>
 
       {/* Above the panel: the window covers the whole pane, not one half of it. */}
-      {actionOpen && (
+      {composerPresent && (
         <ActionComposer
+          closing={!actionOpen}
           branch={branch}
           branches={branches}
           onSelectBranch={onSelectBranch}

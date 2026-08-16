@@ -1,7 +1,5 @@
-/* Geist stands in for SF Pro Display, which the source design uses but cannot ship.
-   Instrument Serif is the project wordmark face, and Roboto Mono is used in exactly
-   one place: the code the version view opens. */
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&family=Roboto+Mono:wght@500&display=swap");
+/* The web fonts are linked from index.html rather than imported here, so the browser
+   can start fetching them without waiting on this stylesheet — see the comment there. */
 @import "tailwindcss";
 
 /* Clever Pro — Compiler design tokens. Values are literal transcriptions from the
@@ -97,6 +95,125 @@
   --shadow-cp-pill: 0 4px 27px -29px rgb(0 0 0 / 0.25);
   --shadow-cp-popover: 0 4px 27px -8px rgb(0 0 0 / 0.25);
   --shadow-cp-checkbox-off: inset 0 0 0 1px #e3e3e3;
+
+  /* Motion. The source design specifies no transitions or animations at all, so
+     none of this is transcribed — it is a house default, picked so state changes
+     read as native-macOS rather than webby.
+
+     --ease-cp is deliberately front-loaded: most of the distance is covered early
+     and the tail settles. That suits movement, where the eye wants the object to
+     commit and then arrive. It suits a fade far less — on this curve opacity is
+     nearly done before it looks like it started — so anything that only changes
+     opacity uses plain ease-out instead, and the compound animations below run the
+     fade and the movement as two animations on two curves rather than one. */
+  --ease-cp: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --animate-cp-fade-in: cp-fade 200ms ease-out both;
+  --animate-cp-page-in: cp-fade 260ms ease-out both;
+
+  /* The sheet rises into the middle of a blurred pane, so it scales from its own
+     centre rather than out of whatever opened it. */
+  --animate-cp-sheet-in:
+    cp-fade 200ms ease-out both,
+    cp-sheet-rise 280ms var(--ease-cp) both;
+
+  /* The branch popover replaces the value it was opened from and keeps its header
+     over that spot, so it grows out of the corner nearest the trigger — the caller
+     sets the origin — instead of appearing in place. */
+  --animate-cp-popover-in:
+    cp-fade 160ms ease-out both,
+    cp-popover-pop 240ms var(--ease-cp) both;
+
+  --animate-cp-check-in: cp-check 180ms var(--ease-cp) both;
+
+  /* Leaving is quicker than arriving, and on an ease-in rather than the house
+     curve: an overlay should commit to going the moment it is dismissed, where
+     arriving wants the front-loaded settle. Every duration below is duplicated in
+     JS, in src/lib/motion.ts — that is what keeps a dismissed overlay in the tree
+     for exactly this long. Change one, change both. */
+  --animate-cp-fade-out: cp-fade-out 140ms ease-in both;
+
+  --animate-cp-sheet-out:
+    cp-fade-out 140ms ease-in both,
+    cp-sheet-sink 160ms ease-in both;
+
+  --animate-cp-popover-out:
+    cp-fade-out 120ms ease-in both,
+    cp-popover-shrink 140ms ease-in both;
+
+  /* Every movement keyframe lands on `transform: none` rather than an identity
+     translate. `both` leaves the final keyframe applied for good, and a transform
+     of any kind — identity included — makes the element a containing block for
+     fixed-position descendants. Ending on `none` keeps these animations from
+     silently re-anchoring a `fixed` child long after they have finished. */
+  @keyframes cp-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes cp-sheet-rise {
+    from {
+      transform: translateY(10px) scale(0.985);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes cp-popover-pop {
+    from {
+      transform: scale(0.9) translateY(-6px);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes cp-check {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* The exits are the only keyframes that end on a transform rather than on
+     `none`, because what they end on never survives: the element is unmounted the
+     moment the animation is over, so there is nothing left to be a containing
+     block for. */
+  @keyframes cp-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes cp-sheet-sink {
+    from {
+      transform: none;
+    }
+    to {
+      transform: translateY(6px) scale(0.985);
+    }
+  }
+
+  @keyframes cp-popover-shrink {
+    from {
+      transform: none;
+    }
+    to {
+      transform: scale(0.94) translateY(-4px);
+    }
+  }
 }
 
 @layer base {
@@ -112,5 +229,13 @@
 
   a:hover {
     color: var(--color-cp-link-alt);
+  }
+
+  /* A guarded rule rather than a utility, because it applies to every link in the
+     app rather than to any one component's class list. */
+  @media (prefers-reduced-motion: no-preference) {
+    a {
+      transition: color 150ms ease-out;
+    }
   }
 }

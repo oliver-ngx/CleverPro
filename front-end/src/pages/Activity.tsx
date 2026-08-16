@@ -1,6 +1,10 @@
+import { PageBody } from '../components/layout/PageBody'
 import type { DataTableColumn } from '../components/ui/DataTable'
 import { DataTable } from '../components/ui/DataTable'
-import { ACTIVITY } from '../data/compiler'
+import { ACTIVITY } from '../data/logs'
+
+/** Both log screens are inset alike; the source draws them from the same margins. */
+const PADDING = 'px-[16px] pt-[20px] pb-[35px] md:pt-[28px] md:pr-[36px] md:pl-[30px]'
 
 /**
  * Column tracks as proportions of the card's inner width, so they hold at any pane
@@ -20,8 +24,8 @@ const COLUMNS: DataTableColumn[] = [
  */
 export default function Activity() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto px-[16px] pt-[20px] pb-[35px] md:pt-[28px] md:pr-[36px] md:pl-[30px]">
+    <PageBody className={PADDING}>
       <DataTable columns={COLUMNS} rows={ACTIVITY} />
-    </div>
+    </PageBody>
   )
 }

@@ -1,11 +1,15 @@
+import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { AppWindow } from './components/layout/AppWindow'
 import { PageHeader } from './components/layout/PageHeader'
 import { Sidebar } from './components/layout/Sidebar'
 import { Avatar } from './components/ui/Avatar'
 import type { IconName } from './components/ui/Icon'
-import type { PaneEntry, TeamMember } from './data/compiler'
-import { BRANCHES, NAV_ITEMS, TEAM } from './data/compiler'
+import type { PageLabel } from './data/navigation'
+import { NAV_ITEMS } from './data/navigation'
+import { BRANCHES } from './data/project'
+import type { PaneEntry, TeamMember } from './data/team'
+import { TEAM } from './data/team'
 import { useResponsiveSidebar } from './hooks/useResponsiveSidebar'
 import Activity from './pages/Activity'
 import Archive from './pages/Archive'
@@ -14,16 +18,55 @@ import Settings from './pages/Settings'
 import Team from './pages/Team'
 
 /** The rail selects one of two things, so the open view is one of two things. */
-type View = { kind: 'page'; label: string } | { kind: 'person'; person: TeamMember }
+type View = { kind: 'page'; label: PageLabel } | { kind: 'person'; person: TeamMember }
+
+/** What the header wears for a given view. */
+interface HeaderContent {
+  title: ReactNode
+  /** Shown before the title. Only a teammate's pane has one. */
+  leading?: ReactNode
+  actions: IconName[]
+}
+
+/**
+ * The header changes with the view: a teammate's pane leads with their face and
+ * carries a different set of toolbar actions, and your own pane sets the "(You)"
+ * after your name in a lighter weight the way the source does.
+ *
+ * `actionOpen` reaches in because the leading glyph on a Self pane is the Action
+ * window's switch, and the frame swaps it while the window is up.
+ */
+function headerFor(view: View, actionOpen: boolean): HeaderContent {
+  if (view.kind === 'page') {
+    return { title: view.label, actions: ['at-sign', 'ellipsis'] }
+  }
+
+  const { person } = view
+
+  if (person.self !== true) {
+    return {
+      title: person.name,
+      leading: <Avatar person={person.id} size={28} />,
+      actions: ['filter', 'ellipsis'],
+    }
+  }
+
+  // "Oliver (You)" — the name semibold, the parenthetical regular.
+  const [name] = person.name.split(' (')
+  return {
+    title: (
+      <>
+        {name} <span className="font-normal">(You)</span>
+      </>
+    ),
+    actions: [actionOpen ? 'close' : 'archive-in', 'filter', 'ellipsis'],
+  }
+}
 
 /**
  * The window and its rail, with one view inside. The rail's nav items open a page;
  * its teammates open that person's pane, which is why the view is a union rather
  * than a single label.
- *
- * The header changes with the view too: a teammate's pane leads with their face and
- * carries a different set of toolbar actions, and your own pane sets the "(You)"
- * after your name in a lighter weight the way the source does.
  *
  * Branches live here rather than on Main because two screens choose from the same
  * list — Main's detail row and the Action window on your own pane.
@@ -36,7 +79,7 @@ function App() {
   const [branch, setBranch] = useState(BRANCHES[0])
   const { open: sidebarOpen, toggle: toggleSidebar, dismissOnMobile } = useResponsiveSidebar()
 
-  const person = view.kind === 'person' ? view.person : undefined
+  const { title, leading, actions } = headerFor(view, actionOpen)
 
   // A new branch is switched to as soon as it exists — the reason to make one is to
   // work in it, and the source moves the selection too.
@@ -54,26 +97,16 @@ function App() {
     dismissOnMobile()
   }
 
-  let title: React.ReactNode = view.kind === 'page' ? view.label : person?.name
-  let leading: React.ReactNode
-  let actions: IconName[] = ['at-sign', 'ellipsis']
-
-  if (person !== undefined) {
-    if (person.self === true) {
-      // "Oliver (You)" — the name semibold, the parenthetical regular.
-      const [name] = person.name.split(' (')
-      title = (
-        <>
-          {name} <span className="font-normal">(You)</span>
-        </>
-      )
-      // The leading glyph is the Action window's switch, and the frame swaps it
-      // while the window is up.
-      actions = [actionOpen ? 'close' : 'archive-in', 'filter', 'ellipsis']
-    } else {
-      leading = <Avatar person={person.id} size={28} />
-      actions = ['filter', 'ellipsis']
-    }
+  // Keyed by label rather than switched on, so adding a nav item without a screen to
+  // open is a type error rather than a rail entry that does nothing. Only the element
+  // the rail has selected is ever rendered; the rest are unbuilt descriptions.
+  const pages: Record<PageLabel, ReactNode> = {
+    Main: (
+      <Main branch={branch} branches={branches} onSelectBranch={setBranch} onAddBranch={addBranch} />
+    ),
+    Activity: <Activity />,
+    Archive: <Archive />,
+    Settings: <Settings />,
   }
 
   return (
@@ -81,12 +114,12 @@ function App() {
       <Sidebar
         title="Compiler"
         navItems={NAV_ITEMS}
-        activeNav={view.kind === 'page' ? view.label : ''}
+        activeNav={view.kind === 'page' ? view.label : undefined}
         onSelectNav={(label) => {
           show({ kind: 'page', label })
         }}
         team={TEAM}
-        activePerson={person?.id}
+        activePerson={view.kind === 'person' ? view.person.id : undefined}
         onSelectPerson={(selected) => {
           show({ kind: 'person', person: selected })
         }}
@@ -94,14 +127,17 @@ function App() {
         onToggle={toggleSidebar}
       />
 
-      {sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar"
-          onClick={toggleSidebar}
-          className="absolute inset-0 z-20 cursor-default border-none bg-black/20 p-0 md:hidden"
-        />
-      )}
+      {/* The scrim stays mounted so it can fade; `inert` keeps it off the tab order
+          and out of the accessibility tree while it is invisible. */}
+      <button
+        type="button"
+        aria-label="Close sidebar"
+        onClick={toggleSidebar}
+        inert={!sidebarOpen}
+        className={`absolute inset-0 z-20 cursor-default border-none bg-black/20 p-0 transition-opacity duration-300 ease-out motion-reduce:transition-none md:hidden ${
+          sidebarOpen ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
 
       {/*
         `relative` so a view's overlay covers this pane and not the rail beside it,
@@ -121,15 +157,15 @@ function App() {
           sidebarOpen={sidebarOpen}
           onToggleSidebar={toggleSidebar}
         />
-        {person !== undefined && (
+        {view.kind === 'person' ? (
           <Team
-            person={person}
+            person={view.person}
             version={version}
             onSelectVersion={(entry) => {
               // The row is a switch: picking the open one shuts the detail again.
               setVersion((current) => (current === entry ? undefined : entry))
             }}
-            actionOpen={actionOpen && person.self === true}
+            actionOpen={actionOpen && view.person.self === true}
             onCloseAction={() => {
               setActionOpen(false)
             }}
@@ -137,18 +173,9 @@ function App() {
             branches={branches}
             onSelectBranch={setBranch}
           />
+        ) : (
+          pages[view.label]
         )}
-        {view.kind === 'page' && view.label === 'Main' && (
-          <Main
-            branch={branch}
-            branches={branches}
-            onSelectBranch={setBranch}
-            onAddBranch={addBranch}
-          />
-        )}
-        {view.kind === 'page' && view.label === 'Activity' && <Activity />}
-        {view.kind === 'page' && view.label === 'Archive' && <Archive />}
-        {view.kind === 'page' && view.label === 'Settings' && <Settings />}
       </div>
     </AppWindow>
   )

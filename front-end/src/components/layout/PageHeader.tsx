@@ -43,6 +43,14 @@ interface PageHeaderProps {
   onToggleSidebar: () => void
 }
 
+/**
+ * The bar every screen opens with: the rail's toggle, the view's title, and a pill of
+ * glyph actions whose contents change with the view.
+ *
+ * It is the page's header rather than the window's, so it sits inside the content
+ * pane and narrows to the history's width when a version splits the pane — the detail
+ * half brings its own toolbar.
+ */
 export function PageHeader({
   title,
   leading,
@@ -57,7 +65,7 @@ export function PageHeader({
       {/* Sized rather than flexed, so it takes the history's width alongside the
           columns below it. */}
       <span
-        className={`flex w-full min-w-0 shrink-0 items-start justify-between gap-[16px] pr-[17px] pl-[22px] ${
+        className={`flex w-full min-w-0 shrink-0 items-start justify-between gap-[16px] pr-[17px] pl-[22px] transition-[width] duration-300 ease-cp motion-reduce:transition-none ${
           split ? '@min-[860px]:w-[420px]' : ''
         }`}
       >
@@ -97,7 +105,6 @@ export function PageHeader({
           ))}
         </span>
       </span>
-
     </div>
   )
 }

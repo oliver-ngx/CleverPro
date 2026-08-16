@@ -1,4 +1,4 @@
-import { BRANCH_ATTACHMENTS } from '../../data/compiler'
+import { BRANCH_ATTACHMENTS } from '../../data/project'
 import { useOverlayDismiss } from '../../hooks/useOverlayDismiss'
 import { BranchSelect } from '../main/BranchSelect'
 import { ComposerRow } from '../ui/ComposerRow'
@@ -11,8 +11,10 @@ interface ActionComposerProps {
   branch: string
   branches: string[]
   onSelectBranch: (branch: string) => void
-  /** Closes the window: it unmounts as soon as this is called. */
+  /** Closes the window, which then plays its exit animation before it unmounts. */
   onDismiss: () => void
+  /** True while that exit is running. */
+  closing?: boolean
 }
 
 /**
@@ -37,6 +39,7 @@ export function ActionComposer({
   branches,
   onSelectBranch,
   onDismiss,
+  closing = false,
 }: ActionComposerProps) {
   useOverlayDismiss(onDismiss)
   const [project, ...files] = BRANCH_ATTACHMENTS
@@ -44,6 +47,7 @@ export function ActionComposer({
   return (
     <Sheet
       title="Action"
+      closing={closing}
       onScrimClick={onDismiss}
       actions={
         <>
