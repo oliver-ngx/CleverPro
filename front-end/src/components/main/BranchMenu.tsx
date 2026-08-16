@@ -4,7 +4,8 @@ interface BranchMenuProps {
   current: string
   branches: string[]
   onSelect: (branch: string) => void
-  onAdd: () => void
+  /** Omitted where there is nowhere to put a new branch, as in the Action window. */
+  onAdd?: () => void
 }
 
 /**
@@ -37,13 +38,15 @@ export function BranchMenu({ current, branches, onSelect, onAdd }: BranchMenuPro
               {branch}
             </button>
           ))}
-        <button
-          type="button"
-          onClick={onAdd}
-          className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px] font-normal text-cp-text-branch transition-colors duration-[120ms] ease-cp hover:text-cp-text-primary"
-        >
-          + Add Branches
-        </button>
+        {onAdd !== undefined && (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px] font-normal text-cp-text-branch transition-colors duration-[120ms] ease-cp hover:text-cp-text-primary"
+          >
+            + Add Branches
+          </button>
+        )}
       </div>
     </div>
   )

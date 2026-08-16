@@ -8,6 +8,8 @@ interface BranchSelectProps {
   branches: string[]
   onSelect: (branch: string) => void
   onAdd?: () => void
+  /** Where the menu lands. Detail rows and composer rows pad differently. */
+  menuPosition?: string
 }
 
 /** Kept in step with --animate-cp-popover-out, for the unmount fallback only. */
@@ -20,7 +22,13 @@ type MenuState = 'closed' | 'open' | 'closing'
  * open it becomes the popover, with a full-window scrim behind it. Closing keeps
  * the popover mounted for the length of its exit animation.
  */
-export function BranchSelect({ current, branches, onSelect, onAdd }: BranchSelectProps) {
+export function BranchSelect({
+  current,
+  branches,
+  onSelect,
+  onAdd,
+  menuPosition = 'top-[9px] right-[9px] md:right-[37px]',
+}: BranchSelectProps) {
   const [state, setState] = useState<MenuState>('closed')
 
   const close = useCallback(() => {
@@ -91,7 +99,7 @@ export function BranchSelect({ current, branches, onSelect, onAdd }: BranchSelec
         onAnimationEnd={(event) => {
           if (closing && event.target === event.currentTarget) setState('closed')
         }}
-        className={`absolute top-[9px] right-[9px] md:right-[37px] z-10 origin-top-right overflow-hidden rounded-cp-popover shadow-cp-popover ${
+        className={`absolute ${menuPosition} z-10 origin-top-right overflow-hidden rounded-cp-popover shadow-cp-popover ${
           closing
             ? 'pointer-events-none animate-cp-popover-out motion-reduce:animate-cp-popover-out-reduced'
             : 'animate-cp-popover-in motion-reduce:animate-cp-popover-in-reduced'
@@ -105,10 +113,14 @@ export function BranchSelect({ current, branches, onSelect, onAdd }: BranchSelec
               onSelect(branch)
               close()
             }}
-            onAdd={() => {
-              onAdd?.()
-              close()
-            }}
+            onAdd={
+              onAdd === undefined
+                ? undefined
+                : () => {
+                    onAdd()
+                    close()
+                  }
+            }
           />
         </Popover>
       </div>

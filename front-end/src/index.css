@@ -1,6 +1,7 @@
 /* Geist stands in for SF Pro Display, which the source design uses but cannot ship.
-   Instrument Serif is the project wordmark face. */
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&display=swap");
+   Instrument Serif is the project wordmark face, and Roboto Mono is used in exactly
+   one place: the code the version view opens. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&family=Roboto+Mono:wght@500&display=swap");
 @import "tailwindcss";
 
 /* Clever Pro — Compiler design tokens. Values are literal transcriptions from the
@@ -13,32 +14,82 @@
   --color-cp-window: #ffffff;
   --color-cp-sidebar: #ededed;
   --color-cp-panel: #f4f4f4;
+  --color-cp-stripe: #e8e8e8;
   --color-cp-popover: #e5e5e5;
+  --color-cp-field: #f0f0f0;
+  --color-cp-button: #ececec;
+  /* The sheet dims the app behind it by tinting toward the desktop grey rather
+     than toward black, so the window reads as pushed back instead of shadowed. */
+  --color-cp-scrim: rgb(230 230 230 / 0.4);
   --color-cp-selected: #e1e1e1;
   --color-cp-pill-wide: rgb(233 233 233 / 0.47);
   --color-cp-hover: rgb(0 0 0 / 0.035);
+  /* Version rows sit on the inset fill and darken through two steps, rather
+     than taking the 3.5% black wash the nav rows use. */
+  --color-cp-row-hover: #e9e9e9;
+  --color-cp-row-active: #dbdbdb;
 
   --color-cp-text-primary: #000000;
+  --color-cp-text-secondary: #696969;
   --color-cp-text-tertiary: #ababab;
+  --color-cp-text-subtle: #8c8c8c;
   --color-cp-text-label: #6a6a6a;
   --color-cp-text-muted: #8f8f8f;
   --color-cp-text-branch: #9c9c9c;
+  --color-cp-text-section: #919191;
+  --color-cp-text-placeholder: #818181;
+  /* The version view's timestamp. */
+  --color-cp-text-stamp: #a3a3a3;
+  /* The Action window's row labels. This is the design system's --cp-gray-550,
+     which its own token file aliases to --cp-text-placeholder and then never
+     uses; the composer is the value's real consumer. */
+  --color-cp-text-composer: #a0a0a0;
+  /* Attachment captions inside the Action window, which are darker than the
+     ones on the Add Branch sheet. */
+  --color-cp-text-file: #737373;
 
   --color-cp-hairline: #e3e3e3;
   --color-cp-accent: #2781ff;
   --color-cp-presence: #008cff;
   --color-cp-link: #1f84ff;
   --color-cp-link-alt: #0090ff;
+  --color-cp-destructive: #ff6161;
+  --color-cp-diff-add: #00db24;
+  --color-cp-diff-remove: #ff0000;
+
+  /* The version viewer's syntax colours. The design system states the code is
+     plain black on white; the frame colours it, and the frame wins. These are
+     its literals, not a highlighter's theme. */
+  --color-cp-code: #757575;
+  --color-cp-code-comment: #47a400;
+  --color-cp-code-decl: #1a00ff;
+  --color-cp-code-ident: #00096b;
+  --color-cp-code-keyword: #cc8aff;
+  --color-cp-code-prop: #3b428f;
+  --color-cp-code-string: #bf3300;
+  --color-cp-code-value: #be4f4f;
 
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Geist",
     "Segoe UI", Roboto, sans-serif;
   --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-cp-checkbox: 6px;
   --radius-cp-nav: 11px;
   --radius-cp-thumb: 9px;
   --radius-cp-popover: 12px;
+  /* Overlay radii, scaled from the source like every other metric here:
+     10 / 18 / 22 in the 2204 frame. */
+  --radius-cp-button: 6px;
+  --radius-cp-field: 11px;
+  --radius-cp-attachment: 14px;
+  /* Every overlay shares the window's own corner rather than the much rounder 70
+     the Add Branch frame draws, so a sheet and the Action composer read as the
+     same object. */
+  --radius-cp-overlay: 24px;
   --radius-cp-panel: 30px;
+  /* Both boxes of the code viewer, shell and sheet, share the source's 28. */
+  --radius-cp-code: 18px;
   --radius-cp-window: 29px;
   --radius-cp-pill: 200px;
 
@@ -50,6 +101,15 @@
   /* The source specifies no transitions; these are the house defaults that make
      states feel native-macOS rather than webby. */
   --ease-cp: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* The house curve is very front-loaded: measured on the split, 63% of the move
+     is over in the first quarter of its duration and 88% in the first two fifths.
+     That suits a colour change or the 299px rail, but across a whole pane the eye
+     only ever catches the first 100ms and the rest reads as a snap. Panel-sized
+     moves get a gentler curve, and a longer run to spend it over.
+     Nothing uses this at the moment — the version split was its only caller and no
+     longer animates. It is kept for whatever pane-sized move comes next. */
+  --ease-cp-pane: cubic-bezier(0.22, 0.61, 0.36, 1);
 
   /* The branch popover grows out of the value it replaces, so it scales from the
      corner nearest the trigger rather than fading in place.
@@ -107,6 +167,82 @@
       opacity: 0;
     }
   }
+
+  /* The Add Branch sheet rises into the middle of the window rather than growing
+     out of a trigger, so it scales from its own centre and travels upward. Split
+     into fade and pop for the same reason the popover is — see above. */
+  --animate-cp-sheet-in:
+    cp-sheet-fade 200ms ease-out both,
+    cp-sheet-pop 240ms var(--ease-cp) both;
+
+  --animate-cp-sheet-in-reduced: cp-sheet-fade 200ms ease-out both;
+
+  @keyframes cp-sheet-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes cp-sheet-pop {
+    from {
+      transform: scale(0.94) translateY(10px);
+    }
+    to {
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  /* One keyframe on the way out, so a single animationend tells the sheet it is
+     safe to unmount. */
+  --animate-cp-sheet-out: cp-sheet-out 180ms ease-in both;
+  --animate-cp-sheet-out-reduced: cp-sheet-fade-out 180ms ease-in both;
+
+  @keyframes cp-sheet-out {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.96) translateY(6px);
+    }
+  }
+
+  @keyframes cp-sheet-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+/* Panels that park off an edge and slide back, the rail's gesture applied to a pane.
+   These exist because Tailwind's own `translate-x-*` utilities do not set `translate`
+   directly — they set it to `var(--tw-translate-x) var(--tw-translate-y)`, and those
+   variables are registered `syntax: "*"`, which is not an interpolable type. Swapping
+   the class changes only the variable, so the declared value the transition compares
+   is identical either way and nothing animates. Writing `transform` out in full gives
+   the transition a value it can actually interpolate.
+
+   The rail collapses by width on a desktop, which is a plain property and has always
+   animated; its phone drawer slides, so it hit exactly this and uses these instead.
+   The version editor uses them only to park itself off the pane — that split no longer
+   animates — but it is the same transform either way. */
+@utility cp-slide-home {
+  transform: translateX(0);
+}
+
+@utility cp-slide-off-right {
+  transform: translateX(100%);
+}
+
+@utility cp-slide-off-left {
+  transform: translateX(-100%);
 }
 
 @layer base {
