@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { ActionComposer } from '../components/team/ActionComposer'
 import { VersionDetail } from '../components/team/VersionDetail'
 import { VersionToolbar } from '../components/team/VersionToolbar'
@@ -33,17 +32,8 @@ interface TeamProps {
  * of the product rather than a list of everything it does.
  *
  * The editor and its toolbar are a single layer, laid out where they will finally
- * sit and parked off the right edge by transform when shut. Nothing inside is ever
- * resized, so the code is laid out once rather than re-wrapping as the pane changes
- * shape.
- *
- * The split does not animate. It used to slide in over 380ms, the rail's gesture at a
- * pane's scale, and the user asked for that to come out — the two halves now arrive
- * together in one frame. The transform is still what puts the panel off screen, so
- * `cp-slide-home` / `cp-slide-off-right` stay; only the transition is gone. Should the
- * motion ever be wanted back, put `transition-transform` on this layer and
- * `transition-[width]` on the history column and the header's title span, and time all
- * three together — they are one gesture and half of it animating reads as a glitch.
+ * sit and pushed off the right edge when shut. Nothing inside is ever resized, so the
+ * code is laid out once rather than re-wrapping as the pane changes shape.
  *
  * The history gives up width and nothing else. The `Team/Others/View` frame redraws
  * its rows at 26px for the split, and that is deliberately not followed — the user
@@ -70,12 +60,6 @@ export default function Team({
   const split = version !== undefined
   // The rail spells your own name "Oliver (You)"; a byline should not.
   const [author] = person.name.split(' (')
-
-  // The editor has to survive its own exit: it is still on screen, sliding shut, for
-  // as long as the animation runs. Keeping the last version rendered is what stops it
-  // emptying the instant it starts to close.
-  const [shown, setShown] = useState(version)
-  if (version !== undefined && version !== shown) setShown(version)
 
   return (
     <>
@@ -114,7 +98,7 @@ export default function Team({
           hangs off the right, which is where this sits when it is shut. */}
       <div
         className={`absolute inset-y-0 right-0 left-[420px] z-10 flex flex-col border-l border-cp-hairline bg-cp-window @max-[860px]:top-[41px] @max-[860px]:left-0 @max-[860px]:border-l-0 ${
-          split ? 'cp-slide-home' : 'cp-slide-off-right'
+          split ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Shut, the panel is merely parked off the edge — it would still take tab
@@ -127,7 +111,7 @@ export default function Team({
               }}
             />
           </div>
-          {shown !== undefined && <VersionDetail entry={shown} author={author} />}
+          {version !== undefined && <VersionDetail entry={version} author={author} />}
         </div>
       </div>
 

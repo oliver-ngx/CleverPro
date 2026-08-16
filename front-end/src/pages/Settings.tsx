@@ -24,7 +24,7 @@ export default function Settings() {
           action={
             <button
               type="button"
-              className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cp-link-alt transition-opacity duration-[120ms] ease-cp active:opacity-[0.55] motion-reduce:transition-none"
+              className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cp-link-alt active:opacity-[0.55]"
             >
               Copy link
             </button>

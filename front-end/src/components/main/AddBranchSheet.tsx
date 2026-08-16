@@ -15,7 +15,7 @@ interface AddBranchSheetProps {
   /** Names already taken, so the sheet can refuse a duplicate before it is made. */
   branches: string[]
   onConfirm: (name: string) => void
-  /** Called once the exit animation has finished and the sheet can be unmounted. */
+  /** Closes the sheet: it unmounts as soon as this is called. */
   onDismiss: () => void
 }
 
@@ -49,7 +49,7 @@ export function AddBranchSheet({
   const [name, setName] = useState('')
   const [deploy, setDeploy] = useState('')
   const nameRef = useRef<HTMLInputElement>(null)
-  const { closing, close } = useOverlayDismiss(onDismiss)
+  useOverlayDismiss(onDismiss)
 
   const trimmed = name.trim()
   const duplicate = branches.some((branch) => branch.toLowerCase() === trimmed.toLowerCase())
@@ -63,17 +63,15 @@ export function AddBranchSheet({
   return (
     <Sheet
       title="Add Branch"
-      closing={closing}
-      onExited={onDismiss}
       onSubmit={(event) => {
         event.preventDefault()
         if (!submittable) return
         onConfirm(trimmed)
-        close()
+        onDismiss()
       }}
       footer={
         <>
-          <Button variant="secondary" onClick={close}>
+          <Button variant="secondary" onClick={onDismiss}>
             Cancel
           </Button>
           <Button type="submit" disabled={!submittable}>

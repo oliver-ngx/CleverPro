@@ -72,7 +72,7 @@ export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTable
                     onClick={() => {
                       onAction?.(row, column)
                     }}
-                    className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-medium text-cp-text-primary transition-opacity duration-[120ms] ease-cp active:opacity-[0.55] motion-reduce:transition-none"
+                    className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-medium text-cp-text-primary active:opacity-[0.55]"
                   >
                     {row[column.key]}
                   </button>

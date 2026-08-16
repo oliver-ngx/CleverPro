@@ -16,7 +16,7 @@ export function FileTree({ files, checked, onToggle, accentColor }: FileTreeProp
       {files.map((file) => (
         <div
           key={file.name}
-          className="flex items-center gap-[8px] rounded-[6px] py-[2px] pr-[6px] transition-colors duration-[120ms] ease-cp hover:bg-cp-hover"
+          className="flex items-center gap-[8px] rounded-[6px] py-[2px] pr-[6px] hover:bg-cp-hover"
         >
           <Checkbox
             checked={checked.has(file.name)}

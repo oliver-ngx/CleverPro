@@ -15,15 +15,11 @@ interface SheetProps {
   size?: string
   /** Passed through to the root, which becomes a form so Enter submits. */
   onSubmit?: SubmitEventHandler<HTMLFormElement>
-  /** True once the overlay has started to leave. */
-  closing: boolean
   /**
    * A click on the scrim. Omitted where a stray click outside must not discard what
    * is inside — a part-filled form, in practice.
    */
   onScrimClick?: () => void
-  /** The exit animation has finished and the caller may unmount. */
-  onExited: () => void
 }
 
 /**
@@ -54,21 +50,11 @@ export function Sheet({
   footer,
   size = 'max-w-[977px] md:h-[578px]',
   onSubmit,
-  closing,
   onScrimClick,
-  onExited,
 }: SheetProps) {
   const titleId = useId()
 
-  const shell = `pointer-events-auto relative flex max-h-full w-full flex-col overflow-hidden rounded-cp-overlay bg-cp-window pb-[19px] shadow-cp-window ${size} ${
-    closing
-      ? 'pointer-events-none animate-cp-sheet-out motion-reduce:animate-cp-sheet-out-reduced'
-      : 'animate-cp-sheet-in motion-reduce:animate-cp-sheet-in-reduced'
-  }`
-
-  const onAnimationEnd = (event: { target: EventTarget; currentTarget: EventTarget }) => {
-    if (closing && event.target === event.currentTarget) onExited()
-  }
+  const shell = `pointer-events-auto relative flex max-h-full w-full flex-col overflow-hidden rounded-cp-overlay bg-cp-window pb-[19px] shadow-cp-window ${size}`
 
   const inner = (
     <>
@@ -100,7 +86,6 @@ export function Sheet({
     role: 'dialog' as const,
     'aria-modal': true,
     'aria-labelledby': titleId,
-    onAnimationEnd,
     className: shell,
   }
 

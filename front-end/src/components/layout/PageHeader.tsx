@@ -34,8 +34,8 @@ interface PageHeaderProps {
   onAction?: (icon: IconName) => void
   /**
    * True when a view has split the pane, which confines the title and its pill to the
-   * list half. The detail's own controls are not passed through here — they travel
-   * with the panel that slides in, so that the whole right side moves as one layer.
+   * list half. The detail's own controls are not passed through here — they belong to
+   * the panel, so that the whole right side is one layer.
    */
   split?: boolean
   /** The header's toggle is the only one left once the rail collapses. */
@@ -55,8 +55,7 @@ export function PageHeader({
   return (
     <div className="flex shrink-0 items-start pt-[15px]">
       {/* Sized rather than flexed, so it takes the history's width alongside the
-          columns below it. Like them it changes in one frame — the split used to
-          animate and no longer does. */}
+          columns below it. */}
       <span
         className={`flex w-full min-w-0 shrink-0 items-start justify-between gap-[16px] pr-[17px] pl-[22px] ${
           split ? '@min-[860px]:w-[420px]' : ''

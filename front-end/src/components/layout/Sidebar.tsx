@@ -17,18 +17,13 @@ interface SidebarProps {
 }
 
 /**
- * The rail collapses two different ways. On a desktop it is in the layout, so it
- * animates its width to zero and the page reclaims the space. On a phone it is an
- * overlay drawer, so it keeps its width and slides off the left edge instead.
+ * The rail collapses two different ways. On a desktop it is in the layout, so its
+ * width goes to zero and the page reclaims the space. On a phone it is an overlay
+ * drawer, so it keeps its width and sits off the left edge instead.
  *
- * Either way the animation belongs to the outer box and the content keeps its full
- * 299px inside it — animating the width of the column itself would reflow the nav
- * and re-wrap the names on every frame. The outer box clips; the column never moves.
- *
- * The drawer slides with `cp-slide-*` rather than Tailwind's `translate-x-*`, which
- * declares its value through a `syntax: "*"` custom property and so never animates.
- * The desktop collapse was never affected, because a width is a plain property; only
- * this phone-width path silently snapped.
+ * Either way it is the outer box that changes and the content keeps its full 299px
+ * inside it. The outer box clips; the column never moves, so the nav does not reflow
+ * and the names do not re-wrap as the rail comes and goes.
  */
 export function Sidebar({
   title,
@@ -43,8 +38,8 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <div
-      className={`shrink-0 overflow-hidden bg-cp-sidebar duration-[260ms] ease-cp motion-reduce:transition-none max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:w-[min(299px,85vw)] max-md:shadow-cp-window max-md:transition-transform md:transition-[width] ${
-        open ? 'max-md:cp-slide-home md:w-[299px]' : 'max-md:cp-slide-off-left md:w-0'
+      className={`shrink-0 overflow-hidden bg-cp-sidebar max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:w-[min(299px,85vw)] max-md:shadow-cp-window ${
+        open ? 'max-md:translate-x-0 md:w-[299px]' : 'max-md:-translate-x-full md:w-0'
       }`}
     >
       {/* Collapsed, the column is merely clipped — it would still take tab stops

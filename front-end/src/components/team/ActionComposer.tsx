@@ -11,7 +11,7 @@ interface ActionComposerProps {
   branch: string
   branches: string[]
   onSelectBranch: (branch: string) => void
-  /** Called once the exit animation has finished and the window can be unmounted. */
+  /** Closes the window: it unmounts as soon as this is called. */
   onDismiss: () => void
 }
 
@@ -38,15 +38,13 @@ export function ActionComposer({
   onSelectBranch,
   onDismiss,
 }: ActionComposerProps) {
-  const { closing, close } = useOverlayDismiss(onDismiss)
+  useOverlayDismiss(onDismiss)
   const [project, ...files] = BRANCH_ATTACHMENTS
 
   return (
     <Sheet
       title="Action"
-      closing={closing}
-      onScrimClick={close}
-      onExited={onDismiss}
+      onScrimClick={onDismiss}
       actions={
         <>
           <IconButton icon="archive-in" label="Attach" iconClassName="h-[17px] w-[22px]" />

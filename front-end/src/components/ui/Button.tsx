@@ -12,8 +12,8 @@ interface ButtonProps extends Omit<ComponentPropsWithRef<'button'>, 'className'>
  * The third, `destructive`, is not a button-shaped thing at all — it is a full-width
  * red text row on its own card at the foot of Settings.
  *
- * Hover brightens and press dims, both at 120ms — the design system's states for a
- * filled button. `enabled:` keeps a disabled button inert under the pointer.
+ * Hover brightens and press dims — the design system's states for a filled button.
+ * `enabled:` keeps a disabled button inert under the pointer.
  */
 // Sizing sits per-variant rather than on the shared class: the two footer buttons
 // belong to the sheet and scale with it, while destructive is an in-window row on
@@ -28,7 +28,7 @@ export function Button({ variant = 'primary', type = 'button', ...rest }: Button
   return (
     <button
       type={type}
-      className={`cursor-pointer border-none font-medium transition-[filter,opacity] duration-[120ms] ease-cp outline-none enabled:hover:brightness-[0.96] enabled:active:opacity-60 disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cp-accent motion-reduce:transition-none ${SKIN[variant]}`}
+      className={`cursor-pointer border-none font-medium outline-none enabled:hover:brightness-[0.96] enabled:active:opacity-60 disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${SKIN[variant]}`}
       {...rest}
     />
   )

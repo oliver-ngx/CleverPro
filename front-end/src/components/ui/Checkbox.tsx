@@ -23,7 +23,7 @@ export function Checkbox({
       aria-label={label}
       onClick={onChange}
       style={{ background: checked ? accentColor : undefined }}
-      className={`inline-flex size-[14px] shrink-0 cursor-pointer items-center justify-center rounded-cp-checkbox border-none p-0 transition-colors duration-[120ms] ease-cp ${
+      className={`inline-flex size-[14px] shrink-0 cursor-pointer items-center justify-center rounded-cp-checkbox border-none p-0 ${
         checked ? '' : 'bg-cp-white shadow-cp-checkbox-off'
       }`}
     >

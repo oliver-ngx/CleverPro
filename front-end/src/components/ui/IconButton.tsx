@@ -12,8 +12,8 @@ interface IconButtonProps {
 
 /**
  * A bare glyph that is genuinely a control: no chrome, but focusable and labelled.
- * The design system gives glyph buttons one state and one only — press dims to 0.55,
- * cross-fading at 120ms. No hover wash, no scale, no colour change.
+ * The design system gives glyph buttons one state and one only — press dims to 0.55.
+ * No hover wash, no scale, no colour change.
  */
 export function IconButton({ icon, label, iconClassName, className, onClick }: IconButtonProps) {
   return (
@@ -21,7 +21,7 @@ export function IconButton({ icon, label, iconClassName, className, onClick }: I
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 transition-opacity duration-[120ms] ease-cp active:opacity-[0.55] motion-reduce:transition-none ${className ?? ''}`}
+      className={`inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 active:opacity-[0.55] ${className ?? ''}`}
     >
       <Icon name={icon} className={iconClassName} />
     </button>
