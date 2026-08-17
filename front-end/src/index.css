@@ -1,1 +1,241 @@
+/* The web fonts are linked from index.html rather than imported here, so the browser
+   can start fetching them without waiting on this stylesheet — see the comment there. */
 @import "tailwindcss";
+
+/* Clever Pro — Compiler design tokens. Values are literal transcriptions from the
+   design system; nothing here is a generated scale. */
+@theme {
+  --color-cp-white: #ffffff;
+  --color-cp-black: #000000;
+
+  --color-cp-desktop: #e6e6e6;
+  --color-cp-window: #ffffff;
+  --color-cp-sidebar: #ededed;
+  --color-cp-panel: #f4f4f4;
+  --color-cp-stripe: #e8e8e8;
+  --color-cp-popover: #e5e5e5;
+  --color-cp-field: #f0f0f0;
+  --color-cp-button: #ececec;
+  /* The sheet dims the app behind it by tinting toward the desktop grey rather
+     than toward black, so the window reads as pushed back instead of shadowed. */
+  --color-cp-scrim: rgb(230 230 230 / 0.4);
+  --color-cp-selected: #e1e1e1;
+  --color-cp-pill-wide: rgb(233 233 233 / 0.47);
+  --color-cp-hover: rgb(0 0 0 / 0.035);
+  /* Version rows sit on the inset fill and darken through two steps, rather
+     than taking the 3.5% black wash the nav rows use. */
+  --color-cp-row-hover: #e9e9e9;
+  --color-cp-row-active: #dbdbdb;
+
+  --color-cp-text-primary: #000000;
+  --color-cp-text-secondary: #696969;
+  --color-cp-text-tertiary: #ababab;
+  --color-cp-text-subtle: #8c8c8c;
+  --color-cp-text-label: #6a6a6a;
+  --color-cp-text-muted: #8f8f8f;
+  --color-cp-text-branch: #9c9c9c;
+  --color-cp-text-section: #919191;
+  --color-cp-text-placeholder: #818181;
+  /* The version view's timestamp. */
+  --color-cp-text-stamp: #a3a3a3;
+  /* The Action window's row labels. This is the design system's --cp-gray-550,
+     which its own token file aliases to --cp-text-placeholder and then never
+     uses; the composer is the value's real consumer. */
+  --color-cp-text-composer: #a0a0a0;
+  /* Attachment captions inside the Action window, which are darker than the
+     ones on the Add Branch sheet. */
+  --color-cp-text-file: #737373;
+
+  --color-cp-hairline: #e3e3e3;
+  --color-cp-accent: #2781ff;
+  --color-cp-presence: #008cff;
+  --color-cp-link: #1f84ff;
+  --color-cp-link-alt: #0090ff;
+  --color-cp-destructive: #ff6161;
+  --color-cp-diff-add: #00db24;
+  --color-cp-diff-remove: #ff0000;
+
+  /* The version viewer's syntax colours. The design system states the code is
+     plain black on white; the frame colours it, and the frame wins. These are
+     its literals, not a highlighter's theme. */
+  --color-cp-code: #757575;
+  --color-cp-code-comment: #47a400;
+  --color-cp-code-decl: #1a00ff;
+  --color-cp-code-ident: #00096b;
+  --color-cp-code-keyword: #cc8aff;
+  --color-cp-code-prop: #3b428f;
+  --color-cp-code-string: #bf3300;
+  --color-cp-code-value: #be4f4f;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Geist",
+    "Segoe UI", Roboto, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-cp-checkbox: 6px;
+  --radius-cp-nav: 11px;
+  --radius-cp-thumb: 9px;
+  --radius-cp-popover: 12px;
+  /* Overlay radii, scaled from the source like every other metric here:
+     10 / 18 / 22 in the 2204 frame. */
+  --radius-cp-button: 6px;
+  --radius-cp-field: 11px;
+  --radius-cp-attachment: 14px;
+  /* Every overlay shares the window's own corner rather than the much rounder 70
+     the Add Branch frame draws, so a sheet and the Action composer read as the
+     same object. */
+  --radius-cp-overlay: 24px;
+  --radius-cp-panel: 30px;
+  /* Both boxes of the code viewer, shell and sheet, share the source's 28. */
+  --radius-cp-code: 18px;
+  --radius-cp-window: 29px;
+  --radius-cp-pill: 200px;
+
+  --shadow-cp-window: 0 4px 70px 0 rgb(0 0 0 / 0.25);
+  --shadow-cp-pill: 0 4px 27px -29px rgb(0 0 0 / 0.25);
+  --shadow-cp-popover: 0 4px 27px -8px rgb(0 0 0 / 0.25);
+  --shadow-cp-checkbox-off: inset 0 0 0 1px #e3e3e3;
+
+  /* Motion. The source design specifies no transitions or animations at all, so
+     none of this is transcribed — it is a house default, picked so state changes
+     read as native-macOS rather than webby.
+
+     --ease-cp is deliberately front-loaded: most of the distance is covered early
+     and the tail settles. That suits movement, where the eye wants the object to
+     commit and then arrive. It suits a fade far less — on this curve opacity is
+     nearly done before it looks like it started — so anything that only changes
+     opacity uses plain ease-out instead, and the compound animations below run the
+     fade and the movement as two animations on two curves rather than one. */
+  --ease-cp: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --animate-cp-fade-in: cp-fade 200ms ease-out both;
+  --animate-cp-page-in: cp-fade 260ms ease-out both;
+
+  /* The sheet rises into the middle of a blurred pane, so it scales from its own
+     centre rather than out of whatever opened it. */
+  --animate-cp-sheet-in:
+    cp-fade 200ms ease-out both,
+    cp-sheet-rise 280ms var(--ease-cp) both;
+
+  /* The branch popover replaces the value it was opened from and keeps its header
+     over that spot, so it grows out of the corner nearest the trigger — the caller
+     sets the origin — instead of appearing in place. */
+  --animate-cp-popover-in:
+    cp-fade 160ms ease-out both,
+    cp-popover-pop 240ms var(--ease-cp) both;
+
+  --animate-cp-check-in: cp-check 180ms var(--ease-cp) both;
+
+  /* Leaving is quicker than arriving, and on an ease-in rather than the house
+     curve: an overlay should commit to going the moment it is dismissed, where
+     arriving wants the front-loaded settle. Every duration below is duplicated in
+     JS, in src/lib/motion.ts — that is what keeps a dismissed overlay in the tree
+     for exactly this long. Change one, change both. */
+  --animate-cp-fade-out: cp-fade-out 140ms ease-in both;
+
+  --animate-cp-sheet-out:
+    cp-fade-out 140ms ease-in both,
+    cp-sheet-sink 160ms ease-in both;
+
+  --animate-cp-popover-out:
+    cp-fade-out 120ms ease-in both,
+    cp-popover-shrink 140ms ease-in both;
+
+  /* Every movement keyframe lands on `transform: none` rather than an identity
+     translate. `both` leaves the final keyframe applied for good, and a transform
+     of any kind — identity included — makes the element a containing block for
+     fixed-position descendants. Ending on `none` keeps these animations from
+     silently re-anchoring a `fixed` child long after they have finished. */
+  @keyframes cp-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes cp-sheet-rise {
+    from {
+      transform: translateY(10px) scale(0.985);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes cp-popover-pop {
+    from {
+      transform: scale(0.9) translateY(-6px);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes cp-check {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* The exits are the only keyframes that end on a transform rather than on
+     `none`, because what they end on never survives: the element is unmounted the
+     moment the animation is over, so there is nothing left to be a containing
+     block for. */
+  @keyframes cp-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes cp-sheet-sink {
+    from {
+      transform: none;
+    }
+    to {
+      transform: translateY(6px) scale(0.985);
+    }
+  }
+
+  @keyframes cp-popover-shrink {
+    from {
+      transform: none;
+    }
+    to {
+      transform: scale(0.94) translateY(-4px);
+    }
+  }
+}
+
+@layer base {
+  body {
+    background: var(--color-cp-desktop);
+    font-family: var(--font-ui);
+  }
+
+  a {
+    color: var(--color-cp-link);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-cp-link-alt);
+  }
+
+  /* A guarded rule rather than a utility, because it applies to every link in the
+     app rather than to any one component's class list. */
+  @media (prefers-reduced-motion: no-preference) {
+    a {
+      transition: color 150ms ease-out;
+    }
+  }
+}

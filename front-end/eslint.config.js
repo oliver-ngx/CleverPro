@@ -6,7 +6,10 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // The design-system export is reference material, not source: its .jsx.txt /
+  // .types.ts files sit outside every tsconfig project on purpose, so typed linting
+  // cannot parse them. Read them; don't lint them.
+  globalIgnores(['dist', 'design-system']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
