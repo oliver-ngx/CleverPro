@@ -8,7 +8,7 @@ const PADDING = 'px-[16px] pt-[20px] pb-[35px] md:pt-[28px] md:pr-[36px] md:pl-[
 
 /**
  * The same three-column geometry as Activity, measured off the archive frame: the
- * version runs to 73% of the card's inner width, then Time, then Action. The Action
+ * version runs to 73% of the table's width, then Time, then Action. The Action
  * column starts at exactly the same offset on both screens.
  */
 const COLUMNS: DataTableColumn[] = [

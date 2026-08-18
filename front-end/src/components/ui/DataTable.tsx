@@ -24,15 +24,14 @@ const ALIGN = {
 
 /**
  * Ported from the design system's `data/DataTable`: the Activity and Archive log
- * tables — a flat #F4F4F4 card holding 25px rows banded #E8E8E8 against #EFEFEF,
- * semibold headers and medium cells, with plain words in the action column.
+ * tables — 25px rows banded #E8E8E8 against #EFEFEF under semibold headers, with
+ * plain words in the action column.
  *
  * Every row carries a fill, so the banding is between the two rather than between a
- * stripe and the card behind it. Only the header and the card's own padding are the
- * card's colour now.
+ * stripe and the page behind it. Only the header sits on the page's own colour.
  *
- * Bands run the full width of the card while the text is inset, so the card takes
- * no horizontal padding of its own and each row carries it instead.
+ * Bands run the full width of the table while the text is inset, so the horizontal
+ * padding belongs to each row rather than to the table.
  *
  * Cells are `whitespace-pre`: the source never wraps a log line, and it contains
  * deliberate double spaces the design system says to reproduce rather than tidy.
@@ -44,13 +43,13 @@ export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTable
 
   return (
     // `shrink-0` is what keeps the page the thing that scrolls. As a flex child of
-    // the scrolling body this card would otherwise shrink to the pane's height and
+    // the scrolling body this table would otherwise shrink to the pane's height and
     // scroll its own rows, putting a scrollbar down the side of the table instead of
     // at the edge of the pane where every other screen has one. At full height there
     // is nothing for it to scroll, so the `overflow-y: auto` that `overflow-x-auto`
     // implies never engages.
-    <div className="shrink-0 overflow-x-auto rounded-cp-panel bg-cp-panel">
-      <div style={{ minWidth }} className="pt-[21px] pb-[25px]">
+    <div className="shrink-0 overflow-x-auto">
+      <div style={{ minWidth }}>
         <div
           role="row"
           style={{ gridTemplateColumns: grid }}

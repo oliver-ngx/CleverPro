@@ -11,13 +11,10 @@
   --color-cp-desktop: #e6e6e6;
   --color-cp-window: #ffffff;
   --color-cp-sidebar: #ededed;
-  --color-cp-panel: #f4f4f4;
-  /* Cards: Main's detail rows and file structure, and every group on Settings. A step
-     darker than --color-cp-panel, which the log tables on Activity and Archive keep —
-     the two are separate tokens so those tables are not dragged along by this one. */
+  /* Cards: Main's detail rows and file structure, and every group on Settings. */
   --color-cp-card: #efefef;
-  /* The log tables band between these two. Every row carries one of them, so the
-     card underneath never shows through between rows the way it used to. */
+  /* The log tables on Activity and Archive band between these two. Every row carries
+     one of them, so the page never shows through between rows. */
   --color-cp-stripe: #e8e8e8;
   --color-cp-stripe-alt: #efefef;
   --color-cp-popover: #e5e5e5;

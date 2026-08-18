@@ -7,7 +7,7 @@ import { ACTIVITY } from '../data/logs'
 const PADDING = 'px-[16px] pt-[20px] pb-[35px] md:pt-[28px] md:pr-[36px] md:pl-[30px]'
 
 /**
- * Column tracks as proportions of the card's inner width, so they hold at any pane
+ * Column tracks as proportions of the table's width, so they hold at any pane
  * width rather than only at the frame's. The source measures 499 / 927 / 159 of
  * 1585, and the Action column starts at the same offset here as it does on Archive.
  */
