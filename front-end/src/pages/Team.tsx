@@ -115,7 +115,7 @@ export default function Team({
         {/* Shut, the panel is merely parked off the edge — it would still take tab
             stops without `inert`, the same trap the collapsed rail has. */}
         <div inert={!split} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex h-[41px] shrink-0 items-start justify-between gap-[12px] pt-[15px] pr-[17px] pl-[29px]">
+          <div className="flex h-[41px] shrink-0 items-start justify-between gap-[12px] pt-[15px] pr-[14px] pl-[16px] md:pr-[17px] md:pl-[29px]">
             <VersionToolbar
               onClose={() => {
                 if (version !== undefined) onSelectVersion(version)

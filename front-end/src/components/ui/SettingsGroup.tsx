@@ -8,8 +8,8 @@ interface SettingsGroupProps {
 
 /**
  * Ported from the design system's `surfaces/SettingsGroup`: a grey caption over a
- * flat #F4F4F4 card. The caption is inset further than the card so it lines up
- * with the row labels inside it rather than with the card's edge.
+ * flat card. The caption is inset further than the card so it lines up with the row
+ * labels inside it rather than with the card's edge.
  */
 export function SettingsGroup({ label, children }: SettingsGroupProps) {
   return (
@@ -19,7 +19,7 @@ export function SettingsGroup({ label, children }: SettingsGroupProps) {
           {label}
         </div>
       )}
-      <div className="rounded-cp-panel bg-cp-panel py-[9px]">{children}</div>
+      <div className="rounded-cp-panel bg-cp-card py-[9px]">{children}</div>
     </div>
   )
 }

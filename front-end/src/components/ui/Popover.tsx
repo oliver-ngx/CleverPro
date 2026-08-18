@@ -10,13 +10,17 @@ interface PopoverProps {
   width?: number
 }
 
-/** The one floating surface in Compiler: flat #E5E5E5, no border. */
+/**
+ * What the surface is made of, separate from the box that floats. Main's branch panel
+ * is the same #E5E5E5 card sitting inside a page rather than over one, and it reads as
+ * the same object only for as long as both are described here once.
+ */
+export const POPOVER_SURFACE = 'rounded-cp-popover bg-cp-popover px-[11px] pt-[8px] pb-[10px]'
+
+/** The floating one: the surface above, at the width the source fixes. */
 export function Popover({ children, width = 126 }: PopoverProps) {
   return (
-    <div
-      style={{ width }}
-      className="rounded-cp-popover bg-cp-popover px-[11px] pt-[8px] pb-[10px]"
-    >
+    <div style={{ width }} className={POPOVER_SURFACE}>
       {children}
     </div>
   )

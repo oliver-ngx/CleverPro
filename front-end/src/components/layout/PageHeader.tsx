@@ -26,8 +26,17 @@ const ACTION_LABEL: Partial<Record<IconName, string>> = {
 interface PageHeaderProps {
   /** A node rather than a string: the Self pane sets "(You)" in a lighter weight. */
   title: ReactNode
-  /** Shown before the title on a teammate's pane. */
+  /**
+   * The teammate's face, shown before their name. Its presence is what makes the
+   * heading a profile rather than a page title, and so what makes it a control.
+   */
   leading?: ReactNode
+  /**
+   * A press on that profile. Optional, and nothing passes one yet — the profile is a
+   * real button either way, the same way most of the version toolbar's glyphs are
+   * controls the source defines no behaviour for.
+   */
+  onSelectProfile?: () => void
   /** The pill's contents. Each screen in the source carries a different set. */
   actions?: IconName[]
   /** Called with the glyph that was pressed. Only some screens act on it. */
@@ -38,14 +47,13 @@ interface PageHeaderProps {
    * the panel, so that the whole right side is one layer.
    */
   split?: boolean
-  /** The header's toggle is the only one left once the rail collapses. */
-  sidebarOpen: boolean
-  onToggleSidebar: () => void
 }
 
 /**
- * The bar every screen opens with: the rail's toggle, the view's title, and a pill of
- * glyph actions whose contents change with the view.
+ * The bar every screen opens with: the view's title and a pill of glyph actions whose
+ * contents change with the view. On a teammate's pane the title is their profile, and
+ * that is a button — pressing it dims, it takes a tab stop, and it announces itself by
+ * their name.
  *
  * It is the page's header rather than the window's, so it sits inside the content
  * pane and narrows to the history's width when a version splits the pane — the detail
@@ -54,12 +62,13 @@ interface PageHeaderProps {
 export function PageHeader({
   title,
   leading,
+  onSelectProfile,
   actions = ['at-sign', 'ellipsis'],
   onAction,
   split = false,
-  sidebarOpen,
-  onToggleSidebar,
 }: PageHeaderProps) {
+  const name = <span className="truncate text-[15px] font-semibold">{title}</span>
+
   return (
     <div className="flex shrink-0 items-start pt-[15px]">
       {/* Sized rather than flexed, so it takes the history's width alongside the
@@ -69,20 +78,27 @@ export function PageHeader({
           split ? '@min-[860px]:w-[420px]' : ''
         }`}
       >
-        <span className="flex items-center gap-[10px]">
-          {/* The rail's own toggle goes with the rail. Small screens always need one
-              here; larger ones need it the moment the rail collapses, or there is
-              nothing left to click to bring it back. */}
-          <IconButton
-            icon="sidebar-toggle"
-            label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-            iconClassName="size-[14px] text-cp-text-primary"
-            className={sidebarOpen ? 'md:hidden' : undefined}
-            onClick={onToggleSidebar}
-          />
-          {leading}
-          <h1 className="truncate text-[15px] font-semibold text-cp-text-primary">{title}</h1>
-        </span>
+        {/* The heading is the page's either way. On a teammate's pane it is their
+            profile, so the face and the name are one control rather than a picture
+            beside a title — pressing either is pressing the person. */}
+        <h1 className="flex items-center gap-[10px] text-[15px] font-semibold text-cp-text-primary">
+          {leading === undefined ? (
+            name
+          ) : (
+            <button
+              type="button"
+              onClick={onSelectProfile}
+              // `outline-none` keeps the browser's own focus ring off the face — it
+              // is drawn two-tone, and its outer band is a white line around the
+              // photo. That utility also nulls the style our ring is drawn in, so
+              // the focus-visible set restates it: solid, 2px, accent.
+              className="flex cursor-pointer items-center gap-[10px] border-none bg-transparent p-0 text-left font-semibold text-cp-text-primary outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cp-accent"
+            >
+              {leading}
+              {name}
+            </button>
+          )}
+        </h1>
         <span
           className={`inline-flex h-[26px] shrink-0 items-center gap-[12px] rounded-cp-pill bg-cp-pill-wide px-[11px] opacity-93 ${
             split ? '@max-[860px]:hidden' : ''

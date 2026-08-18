@@ -12,7 +12,7 @@ interface VersionPanelProps {
   onNextVersion?: () => void
 }
 
-/** The one content surface on Main: a flat #F4F4F4 card holding the file tree. */
+/** The lower of Main's two cards: a flat #EFEFEF surface holding the file tree. */
 export function VersionPanel({
   projectName,
   branch,
@@ -23,7 +23,7 @@ export function VersionPanel({
   onNextVersion,
 }: VersionPanelProps) {
   return (
-    <div className="relative mb-[35px] rounded-cp-panel bg-cp-panel px-[22px] pt-[21px] pb-[25px]">
+    <div className="relative mb-[35px] rounded-cp-panel bg-cp-card px-[22px] pt-[21px] pb-[25px]">
       <div className="text-[13px] font-medium text-cp-text-primary">{projectName}</div>
       <div className="mt-[7px] mb-[16px] text-[11px] font-medium text-cp-text-tertiary">
         {branch}

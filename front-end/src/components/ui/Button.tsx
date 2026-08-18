@@ -12,7 +12,7 @@ interface ButtonProps extends Omit<ComponentPropsWithRef<'button'>, 'className'>
 const VARIANT_STYLE = {
   primary: 'h-[27px] w-[79px] rounded-[8px] bg-cp-presence text-[11px] text-cp-white',
   secondary: 'h-[27px] w-[79px] rounded-[8px] bg-cp-button text-[11px] text-cp-text-primary',
-  destructive: 'h-[37px] w-full rounded-cp-panel bg-cp-panel text-[13px] text-cp-destructive',
+  destructive: 'h-[37px] w-full rounded-cp-panel bg-cp-card text-[13px] text-cp-destructive',
 } as const
 
 /**
@@ -30,7 +30,9 @@ export function Button({ variant = 'primary', type = 'button', ...rest }: Button
   return (
     <button
       type={type}
-      className={`cursor-pointer border-none font-medium outline-none transition-[filter,opacity] duration-150 ease-out motion-reduce:transition-none enabled:hover:brightness-[0.96] enabled:active:opacity-60 disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${VARIANT_STYLE[variant]}`}
+      // `outline-none` suppresses the browser's own two-tone focus ring, and nulls
+      // the style ours is drawn in as a side effect — hence `outline-solid` below.
+      className={`cursor-pointer border-none font-medium outline-none transition-[filter,opacity] duration-150 ease-out motion-reduce:transition-none enabled:hover:brightness-[0.96] enabled:active:opacity-60 disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${VARIANT_STYLE[variant]}`}
       {...rest}
     />
   )

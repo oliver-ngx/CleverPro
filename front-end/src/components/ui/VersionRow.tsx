@@ -56,7 +56,10 @@ export function VersionRow({
       type="button"
       onClick={onClick}
       aria-current={selected ? 'true' : undefined}
-      className={`flex w-full shrink-0 cursor-pointer items-center gap-[16px] border-none pr-[13px] pl-[16px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${
+      // `outline-none` suppresses the browser's own two-tone focus ring, and nulls
+      // the style ours is drawn in as a side effect — hence `outline-solid` below.
+      // Without it the ring is 2px of nothing and a keyboard user sees no focus.
+      className={`flex w-full shrink-0 cursor-pointer items-center gap-[16px] border-none pr-[13px] pl-[16px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${
         tall ? 'h-[50px] rounded-cp-attachment' : 'h-[41px] rounded-cp-pill'
       } ${fill}`}
     >
@@ -71,12 +74,7 @@ export function VersionRow({
 
       {meta}
       {avatars !== undefined && avatars.length > 0 && (
-        <AvatarStack
-          people={avatars}
-          size={28}
-          overlap={15}
-          ring={selected ? 'var(--color-cp-row-active)' : 'var(--color-cp-field)'}
-        />
+        <AvatarStack people={avatars} size={28} overlap={15} />
       )}
     </button>
   )

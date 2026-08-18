@@ -24,10 +24,14 @@ const ALIGN = {
 
 /**
  * Ported from the design system's `data/DataTable`: the Activity and Archive log
- * tables — a flat #F4F4F4 card holding 25px rows striped #E8E8E8, semibold headers
- * and medium cells, with plain words in the action column.
+ * tables — a flat #F4F4F4 card holding 25px rows banded #E8E8E8 against #EFEFEF,
+ * semibold headers and medium cells, with plain words in the action column.
  *
- * Stripes run the full width of the card while the text is inset, so the card takes
+ * Every row carries a fill, so the banding is between the two rather than between a
+ * stripe and the card behind it. Only the header and the card's own padding are the
+ * card's colour now.
+ *
+ * Bands run the full width of the card while the text is inset, so the card takes
  * no horizontal padding of its own and each row carries it instead.
  *
  * Cells are `whitespace-pre`: the source never wraps a log line, and it contains
@@ -39,7 +43,13 @@ export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTable
   const grid = columns.map((column) => column.width ?? 'minmax(0,1fr)').join(' ')
 
   return (
-    <div className="overflow-x-auto rounded-cp-panel bg-cp-panel">
+    // `shrink-0` is what keeps the page the thing that scrolls. As a flex child of
+    // the scrolling body this card would otherwise shrink to the pane's height and
+    // scroll its own rows, putting a scrollbar down the side of the table instead of
+    // at the edge of the pane where every other screen has one. At full height there
+    // is nothing for it to scroll, so the `overflow-y: auto` that `overflow-x-auto`
+    // implies never engages.
+    <div className="shrink-0 overflow-x-auto rounded-cp-panel bg-cp-panel">
       <div style={{ minWidth }} className="pt-[21px] pb-[25px]">
         <div
           role="row"
@@ -60,9 +70,11 @@ export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTable
             key={index}
             role="row"
             style={{ gridTemplateColumns: grid }}
+            // The list stops rather than being cut off: the final row rounds its
+            // bottom corners at the nav radius, which is what a 25px row can carry.
             className={`grid h-[25px] items-center px-[22px] text-[11px] font-medium whitespace-pre text-cp-text-primary ${
-              index % 2 === 0 ? 'bg-cp-stripe' : ''
-            }`}
+              index % 2 === 0 ? 'bg-cp-stripe' : 'bg-cp-stripe-alt'
+            } ${index === rows.length - 1 ? 'rounded-b-cp-nav' : ''}`}
           >
             {columns.map((column) => (
               <span key={column.key} className={ALIGN[column.align ?? 'left']}>
