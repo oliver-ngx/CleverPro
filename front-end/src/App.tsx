@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { AppWindow } from './components/layout/AppWindow'
+import { MobileNav } from './components/layout/MobileNav'
 import { PageHeader } from './components/layout/PageHeader'
 import { Sidebar } from './components/layout/Sidebar'
 import { Avatar } from './components/ui/Avatar'
@@ -10,7 +11,6 @@ import { NAV_ITEMS } from './data/navigation'
 import { BRANCHES } from './data/project'
 import type { PaneEntry, TeamMember } from './data/team'
 import { TEAM } from './data/team'
-import { useResponsiveSidebar } from './hooks/useResponsiveSidebar'
 import Activity from './pages/Activity'
 import Archive from './pages/Archive'
 import Main from './pages/Main'
@@ -77,7 +77,6 @@ function App() {
   const [version, setVersion] = useState<PaneEntry | undefined>(undefined)
   const [branches, setBranches] = useState<string[]>(BRANCHES)
   const [branch, setBranch] = useState(BRANCHES[0])
-  const { open: sidebarOpen, toggle: toggleSidebar, dismissOnMobile } = useResponsiveSidebar()
 
   const { title, leading, actions } = headerFor(view, actionOpen)
 
@@ -94,7 +93,6 @@ function App() {
     setView(next)
     setActionOpen(false)
     setVersion(undefined)
-    dismissOnMobile()
   }
 
   // Keyed by label rather than switched on, so adding a nav item without a screen to
@@ -109,43 +107,36 @@ function App() {
     Settings: <Settings />,
   }
 
+  // The rail and the phone's tab bar are two drawings of one thing, so they are handed
+  // the same selection and the same handlers; only one of them is ever on screen.
+  const navigation = {
+    navItems: NAV_ITEMS,
+    activeNav: view.kind === 'page' ? view.label : undefined,
+    onSelectNav: (label: PageLabel) => {
+      show({ kind: 'page', label })
+    },
+    team: TEAM,
+    activePerson: view.kind === 'person' ? view.person.id : undefined,
+    onSelectPerson: (selected: TeamMember) => {
+      show({ kind: 'person', person: selected })
+    },
+  }
+
   return (
     <AppWindow>
-      <Sidebar
-        title="Compiler"
-        navItems={NAV_ITEMS}
-        activeNav={view.kind === 'page' ? view.label : undefined}
-        onSelectNav={(label) => {
-          show({ kind: 'page', label })
-        }}
-        team={TEAM}
-        activePerson={view.kind === 'person' ? view.person.id : undefined}
-        onSelectPerson={(selected) => {
-          show({ kind: 'person', person: selected })
-        }}
-        open={sidebarOpen}
-        onToggle={toggleSidebar}
-      />
-
-      {/* The scrim stays mounted so it can fade; `inert` keeps it off the tab order
-          and out of the accessibility tree while it is invisible. */}
-      <button
-        type="button"
-        aria-label="Close sidebar"
-        onClick={toggleSidebar}
-        inert={!sidebarOpen}
-        className={`absolute inset-0 z-20 cursor-default border-none bg-black/20 p-0 transition-opacity duration-300 ease-out motion-reduce:transition-none md:hidden ${
-          sidebarOpen ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
+      <Sidebar title="Compiler" {...navigation} />
 
       {/*
         `relative` so a view's overlay covers this pane and not the rail beside it,
         and a container so the split view can ask how much room the pane itself has.
-        The viewport cannot answer that: collapsing the rail widens the pane by 299px
-        without the window changing size at all.
+        The viewport cannot answer that: the rail beside it takes 299px the window's
+        own width says nothing about.
+
+        `min-h-0` because on a phone this is a row in a column, above the tab bar —
+        without it the pane would grow to fit its content and push the bar off screen
+        instead of scrolling inside itself.
       */}
-      <div className="@container relative flex min-w-0 flex-1 flex-col">
+      <div className="@container relative flex min-h-0 min-w-0 flex-1 flex-col">
         <PageHeader
           title={title}
           leading={leading}
@@ -154,8 +145,6 @@ function App() {
             if (icon === 'archive-in' || icon === 'close') setActionOpen(icon === 'archive-in')
           }}
           split={version !== undefined}
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={toggleSidebar}
         />
         {view.kind === 'person' ? (
           <Team
@@ -177,6 +166,8 @@ function App() {
           pages[view.label]
         )}
       </div>
+
+      <MobileNav {...navigation} />
     </AppWindow>
   )
 }

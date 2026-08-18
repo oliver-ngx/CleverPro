@@ -2,29 +2,33 @@ import { useCallback, useState } from 'react'
 import { useOverlayDismiss } from '../../hooks/useOverlayDismiss'
 import { usePresence } from '../../hooks/usePresence'
 import { POPOVER_EXIT_MS } from '../../lib/motion'
-import { Icon } from '../ui/Icon'
 import { Popover } from '../ui/Popover'
 import { BranchMenu } from './BranchMenu'
+import { BranchTrigger } from './BranchTrigger'
 
 interface BranchSelectProps {
   current: string
   branches: string[]
   onSelect: (branch: string) => void
   onAdd?: () => void
-  /** Where the menu lands. Detail rows and composer rows pad differently. */
-  menuPosition?: string
+  /** Where the menu lands, measured from the row it opens over. */
+  menuPosition: string
 }
 
 /**
- * The branch control swaps in place: closed it is a value in the detail row,
- * open it becomes the popover, with a full-window scrim behind it.
+ * The branch control swaps in place: closed it is a value in the row, open it becomes
+ * the popover, with a full-window scrim behind it.
+ *
+ * This is the Action window's control. Main's row does not use it — its card can grow,
+ * so the branches extend it from below rather than floating over it; see `BranchPanel`.
+ * A sheet at a fixed height has nothing to grow, which is why the popover stays here.
  */
 export function BranchSelect({
   current,
   branches,
   onSelect,
   onAdd,
-  menuPosition = 'top-[9px] right-[9px] md:right-[37px]',
+  menuPosition,
 }: BranchSelectProps) {
   const [open, setOpen] = useState(false)
   // The trigger stays hidden for as long as the menu is on screen, exit included —
@@ -41,18 +45,14 @@ export function BranchSelect({
 
   if (!present) {
     return (
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={false}
+      <BranchTrigger
+        current={current}
+        expanded={false}
+        popup
         onClick={() => {
           setOpen(true)
         }}
-        className="inline-flex cursor-pointer items-center gap-[6px] border-none bg-transparent p-0 text-[13px] font-semibold text-cp-text-tertiary"
-      >
-        {current}
-        <Icon name="chevron-up-down" className="h-[11px] w-[8px]" />
-      </button>
+      />
     )
   }
 

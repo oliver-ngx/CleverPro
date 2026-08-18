@@ -21,7 +21,10 @@ interface VersionToolbarProps {
 export function VersionToolbar({ onClose }: VersionToolbarProps) {
   return (
     <>
-      <span className="flex items-center gap-[26px]">
+      {/* Ten glyphs in one row is the widest thing in the product. The gap between
+          the two groups is what gives on a phone, since it is the only spacing here
+          that is not holding related glyphs apart. */}
+      <span className="flex items-center gap-[14px] md:gap-[26px]">
         <span className="flex items-center gap-[12px]">
           <IconButton icon="archive-out" label="Restore" iconClassName="h-[10px] w-[13px]" />
           <IconButton

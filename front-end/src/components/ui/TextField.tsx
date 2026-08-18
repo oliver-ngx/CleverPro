@@ -54,7 +54,9 @@ export function TextField({
         aria-invalid={error !== undefined}
         aria-describedby={error === undefined ? undefined : errorId}
         style={{ height }}
-        className={`w-full border-none bg-cp-field px-[19px] text-[11px] font-medium text-cp-text-primary outline-none placeholder:text-cp-text-placeholder focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${
+        // `outline-none` suppresses the browser's own two-tone focus ring, and nulls
+        // the style ours is drawn in as a side effect — hence `outline-solid` below.
+        className={`w-full border-none bg-cp-field px-[19px] text-[11px] font-medium text-cp-text-primary outline-none placeholder:text-cp-text-placeholder focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${
           radius === 'tall' ? 'rounded-[18px]' : 'rounded-cp-attachment'
         }`}
         {...rest}
