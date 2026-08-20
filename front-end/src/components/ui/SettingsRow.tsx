@@ -14,6 +14,14 @@ interface SettingsRowProps {
   onClick?: () => void
   /** Greys the row and refuses the press, while a write is in flight. */
   disabled?: boolean
+  /**
+   * The value can grow taller than the row, and the row grows with it — a value
+   * that opens into a card. 35 then sets where the row starts rather than where
+   * it ends, and the label holds its line instead of drifting to the middle of
+   * whatever the value has become. Only ever set alongside `action`: a growing
+   * row is not itself the control, the thing inside it is.
+   */
+  grows?: boolean
 }
 
 /**
@@ -30,6 +38,9 @@ interface SettingsRowProps {
  * the settings list is a column of controls and it has to be reachable by
  * keyboard. The two branches share every layout class, so an interactive row and
  * a reading row are the same 35px line either way.
+ *
+ * A row whose value opens into a card grows instead of holding that line — see
+ * `grows`, and `OptionSelect`, which is what does the opening.
  */
 export function SettingsRow({
   label,
@@ -39,13 +50,29 @@ export function SettingsRow({
   divider = true,
   onClick,
   disabled = false,
+  grows = false,
 }: SettingsRowProps) {
-  const LAYOUT = 'flex h-[35px] w-full items-center justify-between gap-[16px] pr-[19px] pl-[30px]'
+  const LAYOUT = `flex w-full justify-between gap-[16px] pr-[19px] pl-[30px] ${
+    grows ? 'min-h-[35px] items-start' : 'h-[35px] items-center'
+  }`
 
   const content = (
     <>
-      <span className="shrink-0 text-[13px] font-medium text-cp-text-primary">{label}</span>
-      <span className="flex min-w-0 items-center gap-[9px] text-[13px] font-medium text-cp-text-tertiary">
+      {/* A growing row is aligned to the top, so the label centres itself against
+          the row's closed height rather than against the row — otherwise it would
+          slide down the moment the value opened. */}
+      <span
+        className={`shrink-0 text-[13px] font-medium text-cp-text-primary ${
+          grows ? 'flex h-[35px] items-center' : ''
+        }`}
+      >
+        {label}
+      </span>
+      <span
+        className={`flex min-w-0 text-[13px] font-medium text-cp-text-tertiary ${
+          grows ? 'flex-col items-end' : 'items-center gap-[9px]'
+        }`}
+      >
         {action ?? <span className="truncate">{value}</span>}
         {chevron && <Icon name="chevron-small" className="h-[7px] w-[4px] shrink-0 opacity-84" />}
       </span>

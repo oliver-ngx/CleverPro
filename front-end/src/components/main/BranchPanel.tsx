@@ -9,7 +9,12 @@ interface BranchPanelProps {
   current: string
   branches: string[]
   onSelect: (branch: string) => void
-  onAdd: () => void
+  /**
+   * Omitted from a project where this member may not create a branch, which
+   * takes "+ Add Branches" off the list rather than offering a control the
+   * server would refuse.
+   */
+  onAdd?: () => void
   /** The row's closed height, which the value is centred in while it is just a value. */
   rowHeight: number
 }

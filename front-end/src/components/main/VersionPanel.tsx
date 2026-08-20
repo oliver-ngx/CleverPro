@@ -7,8 +7,9 @@ interface VersionPanelProps {
   projectName: string
   branch: string
   files: ProjectFile[]
+  /** Ticked paths, not names — two folders can hold the same filename. */
   checked: ReadonlySet<string>
-  onToggleFile: (name: string) => void
+  onToggleFile: (path: string) => void
   /** Loading, error or empty copy, shown in place of the tree. */
   children?: ReactNode
   onPreviousVersion?: () => void

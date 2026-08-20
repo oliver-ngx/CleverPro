@@ -42,6 +42,11 @@ interface PageHeaderProps {
   /** Called with the glyph that was pressed. Only some screens act on it. */
   onAction?: (icon: IconName) => void
   /**
+   * A panel hanging off the pill, anchored to its right edge. The overflow glyph
+   * on a teammate's pane opens the member menu into it; nothing else uses it yet.
+   */
+  menu?: ReactNode
+  /**
    * True when a view has split the pane, which confines the title and its pill to the
    * list half. The detail's own controls are not passed through here — they belong to
    * the panel, so that the whole right side is one layer.
@@ -65,6 +70,7 @@ export function PageHeader({
   onSelectProfile,
   actions = ['at-sign', 'ellipsis'],
   onAction,
+  menu,
   split = false,
 }: PageHeaderProps) {
   const name = <span className="truncate text-[15px] font-semibold">{title}</span>
@@ -100,7 +106,7 @@ export function PageHeader({
           )}
         </h1>
         <span
-          className={`inline-flex h-[26px] shrink-0 items-center gap-[12px] rounded-cp-pill bg-cp-pill-wide px-[11px] opacity-93 ${
+          className={`relative inline-flex h-[26px] shrink-0 items-center gap-[12px] rounded-cp-pill bg-cp-pill-wide px-[11px] opacity-93 ${
             split ? '@max-[860px]:hidden' : ''
           }`}
         >
@@ -119,6 +125,12 @@ export function PageHeader({
               }
             />
           ))}
+
+          {/* Below the pill and flush with its right edge, so it reads as having
+              come out of the glyph that opened it. */}
+          {menu !== undefined && (
+            <span className="absolute top-[32px] right-0 z-20">{menu}</span>
+          )}
         </span>
       </span>
     </div>

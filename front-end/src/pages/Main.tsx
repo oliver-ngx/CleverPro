@@ -1,6 +1,7 @@
 import { useCallback, useId, useMemo, useState } from 'react'
-import { toFiles } from '../api/adapters'
+import { flattenFiles, toFiles } from '../api/adapters'
 import { api } from '../api/client'
+import type { MemberDto } from '../api/types'
 import { PageBody } from '../components/layout/PageBody'
 import { AddBranchSheet } from '../components/main/AddBranchSheet'
 import { BranchPanel } from '../components/main/BranchPanel'
@@ -8,10 +9,12 @@ import { DetailRow } from '../components/main/DetailRow'
 import { ProjectThumbnail } from '../components/main/ProjectThumbnail'
 import { VersionPanel } from '../components/main/VersionPanel'
 import { ResourceState } from '../components/ui/ResourceState'
+import { CURRENT_USER } from '../config'
 import { useAction } from '../hooks/useAction'
 import { useOverlayDismiss } from '../hooks/useOverlayDismiss'
 import { usePresence } from '../hooks/usePresence'
 import { useResource } from '../hooks/useResource'
+import { canCreateBranch } from '../lib/authority'
 import { SHEET_EXIT_MS } from '../lib/motion'
 
 /**
@@ -29,6 +32,8 @@ export interface MainProject {
 
 interface MainProps {
   project: MainProject
+  /** The project's members: who a new branch can be assigned to. */
+  members: MemberDto[]
   branch: string
   branches: string[]
   onSelectBranch: (branch: string) => void
@@ -43,16 +48,18 @@ interface MainProps {
  */
 export default function Main({
   project,
+  members,
   branch,
   branches,
   onSelectBranch,
 }: MainProps) {
   const [addingBranch, setAddingBranch] = useState(false)
   /**
-   * Which files the user has *un*ticked, rather than which are ticked. The API
-   * marks every file in a version as included, so "all on" is the resting
-   * state -- tracking the exceptions means the tree needs no initialisation
-   * when it loads and no resetting when the branch changes under it.
+   * Which files the user has *un*ticked, rather than which are ticked, by path.
+   * The API marks every file in a version as included, so "all on" is the
+   * resting state -- tracking the exceptions means the tree needs no
+   * initialisation when it loads and no resetting when the branch changes
+   * under it.
    */
   const [unchecked, setUnchecked] = useState<ReadonlySet<string>>(new Set())
   // The branches extend the card rather than floating over it, so the open state
@@ -66,8 +73,29 @@ export default function Main({
 
   const tree = useResource((signal) => api.branchFiles(branch, signal), [branch])
   const files = useMemo(() => (tree.data === undefined ? [] : toFiles(tree.data)), [tree.data])
+
+  // Creating a branch is the one capability an Owner can move between tiers, so
+  // whether this member has it depends on the project's settings as much as on
+  // their role. Both are read here rather than assumed: until the answer
+  // arrives the control stays hidden, which is the safe way round for something
+  // the server would otherwise refuse.
+  const settings = useResource((signal) => api.settings(signal), [])
+  const me = members.find((member) => member.name === CURRENT_USER)
+  const mayAddBranch = settings.data !== undefined && canCreateBranch(me?.role, settings.data)
+
+  // Fetched only for the sheet's subdomain check — the overview's branch
+  // summaries carry names and versions but not the subdomain each deploys to.
+  const branchRows = useResource((signal) => api.branches(signal), [])
+  const takenSubdomains = (branchRows.data ?? []).flatMap((row) =>
+    row.deploy_subdomain === null ? [] : [row.deploy_subdomain],
+  )
   const checked = useMemo(
-    () => new Set(files.map((file) => file.name).filter((name) => !unchecked.has(name))),
+    () =>
+      new Set(
+        flattenFiles(files)
+          .map((file) => file.path)
+          .filter((path) => !unchecked.has(path)),
+      ),
     [files, unchecked],
   )
 
@@ -80,11 +108,11 @@ export default function Main({
   // clicking elsewhere on the page is not clicking off anything.
   useOverlayDismiss(closeBranches, branchesOpen)
 
-  const toggleFile = (name: string) => {
+  const toggleFile = (path: string) => {
     setUnchecked((current) => {
       const next = new Set(current)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
       return next
     })
   }
@@ -142,10 +170,14 @@ export default function Main({
                 onSelectBranch(next)
                 closeBranches()
               }}
-              onAdd={() => {
-                setAddingBranch(true)
-                closeBranches()
-              }}
+              onAdd={
+                mayAddBranch
+                  ? () => {
+                      setAddingBranch(true)
+                      closeBranches()
+                    }
+                  : undefined
+              }
               rowHeight={BRANCH_ROW_HEIGHT}
             />
           </DetailRow>
@@ -174,17 +206,22 @@ export default function Main({
           closing={!addingBranch}
           sourceBranch={branch}
           branches={branches}
+          takenSubdomains={takenSubdomains}
+          members={members}
           pending={create.pending}
           error={create.error}
-          onConfirm={(name, deploySubdomain) => {
+          onConfirm={(name, deploySubdomain, team) => {
             create.run(
-              () => api.createBranch(name, deploySubdomain),
-              () => {
+              () => api.createBranch(name, deploySubdomain, team),
+              (created) => {
                 // A new branch is switched to as soon as it exists — the
                 // reason to make one is to work in it, and the source moves
-                // the selection too. Only on success: a refused create leaves
-                // the sheet open with the server's reason in the name field.
-                onSelectBranch(name)
+                // the selection too. The name comes back from the server
+                // rather than from the field, because a blank field is legal
+                // and the server is what names the branch in that case. Only
+                // on success: a refused create leaves the sheet open with the
+                // server's reason in the name field.
+                onSelectBranch(created.branch)
                 setAddingBranch(false)
               },
             )

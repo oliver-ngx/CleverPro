@@ -73,10 +73,24 @@ export interface ActivityEventDto {
 export interface MemberActivityDto {
   event_id: string
   type: 'commit' | 'push'
+  /** The fused log line, "Committed {comment}" / "Pushed {comment} to {branch}". */
   description: string
+  /** The same comment on its own, which is what the pane actually reads. */
+  comment: string
   branch: string | null
   commit_id: string | null
   timestamp: number
+  /** Commit rows only: the paths the commit changed. */
+  files?: string[]
+  /**
+   * Commit rows only. Retract is valid on a pending proposal and on nothing
+   * else, so the toolbar has to know which one it is looking at.
+   */
+  status?: 'pending' | 'merged' | 'pushed' | 'retracted'
+  /** Commit rows only: whether its author or a reader has flagged it. */
+  flagged?: boolean
+  /** Push rows only: the version the push produced, "V3" or a branch date-stamp. */
+  version_label?: string
   diff?: DiffDto
 }
 
@@ -86,6 +100,7 @@ export interface ArchiveRowDto {
   pushed_by: string
   /** Named `time`, not `timestamp`, unlike every other endpoint. Epoch seconds. */
   time: number
+  /** "Applied" on the live version, "Undo" on every other. */
   action: 'Applied' | 'Undo'
 }
 
@@ -98,6 +113,15 @@ export interface SettingsDto {
   branch_creation_open_to_contributors: boolean
   production_visibility: string
   custom_domain: string | null
+}
+
+/** POST /projects/{id}/branches */
+export interface CreatedBranchDto {
+  /** The name the server settled on -- generated, if the sheet sent none. */
+  branch: string
+  members: string[]
+  deploy_subdomain: string | null
+  seeded_from_main: boolean
 }
 
 /** GET /projects/{id}/commits/{commit_id}/comments */

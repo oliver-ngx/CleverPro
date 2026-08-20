@@ -35,7 +35,11 @@ export type ActivityEntry = {
   commitId: string
 }
 
-/** The archive's action column offers one more word than the activity log's. */
+/**
+ * The archive's action column, and the whole of it. "Applied" marks the live
+ * version and is a status rather than a control; "Undo" is on every other row
+ * and applies that version immediately.
+ */
 export type ArchiveAction = 'Undo' | 'Applied'
 
 export type ArchiveEntry = {

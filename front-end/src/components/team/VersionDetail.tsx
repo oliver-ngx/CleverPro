@@ -1,3 +1,4 @@
+import type { RefObject } from 'react'
 import { memo, useState } from 'react'
 import { api } from '../../api/client'
 import type { CommentDto } from '../../api/types'
@@ -12,6 +13,12 @@ interface VersionDetailProps {
   entry: PaneEntry
   /** Whose pane this is — the note under the diff is theirs. */
   author: string
+  /**
+   * The note field, held by the pane so the toolbar's Comment glyph can put the
+   * cursor in it. A ref rather than a callback prop because focusing is the
+   * whole of the interaction — there is no state either side needs to share.
+   */
+  noteRef?: RefObject<HTMLInputElement | null>
 }
 
 /**
@@ -41,6 +48,11 @@ function threadBlocks(comments: CommentDto[]) {
  * still drawn rather than fetched. Its header is real — the filename and glyph come
  * from the row you picked.
  *
+ * Directly beneath the viewer sits the commit's own message. It used to be the
+ * history row's title, which meant the row read as a sentence and the message had
+ * only a truncated capsule to live in; the row now names the file or the project
+ * and the message is read here instead.
+ *
  * The thread beneath it is real, and only commits have one: the API attaches notes
  * to a commit, so a push row shows the composer nothing to talk about and says so.
  *
@@ -50,7 +62,11 @@ function threadBlocks(comments: CommentDto[]) {
  * collapsing, a branch being picked) from rebuilding several hundred elements
  * of code listing behind the panel.
  */
-export const VersionDetail = memo(function VersionDetail({ entry, author }: VersionDetailProps) {
+export const VersionDetail = memo(function VersionDetail({
+  entry,
+  author,
+  noteRef,
+}: VersionDetailProps) {
   const [draft, setDraft] = useState('')
   const post = useAction()
   const commitId = entry.commitId
@@ -70,6 +86,17 @@ export const VersionDetail = memo(function VersionDetail({ entry, author }: Vers
         <CodeViewer filename={entry.title} icon={entry.icon} lines={VERSION_SOURCE} />
       </div>
 
+      {/* The message its author typed in the Action window. It is read here,
+          under the file it was written about, rather than on the history row --
+          the row names the artefact, so a comment of any length has somewhere
+          to go. Printed verbatim, stray double spaces and all, because the
+          product's log lines are copied rather than tidied. */}
+      {entry.comment.trim() !== '' && (
+        <p className="mt-[18px] mb-0 shrink-0 pl-[9px] text-[13px]/[130%] font-normal text-cp-text-primary">
+          {entry.comment}
+        </p>
+      )}
+
       <div className="mt-[32px] flex shrink-0 flex-col gap-[20px] pl-[9px]">
         {blocks.map((block) => (
           <CommentBlock key={`${block.author}-${block.items[0]}`} {...block} />
@@ -81,6 +108,7 @@ export const VersionDetail = memo(function VersionDetail({ entry, author }: Vers
           </span>
         ) : (
           <input
+            ref={noteRef}
             type="text"
             value={draft}
             disabled={post.pending}

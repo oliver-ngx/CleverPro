@@ -5,12 +5,61 @@ import type {
   ArchiveRowDto,
   BranchDto,
   CommentDto,
+  CreatedBranchDto,
   FileNodeDto,
   MemberActivityDto,
   MemberDto,
   OverviewDto,
   SettingsDto,
 } from './types'
+
+/**
+ * What a Commit or Push carries. The two halves are the attachment model the
+ * product is specified against: a set of individual files, or one whole
+ * version of the branch named by its label -- never a silent mixture.
+ *
+ * Both may be set at once, and that is not an oversight. A commit is a
+ * proposal and may be heterogeneous; a push must resolve to one unambiguous
+ * next state, so the server refuses a mixed bundle with a 422. The composer
+ * disables Push before it gets that far, but the rule is enforced at both
+ * ends rather than trusted at one.
+ */
+export interface AttachmentInput {
+  /** A whole version of the target branch, by its label ("V3", "Aug10"). */
+  versionRef?: string
+  /** A folder read off the user's machine: real paths carrying real content. */
+  folder?: { name: string; files: Record<string, string> }
+  /** Individual files, by full path. */
+  paths?: string[]
+}
+
+/**
+ * The three kinds, on the wire.
+ *
+ * A **folder** is the only one that carries content from this side: it was read
+ * off the user's machine, so the snapshot travels with the request and replaces
+ * the branch's tree wholesale.
+ *
+ * A **version** carries content too, but the server assembles it — the client
+ * sends a label and the backend resolves it to that version's stored files.
+ *
+ * **Files** carry none, and cannot. A path that came from a tree the browser was
+ * handed over JSON has no bytes attached to it, so `file_contents` goes empty
+ * and the backend carries each named path's existing content forward. That is
+ * why attaching a folder is how you get new content into the project, and
+ * attaching files is how you move what is already there.
+ */
+function attachmentBody(attachment: AttachmentInput) {
+  const folder = attachment.folder
+  return {
+    ...(folder === undefined
+      ? {}
+      : { folder_ref: folder.name, tree_snapshot: folder.files }),
+    ...(attachment.versionRef === undefined ? {} : { version_ref: attachment.versionRef }),
+    loose_files: attachment.paths ?? [],
+    file_contents: {},
+  }
+}
 
 /**
  * Everything goes through /api, which Vite proxies to the backend (see
@@ -131,7 +180,11 @@ export const api = {
   /** Reverse your own merge. Flips the same row back to "Merge". */
   unmerge: (commitId: string) => post(`${project}/unmerge/${seg(commitId)}`),
 
-  /** Roll production back to a version that was deployed at some point. */
+  /**
+   * Archive's row action: make a published version the live one, immediately.
+   * Any version on Main's shelf qualifies, whether or not it has been live
+   * before -- "Undo" is named for the direction it is usually travelled.
+   */
   rollback: (versionLabel: string) =>
     post(`${project}/undo`, { version_label: versionLabel }),
 
@@ -139,37 +192,53 @@ export const api = {
   deploy: (versionLabel?: string) =>
     post(`${project}/deploy`, { version_label: versionLabel ?? null }),
 
-  createBranch: (name: string, deploySubdomain?: string) =>
-    post(`${project}/branches`, {
+  /**
+   * `name` may be empty: the sheet does not require one and the server
+   * generates "{project}-experiment-{date}" in its place. Which is why the
+   * created branch's real name comes back in the response rather than being
+   * assumed by the caller. `team` omitted means every member, the "All from
+   * Main" default the sheet opens on.
+   */
+  createBranch: (name: string, deploySubdomain?: string, team?: string[]) =>
+    post<CreatedBranchDto>(`${project}/branches`, {
       name,
       deploy_subdomain: deploySubdomain === undefined || deploySubdomain === ''
         ? null
         : deploySubdomain,
+      team: team ?? null,
     }),
 
-  /**
-   * A proposal against the named files. `file_contents` is left empty
-   * because the browser has no way to read a file yet -- see the note in
-   * ActionComposer -- so the backend diffs the paths against the branch
-   * head and records a zero-line change.
-   */
-  commit: (branch: string, comment: string, paths: string[], viewBy: string[]) =>
+  /** A proposal, routed to `viewBy` -- empty meaning the whole team. */
+  commit: (
+    branch: string,
+    comment: string,
+    attachment: AttachmentInput,
+    viewBy: string[],
+  ) =>
     post(`${project}/commit`, {
       branch,
       comment,
-      loose_files: paths,
-      file_contents: {},
+      ...attachmentBody(attachment),
       view_by: viewBy,
     }),
 
-  /** Promotes the named files onto the branch as a new version. */
-  push: (branch: string, comment: string, paths: string[]) =>
-    post(`${project}/push`, {
-      branch,
-      comment,
-      loose_files: paths,
-      file_contents: {},
-    }),
+  /** Promotes the attachment onto the branch as a new version. */
+  push: (branch: string, comment: string, attachment: AttachmentInput) =>
+    post(`${project}/push`, { branch, comment, ...attachmentBody(attachment) }),
+
+  /**
+   * Withdraw your own proposal. Valid only while it is still pending -- once
+   * anyone has merged it, or it has been pushed, it is history and the server
+   * refuses, which is the whole point of the rule.
+   */
+  retract: (commitId: string) => post(`${project}/retract/${seg(commitId)}`),
+
+  /** Promote one commit's attachment straight onto its branch. */
+  pushCommit: (commitId: string, comment?: string) =>
+    post<{ push_id: string; version_label: string; branch: string }>(
+      `${project}/push_commit/${seg(commitId)}`,
+      { comment: comment ?? null },
+    ),
 
   addComment: (commitId: string, text: string) =>
     post(`${project}/commits/${seg(commitId)}/comments`, { text }),
@@ -196,6 +265,19 @@ export const api = {
 
   transferOwner: (target: string) =>
     post<SettingsDto>(`${project}/settings/transfer-owner`, { target }),
+
+  /**
+   * Role administration, which the product puts on a member's own profile
+   * rather than on a roster screen. Owner-only, both of them.
+   */
+  grantMaintainer: (member: string) =>
+    post(`${project}/team/${seg(member)}/grant-maintainer`),
+
+  revokeMaintainer: (member: string) =>
+    post(`${project}/team/${seg(member)}/revoke-maintainer`),
+
+  /** Maintainer and above, and only ever a Contributor. */
+  removeMember: (member: string) => post(`${project}/team/${seg(member)}/remove`),
 
   deleteProject: () => post<{ deleted: boolean }>(`${project}/settings/delete`),
 }

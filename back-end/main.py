@@ -67,11 +67,30 @@ def get_project(project_id: str) -> Project:
     return _projects[project_id]
 
 
-def _attachment_from(body) -> Attachment:
-    """Every Commit/Push-shaped request builds an Attachment the same way — one place, not four."""
+def _attachment_from(proj: Project, body) -> Attachment:
+    """
+    Every Commit/Push-shaped request builds an Attachment the same way — one
+    place, not four.
+
+    `version_ref` names one whole version of the target branch, which is the
+    other half of the attachment model in Dev Reference §0: files[] *or* a
+    version_ref. Only the server holds that version's bytes, so it resolves
+    into a real snapshot here rather than being uploaded by a browser that
+    cannot read them.
+
+    Sending a version_ref *and* loose files is allowed and is precisely the
+    mixed bundle the Push-validity rule (§7) exists for: commit() accepts it
+    and records both halves, push() raises PushInvalidError, which becomes the
+    422 the composer's disabled Push icon is meant to pre-empt.
+    """
+    folder_ref, snapshot = body.folder_ref, body.tree_snapshot
+    version_ref = getattr(body, "version_ref", None)
+    if version_ref:
+        snapshot = proj.files_at_version(body.branch, version_ref)
+        folder_ref = f"{body.branch}@{version_ref}"
     return Attachment(
-        folder_ref=body.folder_ref, loose_files=body.loose_files,
-        file_contents=body.file_contents, tree_snapshot=body.tree_snapshot,
+        folder_ref=folder_ref, loose_files=body.loose_files,
+        file_contents=body.file_contents, tree_snapshot=snapshot,
     )
 
 
@@ -88,6 +107,8 @@ class CommitRequest(BaseModel):
     actor: str
     branch: str = "main"
     folder_ref: Optional[str] = None
+    # One whole version of `branch`, resolved server-side -- see _attachment_from.
+    version_ref: Optional[str] = None
     loose_files: list[str] = []
     file_contents: dict[str, str] = {}
     tree_snapshot: Optional[dict[str, str]] = None
@@ -99,6 +120,8 @@ class PushRequest(BaseModel):
     actor: str
     branch: str = "main"
     folder_ref: Optional[str] = None
+    # One whole version of `branch`, resolved server-side -- see _attachment_from.
+    version_ref: Optional[str] = None
     loose_files: list[str] = []
     file_contents: dict[str, str] = {}
     tree_snapshot: Optional[dict[str, str]] = None
@@ -250,7 +273,7 @@ def revoke_maintainer(project_id: str, member: str, body: ActorOnlyRequest):
 @handle_core_errors
 def commit(project_id: str, body: CommitRequest):
     proj = get_project(project_id)
-    c = proj.commit(actor=body.actor, branch=body.branch, attachment=_attachment_from(body),
+    c = proj.commit(actor=body.actor, branch=body.branch, attachment=_attachment_from(proj, body),
                      comment=body.comment, view_by=body.view_by)
     return {"commit_id": c.id, "branch": c.branch, "author": c.author}
 
@@ -259,7 +282,7 @@ def commit(project_id: str, body: CommitRequest):
 @handle_core_errors
 def push(project_id: str, body: PushRequest):
     proj = get_project(project_id)
-    p = proj.push(actor=body.actor, branch=body.branch, attachment=_attachment_from(body),
+    p = proj.push(actor=body.actor, branch=body.branch, attachment=_attachment_from(proj, body),
                    comment=body.comment)
     return {"push_id": p.id, "version_label": p.version_label, "branch": p.branch}
 

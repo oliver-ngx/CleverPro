@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { toPaneEntries } from '../api/adapters'
 import { api } from '../api/client'
 import { ActionComposer } from '../components/team/ActionComposer'
@@ -9,6 +9,7 @@ import { ResourceState } from '../components/ui/ResourceState'
 import { VersionRow } from '../components/ui/VersionRow'
 import type { MemberDto } from '../api/types'
 import type { PaneEntry, TeamMember } from '../data/team'
+import { useAction } from '../hooks/useAction'
 import { usePresence } from '../hooks/usePresence'
 import { useResource } from '../hooks/useResource'
 import { SHEET_EXIT_MS } from '../lib/motion'
@@ -17,7 +18,8 @@ interface TeamProps {
   person: TeamMember
   /** Row face stacks (see toPaneEntries) and the composer's recipient list. */
   members: MemberDto[]
-  /** The Action window labels its project tile with this. */
+  /** The Action window labels its project tile with this, and a push row is
+   *  titled by it -- a push promotes the whole project, not one file. */
   projectName: string
   /** The open version, if the pane is split. */
   version?: PaneEntry
@@ -28,6 +30,8 @@ interface TeamProps {
   onCloseAction: () => void
   branch: string
   branches: string[]
+  /** The branch's current version label, which the Action window can attach whole. */
+  versionLabel?: string
   onSelectBranch: (branch: string) => void
 }
 
@@ -67,6 +71,7 @@ export default function Team({
   onCloseAction,
   branch,
   branches,
+  versionLabel,
   onSelectBranch,
 }: TeamProps) {
   // `person.name` carries the "(You)" suffix the rail draws; the API knows
@@ -74,8 +79,11 @@ export default function Team({
   const [author] = person.name.split(' (')
   const history = useResource((signal) => api.memberActivity(author, signal), [author])
   const entries = useMemo(
-    () => (history.data === undefined ? [] : toPaneEntries(history.data, author, members)),
-    [history.data, author, members],
+    () =>
+      history.data === undefined
+        ? []
+        : toPaneEntries(history.data, author, members, projectName),
+    [history.data, author, members, projectName],
   )
   const split = version !== undefined
   // Closing clears the selection at once, but the panel needs 300ms to get off the
@@ -85,6 +93,21 @@ export default function Team({
   const [shownVersion, setShownVersion] = useState(version)
   if (version !== undefined && version !== shownVersion) setShownVersion(version)
   const composerPresent = usePresence(actionOpen, SHEET_EXIT_MS)
+
+  // The version toolbar's actions. They all act on the open commit, so they are
+  // owned here rather than in the toolbar: the toolbar draws the row and decides
+  // which glyphs are live, this decides what they do.
+  const act = useAction()
+  const noteRef = useRef<HTMLInputElement>(null)
+  const mine = person.self === true
+  const openCommit =
+    shownVersion?.commitId === undefined
+      ? undefined
+      : {
+          id: shownVersion.commitId,
+          ...(shownVersion.status === undefined ? {} : { status: shownVersion.status }),
+          ...(shownVersion.flagged === undefined ? {} : { flagged: shownVersion.flagged }),
+        }
 
   return (
     <>
@@ -141,10 +164,39 @@ export default function Team({
               onClose={() => {
                 if (version !== undefined) onSelectVersion(version)
               }}
+              commit={openCommit}
+              mine={mine}
+              pending={act.pending}
+              onRetract={() => {
+                if (openCommit !== undefined) act.run(() => api.retract(openCommit.id))
+              }}
+              onMerge={() => {
+                if (openCommit !== undefined) act.run(() => api.merge(openCommit.id))
+              }}
+              onPush={() => {
+                if (openCommit !== undefined) act.run(() => api.pushCommit(openCommit.id))
+              }}
+              onFlag={() => {
+                if (openCommit !== undefined) {
+                  act.run(() => api.flagCommit(openCommit.id, openCommit.flagged !== true))
+                }
+              }}
+              onComment={() => {
+                noteRef.current?.focus()
+              }}
             />
           </div>
+
+          {act.error !== undefined && (
+            <div
+              role="alert"
+              className="shrink-0 px-[16px] pb-[8px] text-[11px] font-medium text-cp-text-primary md:px-[29px]"
+            >
+              {act.error}
+            </div>
+          )}
           {shownVersion !== undefined && (
-            <VersionDetail entry={shownVersion} author={author} />
+            <VersionDetail entry={shownVersion} author={author} noteRef={noteRef} />
           )}
         </div>
       </div>
@@ -157,6 +209,7 @@ export default function Team({
           members={members}
           branch={branch}
           branches={branches}
+          versionLabel={versionLabel}
           onSelectBranch={onSelectBranch}
           onDismiss={onCloseAction}
         />

@@ -11,7 +11,14 @@ import type { IconName } from '../components/ui/Icon'
 
 export interface ProjectFile {
   name: string
+  /**
+   * Full path from the project root. Two files in different folders can share a
+   * name, so the path is what identifies a row — the name is only what it says.
+   */
+  path: string
   isFolder: boolean
+  /** A folder's contents. Empty on a file, and on a folder holding nothing. */
+  children: ProjectFile[]
 }
 
 /** A card in the Add Branch sheet's attachment tray. */

@@ -23,15 +23,18 @@ export function useAction() {
   // cannot, because the second click is handled before React re-renders.
   const inFlight = useRef(false)
 
-  const run = useCallback((operation: () => Promise<unknown>, onDone?: () => void) => {
+  // Generic in the operation's result so a caller can act on what came back --
+  // creating a branch has to know the name the server settled on, which is not
+  // necessarily the one the sheet sent.
+  const run = useCallback(<T,>(operation: () => Promise<T>, onDone?: (result: T) => void) => {
     if (inFlight.current) return
     inFlight.current = true
     setPending(true)
     setError(undefined)
 
     operation()
-      .then(() => {
-        onDone?.()
+      .then((result) => {
+        onDone?.(result)
       })
       .catch((cause: unknown) => {
         setError(

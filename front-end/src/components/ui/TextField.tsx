@@ -16,6 +16,12 @@ interface TextFieldProps extends Omit<ComponentPropsWithRef<'input'>, 'className
   radius?: 'field' | 'tall'
   /** Shown under the field when the value is rejected. Sets up aria-describedby. */
   error?: string
+  /**
+   * Shown under the field when there is nothing wrong with it — what a blank
+   * one will do, in practice. Yields to `error`, since a field cannot be both
+   * fine and refused, and is described rather than flagged.
+   */
+  hint?: string
 }
 
 /**
@@ -37,10 +43,12 @@ export function TextField({
   height = 47,
   radius = 'field',
   error,
+  hint,
   ...rest
 }: TextFieldProps) {
   const id = useId()
   const errorId = useId()
+  const note = error ?? hint
 
   return (
     <div>
@@ -52,7 +60,7 @@ export function TextField({
       <input
         id={id}
         aria-invalid={error !== undefined}
-        aria-describedby={error === undefined ? undefined : errorId}
+        aria-describedby={note === undefined ? undefined : errorId}
         style={{ height }}
         // `outline-none` suppresses the browser's own two-tone focus ring, and nulls
         // the style ours is drawn in as a side effect — hence `outline-solid` below.
@@ -61,9 +69,9 @@ export function TextField({
         }`}
         {...rest}
       />
-      {error !== undefined && (
+      {note !== undefined && (
         <p id={errorId} className="mt-[6px] px-[19px] text-[10px]/[100%] text-cp-text-branch">
-          {error}
+          {note}
         </p>
       )}
     </div>

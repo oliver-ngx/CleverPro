@@ -1,17 +1,20 @@
 import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { toProject, toTeam } from './api/adapters'
 import { api } from './api/client'
 import { AppWindow } from './components/layout/AppWindow'
 import { MobileNav } from './components/layout/MobileNav'
 import { PageHeader } from './components/layout/PageHeader'
 import { Sidebar } from './components/layout/Sidebar'
+import { MemberMenu } from './components/team/MemberMenu'
 import { Avatar } from './components/ui/Avatar'
 import type { IconName } from './components/ui/Icon'
 import { CURRENT_USER } from './config'
 import type { PageLabel } from './data/navigation'
 import { NAV_ITEMS } from './data/navigation'
 import type { PaneEntry, TeamMember } from './data/team'
+import { useAction } from './hooks/useAction'
+import { useOverlayDismiss } from './hooks/useOverlayDismiss'
 import { useResource } from './hooks/useResource'
 import Activity from './pages/Activity'
 import Archive from './pages/Archive'
@@ -77,6 +80,11 @@ function App() {
   const [view, setView] = useState<View>({ kind: 'page', label: 'Main' })
   const [actionOpen, setActionOpen] = useState(false)
   const [version, setVersion] = useState<PaneEntry | undefined>(undefined)
+  // The overflow glyph on a teammate's pane, which is where role changes and
+  // removals live -- the product has no roster screen, so administration hangs
+  // off the person it affects.
+  const [memberMenuOpen, setMemberMenuOpen] = useState(false)
+  const administer = useAction()
 
   // One overview call serves three things — the project card, the branch list
   // and the Archive table's version prefix — so it is fetched once up here
@@ -109,15 +117,38 @@ function App() {
   const [selectedBranch, setSelectedBranch] = useState<string | undefined>(undefined)
   const branch = selectedBranch ?? (branches.length > 0 ? branches[0] : 'main')
 
+  // The label of what the branch currently holds. The Action window attaches
+  // this by name and the server resolves it to the real snapshot, so a branch
+  // nothing has been pushed to genuinely has nothing whole to send.
+  const versionLabel =
+    (overview.data?.branches ?? []).find((entry) => entry.name === branch)?.latest_version ??
+    undefined
+
   const { title, leading, actions } = headerFor(view, actionOpen)
 
-  // Both overlays belong to the pane they were opened from, so leaving takes them
+  // Every overlay belongs to the pane it was opened from, so leaving takes them
   // with you rather than dropping them onto whatever comes next.
   const show = (next: View) => {
     setView(next)
     setActionOpen(false)
     setVersion(undefined)
+    setMemberMenuOpen(false)
   }
+
+  const closeMemberMenu = useCallback(() => {
+    setMemberMenuOpen(false)
+  }, [])
+
+  // Escape shuts it, as it shuts everything else in the product.
+  useOverlayDismiss(closeMemberMenu, memberMenuOpen)
+
+  // Who is signed in, and whose pane is open. Both are needed before the menu
+  // can say what this member is allowed to do to that one.
+  const viewerRole = (members.data ?? []).find((member) => member.name === CURRENT_USER)?.role
+  const subject =
+    view.kind === 'person'
+      ? (members.data ?? []).find((member) => member.name === view.person.name.split(' (')[0])
+      : undefined
 
   // Keyed by label rather than switched on, so adding a nav item without a screen to
   // open is a type error rather than a rail entry that does nothing. Only the element
@@ -126,6 +157,7 @@ function App() {
     Main: (
       <Main
         project={project}
+        members={members.data ?? []}
         branch={branch}
         branches={branches}
         onSelectBranch={setSelectedBranch}
@@ -133,7 +165,7 @@ function App() {
     ),
     Activity: <Activity />,
     Archive: <Archive projectName={project.name} />,
-    Settings: <Settings />,
+    Settings: <Settings projectName={project.name} />,
   }
 
   // The rail and the phone's tab bar are two drawings of one thing, so they are handed
@@ -172,9 +204,48 @@ function App() {
           actions={actions}
           onAction={(icon) => {
             if (icon === 'archive-in' || icon === 'close') setActionOpen(icon === 'archive-in')
+            if (icon === 'ellipsis' && view.kind === 'person') {
+              setMemberMenuOpen((open) => !open)
+            }
           }}
+          menu={
+            memberMenuOpen && view.kind === 'person' && subject !== undefined ? (
+              <MemberMenu
+                name={subject.name}
+                role={subject.role}
+                viewerRole={viewerRole}
+                self={view.person.self === true}
+                pending={administer.pending}
+                onSetRole={(next) => {
+                  administer.run(
+                    () =>
+                      next === 'maintainer'
+                        ? api.grantMaintainer(subject.name)
+                        : api.revokeMaintainer(subject.name),
+                    closeMemberMenu,
+                  )
+                }}
+                onRemove={() => {
+                  administer.run(() => api.removeMember(subject.name), () => {
+                    // Their pane is gone along with them, so there is nowhere
+                    // to stay -- the project opens where it opened.
+                    show({ kind: 'page', label: 'Main' })
+                  })
+                }}
+              />
+            ) : undefined
+          }
           split={version !== undefined}
         />
+
+        {administer.error !== undefined && (
+          <div
+            role="alert"
+            className="shrink-0 px-[22px] pt-[8px] text-[11px] font-medium text-cp-text-primary"
+          >
+            {administer.error}
+          </div>
+        )}
         {view.kind === 'person' ? (
           <Team
             person={view.person}
@@ -191,6 +262,7 @@ function App() {
             }}
             branch={branch}
             branches={branches}
+            versionLabel={versionLabel}
             onSelectBranch={setSelectedBranch}
           />
         ) : (

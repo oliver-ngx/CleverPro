@@ -57,20 +57,34 @@ export function toProject(dto: OverviewDto) {
 }
 
 /**
- * The file tree arrives nested; `FileTree` draws a single level, because the
- * source draws folders with a disclosure chevron but never draws one open.
- * So this takes the top level only and keeps the chevron honest -- a folder
- * is marked as one even though its children are not rendered yet.
+ * The file tree arrives nested and stays nested.
  *
- * Folders first, then files, each alphabetised: the API returns them in path
- * order, which interleaves the two.
+ * It used to be flattened to its top level, on the grounds that the source
+ * draws a folder's disclosure chevron but never draws one open. That was fine
+ * while the tree was a fixture ten files deep; it is not fine now that the
+ * project can be a real directory off somebody's machine, where everything
+ * that matters is two or three levels down and a single level shows almost
+ * nothing. The chevron opens.
+ *
+ * Folders first, then files, each alphabetised at every level: the API returns
+ * them in path order, which interleaves the two.
  */
 export function toFiles(nodes: FileNodeDto[]): ProjectFile[] {
   return nodes
-    .map((node) => ({ name: node.name, isFolder: node.type === 'folder' }))
+    .map((node) => ({
+      name: node.name,
+      path: node.path,
+      isFolder: node.type === 'folder',
+      children: node.children === undefined ? [] : toFiles(node.children),
+    }))
     .sort((a, b) =>
       a.isFolder === b.isFolder ? a.name.localeCompare(b.name) : a.isFolder ? -1 : 1,
     )
+}
+
+/** Every row in the tree, folders included, in the order they are drawn. */
+export function flattenFiles(files: ProjectFile[]): ProjectFile[] {
+  return files.flatMap((file) => [file, ...flattenFiles(file.children)])
 }
 
 export function toTeam(members: MemberDto[], currentUser: string): TeamMember[] {
@@ -144,15 +158,22 @@ const ICONS: { match: RegExp; icon: IconName; size: number }[] = [
   { match: /\.[a-z0-9]+\b/i, icon: 'file', size: 16 },
 ]
 
-function iconFor(title: string) {
+export function iconForFile(title: string) {
   return ICONS.find((entry) => entry.match.test(title)) ?? { icon: 'file' as IconName, size: 16 }
 }
 
 /**
  * A teammate's pane. The API returns log lines; the row wants a title, a
- * glyph and a face stack, so most of this is unpicking prose the backend
- * composed: it renders a commit as "Committed {comment}" and a push as
- * "Pushed {comment} to {branch}", and the comment is the part worth showing.
+ * glyph and a face stack.
+ *
+ * The row names the artefact, not the message: a commit is titled by the
+ * files it changed and a push by the project at the version it produced.
+ * The comment travels alongside and is read under the file preview in the
+ * detail pane, which is where a sentence has room to be one. That is why
+ * the fused `description` ("Committed refined ContentView.js v2.1") is left
+ * alone here -- the endpoint hands over the parts, so there is no prose to
+ * unpick. A commit whose attachment named no path at all has nothing to be
+ * titled by, so it falls back to its comment rather than drawing an empty row.
  *
  * The faces are the weak spot. `member_activity` returns no participant
  * list, so there is nothing to build a real stack from -- these are simply
@@ -163,6 +184,7 @@ export function toPaneEntries(
   rows: MemberActivityDto[],
   member: string,
   team: MemberDto[],
+  projectName: string,
 ): PaneEntry[] {
   const others = team
     .filter((other) => other.name !== member)
@@ -174,10 +196,11 @@ export function toPaneEntries(
   return rows
     .map((row) => {
       if (row.type === 'push') {
-        const title = row.description
-          .replace(/^Pushed /, '')
-          .replace(/ to [^ ]+$/, '')
-          .trim()
+        // "Orchid Lab V3" -- the same fused string the archive table prints,
+        // because both are naming one version of the whole project.
+        const title = row.version_label === undefined
+          ? projectName
+          : `${projectName} ${row.version_label}`
         // Pushes are the taller row shape, and passing a subtitle is the
         // only thing that selects it -- see VersionRow.
         return {
@@ -185,22 +208,29 @@ export function toPaneEntries(
           icon: 'eye' as IconName,
           iconSize: 18,
           title,
+          comment: row.comment,
           stamp: longStamp(row.timestamp),
           subtitle: 'Preview',
           avatars: others,
         }
       }
 
-      const title = row.description.replace(/^Committed /, '').trim()
-      const { icon, size } = iconFor(title)
+      // Paths, because the API addresses files by their full path; the row
+      // shows the leaf, which is the name anyone would say out loud.
+      const files = (row.files ?? []).map((path) => path.split('/').pop() ?? path)
+      const title = files.length === 0 ? row.comment.trim() : files.join(', ')
+      const { icon, size } = iconForFile(files[0] ?? title)
       return {
         id: row.event_id,
         icon,
         iconSize: size,
         title,
+        comment: row.comment,
         stamp: longStamp(row.timestamp),
         avatars: others,
         ...(row.commit_id === null ? {} : { commitId: row.commit_id }),
+        ...(row.status === undefined ? {} : { status: row.status }),
+        ...(row.flagged === undefined ? {} : { flagged: row.flagged }),
         ...(row.diff === undefined ? {} : { diff: row.diff }),
       }
     })

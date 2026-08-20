@@ -27,21 +27,22 @@ interface ArchiveProps {
 }
 
 /**
- * Every version ever pushed to Main, newest first, each one undoable.
+ * The shelf: every version ever published to Main, newest first, and a way to
+ * put any of them live.
  *
  * Exactly one row reads "Applied" -- what production is actually serving --
  * and it is not necessarily the top one. A push advances Main without
  * touching production, so the newest version sitting above the applied one is
  * the normal state of a project mid-flight, not a bug.
  *
- * "Undo" rolls production onto that row's version, and the "Applied" marker
- * moves to it. Nothing is deleted: the rollback is recorded as a new deploy
- * pointing at an old version, so the list itself never shortens.
+ * Every other row reads "Undo", and pressing it applies that version
+ * immediately: production changes, the deploy URL follows, and the "Applied"
+ * marker moves to that row. Nothing is deleted -- the change is recorded as a
+ * new deployment pointing at an existing version, so this list only ever grows.
  *
- * The API only accepts a rollback to a version that was deployed at some
- * point, so a row that has only ever been pushed will be refused with a 400
- * naming the reason -- which is shown rather than pre-empted, because the
- * archive payload does not say which versions were ever live.
+ * It is Maintainer-and-above, and that is not pre-empted here. The row keeps
+ * its word and the server's refusal is shown if it comes, because release
+ * authority is the kind of thing that changes under a page already open.
  */
 export default function Archive({ projectName }: ArchiveProps) {
   const archive = useResource((signal) => api.archive(signal), [])
