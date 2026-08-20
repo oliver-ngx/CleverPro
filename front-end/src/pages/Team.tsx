@@ -1,16 +1,24 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { toPaneEntries } from '../api/adapters'
+import { api } from '../api/client'
 import { ActionComposer } from '../components/team/ActionComposer'
 import { VersionDetail } from '../components/team/VersionDetail'
 import { VersionToolbar } from '../components/team/VersionToolbar'
 import { DiffStat } from '../components/ui/DiffStat'
+import { ResourceState } from '../components/ui/ResourceState'
 import { VersionRow } from '../components/ui/VersionRow'
+import type { MemberDto } from '../api/types'
 import type { PaneEntry, TeamMember } from '../data/team'
-import { TEAM_PANES } from '../data/team'
 import { usePresence } from '../hooks/usePresence'
+import { useResource } from '../hooks/useResource'
 import { SHEET_EXIT_MS } from '../lib/motion'
 
 interface TeamProps {
   person: TeamMember
+  /** Row face stacks (see toPaneEntries) and the composer's recipient list. */
+  members: MemberDto[]
+  /** The Action window labels its project tile with this. */
+  projectName: string
   /** The open version, if the pane is split. */
   version?: PaneEntry
   /** Selecting the open version again closes it. */
@@ -51,6 +59,8 @@ interface TeamProps {
  */
 export default function Team({
   person,
+  members,
+  projectName,
   version,
   onSelectVersion,
   actionOpen,
@@ -59,7 +69,14 @@ export default function Team({
   branches,
   onSelectBranch,
 }: TeamProps) {
-  const entries = TEAM_PANES[person.id]
+  // `person.name` carries the "(You)" suffix the rail draws; the API knows
+  // the member by their bare name, so the byline below is also what we ask for.
+  const [author] = person.name.split(' (')
+  const history = useResource((signal) => api.memberActivity(author, signal), [author])
+  const entries = useMemo(
+    () => (history.data === undefined ? [] : toPaneEntries(history.data, author, members)),
+    [history.data, author, members],
+  )
   const split = version !== undefined
   // Closing clears the selection at once, but the panel needs 300ms to get off the
   // pane. Held here, the last version stays on screen until the panel has gone;
@@ -68,8 +85,6 @@ export default function Team({
   const [shownVersion, setShownVersion] = useState(version)
   if (version !== undefined && version !== shownVersion) setShownVersion(version)
   const composerPresent = usePresence(actionOpen, SHEET_EXIT_MS)
-  // The rail spells your own name "Oliver (You)"; a byline should not.
-  const [author] = person.name.split(' (')
 
   return (
     <>
@@ -82,9 +97,15 @@ export default function Team({
             split ? 'w-[420px] @max-[860px]:hidden' : 'w-full'
           }`}
         >
+          <ResourceState
+            loading={history.loading}
+            error={history.error}
+            empty="No commits or pushes from this teammate yet."
+            emptyWhen={entries.length === 0}
+          />
           {entries.map((entry) => (
             <VersionRow
-              key={entry.title}
+              key={entry.id}
               icon={entry.icon}
               iconSize={entry.iconSize}
               title={entry.title}
@@ -132,6 +153,8 @@ export default function Team({
       {composerPresent && (
         <ActionComposer
           closing={!actionOpen}
+          projectName={projectName}
+          members={members}
           branch={branch}
           branches={branches}
           onSelectBranch={onSelectBranch}

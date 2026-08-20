@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { ProjectFile } from '../../data/project'
 import { IconButton } from '../ui/IconButton'
 import { FileTree } from './FileTree'
@@ -8,6 +9,8 @@ interface VersionPanelProps {
   files: ProjectFile[]
   checked: ReadonlySet<string>
   onToggleFile: (name: string) => void
+  /** Loading, error or empty copy, shown in place of the tree. */
+  children?: ReactNode
   onPreviousVersion?: () => void
   onNextVersion?: () => void
 }
@@ -19,6 +22,7 @@ export function VersionPanel({
   files,
   checked,
   onToggleFile,
+  children,
   onPreviousVersion,
   onNextVersion,
 }: VersionPanelProps) {
@@ -29,6 +33,7 @@ export function VersionPanel({
         {branch}
       </div>
 
+      {children}
       <FileTree files={files} checked={checked} onToggle={onToggleFile} />
 
       <span className="absolute top-[20px] right-[28px] inline-flex gap-[16px]">

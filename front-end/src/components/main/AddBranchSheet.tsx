@@ -14,7 +14,12 @@ interface AddBranchSheetProps {
   sourceBranch: string
   /** Names already taken, so the sheet can refuse a duplicate before it is made. */
   branches: string[]
-  onConfirm: (name: string) => void
+  /** `deploySubdomain` is the prefix only; the suffix is fixed for every branch. */
+  onConfirm: (name: string, deploySubdomain: string) => void
+  /** True while the create request is in flight. */
+  pending?: boolean
+  /** Whatever the server refused with, if it did. */
+  error?: string
   /** Closes the sheet, which then plays its exit animation before it unmounts. */
   onDismiss: () => void
   /** True while that exit is running. */
@@ -48,6 +53,8 @@ export function AddBranchSheet({
   onConfirm,
   onDismiss,
   closing = false,
+  pending = false,
+  error,
 }: AddBranchSheetProps) {
   const [name, setName] = useState('')
   const [deploy, setDeploy] = useState('')
@@ -69,17 +76,21 @@ export function AddBranchSheet({
       closing={closing}
       onSubmit={(event) => {
         event.preventDefault()
-        if (!submittable) return
-        onConfirm(trimmed)
-        onDismiss()
+        if (!submittable || pending) return
+        // The sheet does not close itself any more: the branch is created on
+        // the server, and the request can be refused -- Branches switched off
+        // in Settings, a subdomain already in use, a role too low to create
+        // one. Dismissing on submit would throw that message away along with
+        // the half-filled form. The page closes it once the server agrees.
+        onConfirm(trimmed, deploy.trim())
       }}
       footer={
         <>
           <Button variant="secondary" onClick={onDismiss}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!submittable}>
-            Add
+          <Button type="submit" disabled={!submittable || pending}>
+            {pending ? 'Adding...' : 'Add'}
           </Button>
         </>
       }
@@ -95,7 +106,9 @@ export function AddBranchSheet({
           placeholder="e.g.  OrchildLab.exp1"
           // Not in the source, but two branches sharing a name would collide in the
           // list and the switcher, so the sheet refuses one.
-          error={duplicate ? `A branch called “${trimmed}” already exists.` : undefined}
+          error={
+            duplicate ? `A branch called “${trimmed}” already exists.` : error
+          }
         />
 
         <TextField

@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { toProject, toTeam } from './api/adapters'
+import { api } from './api/client'
 import { AppWindow } from './components/layout/AppWindow'
 import { MobileNav } from './components/layout/MobileNav'
 import { PageHeader } from './components/layout/PageHeader'
 import { Sidebar } from './components/layout/Sidebar'
 import { Avatar } from './components/ui/Avatar'
 import type { IconName } from './components/ui/Icon'
+import { CURRENT_USER } from './config'
 import type { PageLabel } from './data/navigation'
 import { NAV_ITEMS } from './data/navigation'
-import { BRANCHES } from './data/project'
 import type { PaneEntry, TeamMember } from './data/team'
-import { TEAM } from './data/team'
+import { useResource } from './hooks/useResource'
 import Activity from './pages/Activity'
 import Archive from './pages/Archive'
 import Main from './pages/Main'
@@ -75,17 +77,39 @@ function App() {
   const [view, setView] = useState<View>({ kind: 'page', label: 'Main' })
   const [actionOpen, setActionOpen] = useState(false)
   const [version, setVersion] = useState<PaneEntry | undefined>(undefined)
-  const [branches, setBranches] = useState<string[]>(BRANCHES)
-  const [branch, setBranch] = useState(BRANCHES[0])
+
+  // One overview call serves three things — the project card, the branch list
+  // and the Archive table's version prefix — so it is fetched once up here
+  // rather than three times down there.
+  const overview = useResource((signal) => api.overview(signal), [])
+  const members = useResource((signal) => api.team(signal), [])
+
+  const project = useMemo(
+    () =>
+      overview.data === undefined
+        ? { name: 'Compiler', version: '', deployHost: null, previewSrc: null }
+        : toProject(overview.data),
+    [overview.data],
+  )
+  const team = useMemo(
+    () => (members.data === undefined ? [] : toTeam(members.data, CURRENT_USER)),
+    [members.data],
+  )
+
+  // The server owns the branch list outright now: creating one POSTs, which
+  // bumps the revision counter, which refetches this. Nothing is layered on
+  // top locally, so what is on screen is what exists.
+  const branches = useMemo(
+    () => (overview.data?.branches ?? []).map((entry) => entry.name),
+    [overview.data],
+  )
+
+  // Held as a name rather than an index so it survives the list arriving, and
+  // falls back to whatever is first until it does.
+  const [selectedBranch, setSelectedBranch] = useState<string | undefined>(undefined)
+  const branch = selectedBranch ?? (branches.length > 0 ? branches[0] : 'main')
 
   const { title, leading, actions } = headerFor(view, actionOpen)
-
-  // A new branch is switched to as soon as it exists — the reason to make one is to
-  // work in it, and the source moves the selection too.
-  const addBranch = (name: string) => {
-    setBranches((current) => [...current, name])
-    setBranch(name)
-  }
 
   // Both overlays belong to the pane they were opened from, so leaving takes them
   // with you rather than dropping them onto whatever comes next.
@@ -100,10 +124,15 @@ function App() {
   // the rail has selected is ever rendered; the rest are unbuilt descriptions.
   const pages: Record<PageLabel, ReactNode> = {
     Main: (
-      <Main branch={branch} branches={branches} onSelectBranch={setBranch} onAddBranch={addBranch} />
+      <Main
+        project={project}
+        branch={branch}
+        branches={branches}
+        onSelectBranch={setSelectedBranch}
+      />
     ),
     Activity: <Activity />,
-    Archive: <Archive />,
+    Archive: <Archive projectName={project.name} />,
     Settings: <Settings />,
   }
 
@@ -115,7 +144,7 @@ function App() {
     onSelectNav: (label: PageLabel) => {
       show({ kind: 'page', label })
     },
-    team: TEAM,
+    team,
     activePerson: view.kind === 'person' ? view.person.id : undefined,
     onSelectPerson: (selected: TeamMember) => {
       show({ kind: 'person', person: selected })
@@ -124,7 +153,7 @@ function App() {
 
   return (
     <AppWindow>
-      <Sidebar title="Compiler" {...navigation} />
+      <Sidebar title={project.name} {...navigation} />
 
       {/*
         `relative` so a view's overlay covers this pane and not the rail beside it,
@@ -149,6 +178,8 @@ function App() {
         {view.kind === 'person' ? (
           <Team
             person={view.person}
+            members={members.data ?? []}
+            projectName={project.name}
             version={version}
             onSelectVersion={(entry) => {
               // The row is a switch: picking the open one shuts the detail again.
@@ -160,7 +191,7 @@ function App() {
             }}
             branch={branch}
             branches={branches}
-            onSelectBranch={setBranch}
+            onSelectBranch={setSelectedBranch}
           />
         ) : (
           pages[view.label]

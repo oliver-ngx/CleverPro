@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -6,8 +7,22 @@ from functools import wraps
 import json
 
 from compiler_logic import Project, Role, Attachment, PermissionError_, PushInvalidError
+from seed import build_demo_project
 
 app = FastAPI(title="Compiler API", version="0.1.0")
+
+# The Vite dev server serves the front-end from a different origin, so the
+# browser preflights every request it makes here. The dev setup proxies /api
+# through Vite (see front-end/vite.config.ts), which avoids CORS entirely --
+# this is the belt to that pair of braces, so hitting :8000 straight from the
+# browser (or from a second dev host) works too.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def handle_core_errors(fn):
@@ -36,6 +51,14 @@ def health():
 # compiler_core.py itself doesn't change either way.
 # --------------------------------------------------------------------
 _projects: dict[str, Project] = {}
+
+# The demo project the Figma frames were drawn against, built at import time.
+# The front-end has no create-project flow -- the design assumes one project
+# is already open -- so without this every screen renders a 404 on a cold
+# start. DEMO_PROJECT_ID is the id the front-end asks for; it is mirrored in
+# front-end/src/config.ts.
+DEMO_PROJECT_ID = "proj_1"
+_projects[DEMO_PROJECT_ID] = build_demo_project()
 
 
 def get_project(project_id: str) -> Project:

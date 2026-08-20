@@ -1,6 +1,11 @@
 /**
- * The one project Compiler has open — its artwork and deploy host, the files inside
- * it, and the branches it can be worked in.
+ * What the Add Branch sheet carries, plus the shape of a row in the file tree.
+ *
+ * The project itself -- its name, current version, deploy host, preview
+ * artwork, branch list and real file contents -- all comes from the API now
+ * (GET /overview and GET /branches/{name}/files, mapped in api/adapters.ts).
+ * What is left here is the one thing the API has no opinion about: the
+ * fixtures the Add Branch sheet draws in its attachment tray.
  */
 import type { IconName } from '../components/ui/Icon'
 
@@ -22,38 +27,18 @@ export interface BranchAttachment {
   size: number
 }
 
-/** The project itself. One is open at a time and the source never names another. */
-export const PROJECT = {
-  name: 'Orchid Lab',
-  version: 'Orchid Lab V3',
-  deployHost: 'orchid-lab.cleverpro.com',
-  previewSrc: '/assets/images/orchid-lab-preview.png',
-}
-
-export const PROJECT_FILES: ProjectFile[] = [
-  { name: 'assets', isFolder: true },
-  { name: 'api', isFolder: true },
-  { name: 'public', isFolder: true },
-  { name: 'src', isFolder: true },
-  { name: '.env', isFolder: false },
-  { name: 'README.md', isFolder: false },
-  { name: 'pack-lock.json', isFolder: false },
-  { name: 'pack.json', isFolder: false },
-]
-
-/** Seed value only — the Main page owns the live list once a branch is added. */
-export const BRANCHES = ['main', 'Orchidlab Experiment AUG10']
-
 /** Every branch deploys to a subdomain, so the field only ever takes the prefix. */
 export const DEPLOY_SUFFIX = '.cleverpro.com'
 
 /**
- * What a new branch carries over. Fixed in the source; nothing selects them yet.
+ * What a new branch carries over. Still fixed in the source: the sheet has no
+ * write path yet, so nothing here is selected and nothing is sent. Creating a
+ * branch through the API would seed it from Main's real snapshot instead.
  *
- * `size` is the glyph's width in the Add Branch sheet's tile and nowhere else — the
- * Action window draws the same two attachments at its own, much smaller sizes. These
- * carry that sheet's step-up from 62 and 41, held just under it so the taller glyph
- * still clears its 94px well.
+ * `size` is the glyph's width in the Add Branch sheet's tile and nowhere else --
+ * the Action window draws the same two attachments at its own, much smaller
+ * sizes. These carry that sheet's step-up from 62 and 41, held just under it so
+ * the taller glyph still clears its 94px well.
  */
 export const BRANCH_ATTACHMENTS: BranchAttachment[] = [
   { name: 'OrchidLab v1.3', icon: 'file-blank', size: 75, showsSourceBranch: true },

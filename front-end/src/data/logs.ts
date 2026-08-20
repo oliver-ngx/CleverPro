@@ -1,7 +1,12 @@
 /**
- * The two log tables, Activity and Archive. Both are handed straight to `DataTable`,
- * which is why their rows are type aliases rather than interfaces.
+ * Row shapes for the two log tables, Activity and Archive.
+ *
+ * Types only. The rows themselves come from the API now -- see
+ * api/adapters.ts, which maps the activity feed and the archive surface onto
+ * these -- but the shapes stay declared here because both tables and both
+ * adapters have to agree on them.
  */
+
 /** View, Merge and Undo are the only words the Action column ever holds. */
 export type ActivityAction = 'View' | 'Merge' | 'Undo'
 
@@ -12,41 +17,23 @@ export type ActivityAction = 'View' | 'Merge' | 'Undo'
 export type ActivityEntry = {
   who: string
   /**
-   * The log line, verbatim. The design system is explicit that the source's
-   * inconsistent version casing (`v3` and `V3` both occur), its stray double
-   * spaces and its `V1 .1` are to be reproduced rather than tidied.
+   * The log line exactly as the server composed it. The backend renders a row
+   * as "Committed {comment}" or "Pushed {comment} to {branch}", so whatever
+   * inconsistency the author typed -- mixed version casing, a stray double
+   * space -- travels through untouched. DataTable sets `whitespace-pre` to
+   * preserve that rather than collapse it, which is also why it scrolls
+   * sideways instead of wrapping.
    */
   activity: string
   action: ActivityAction
+  /**
+   * The commit this row is about, or empty on a push or undo row. Carried on
+   * the row rather than looked up, because the Action button needs it and
+   * DataTable hands its handler the whole row. It is never rendered -- the
+   * table only draws the three columns it is given.
+   */
+  commitId: string
 }
-
-export const ACTIVITY: ActivityEntry[] = [
-  { who: 'Oliver', activity: 'Pushed Orchid Lab V3 to main', action: 'View' },
-  { who: 'Eden Sears', activity: 'Committed refined ContentView.js v2.1 ', action: 'Merge' },
-  { who: 'Eden Sears', activity: 'Committed refined ContentView.js v2 ', action: 'Merge' },
-  {
-    who: 'Juliana',
-    activity: 'Committed refined  TableView.js v2, TableContent.css v3  ',
-    action: 'Undo',
-  },
-  { who: 'Juliana', activity: 'Pushed TableView.js v2 to main ', action: 'View' },
-  { who: 'Eden Sears', activity: 'Committed ContentView.js v1.2 ', action: 'Merge' },
-  { who: 'Oliver', activity: 'Pushed Orchid Lab V2.1 to main', action: 'View' },
-  { who: 'Oliver', activity: 'Undo Orchid Lab V2 to main  ', action: 'View' },
-  { who: 'Oliver', activity: 'Pushed Orchid Lab V2 to main ', action: 'View' },
-  { who: 'Juliana', activity: 'Pushed TableView.js V1 .1 to main', action: 'View' },
-  { who: 'Juliana', activity: 'Committed TableView.js V1 .1', action: 'Merge' },
-  { who: 'Eden Sears', activity: 'Pushed ContentView.js v1.1.1 to main', action: 'View' },
-  { who: 'Oliver', activity: 'Committed Orchid Lab V2 ', action: 'View' },
-  { who: 'Eden Sears', activity: 'Committed ContentView.js v1.1.1', action: 'Merge' },
-  { who: 'Eden Sears', activity: 'Committed ContentView.js v1.1', action: 'Merge' },
-  { who: 'Juliana', activity: 'Committed TableView.js V1 ', action: 'Merge' },
-  { who: 'Oliver', activity: 'Undo Orchid Lab V0.1 to main', action: 'View' },
-  { who: 'Eden Sears', activity: 'Committed ContentView.js v0.1.1', action: 'Merge' },
-  { who: 'Eden Sears', activity: 'Committed ContentView.js v0.1', action: 'Merge' },
-  { who: 'Juliana', activity: 'Committed TableView.js V0.1 ', action: 'Merge' },
-  { who: 'Oliver', activity: 'Pushed Orchid Lab V0.1 to main', action: 'View' },
-]
 
 /** The archive's action column offers one more word than the activity log's. */
 export type ArchiveAction = 'Undo' | 'Applied'
@@ -56,14 +43,9 @@ export type ArchiveEntry = {
   /** Terse in the archive table, unlike the activity log's long-form stamps. */
   time: string
   action: ArchiveAction
+  /**
+   * The bare version label the API knows this row by -- "V6", where `version`
+   * above reads "Orchid Lab V6". Carried for the Undo button, never rendered.
+   */
+  versionLabel: string
 }
-
-/** Verbatim again — the third row drops the `v` the others carry. */
-export const ARCHIVE: ArchiveEntry[] = [
-  { version: 'Orchid Lab v3', time: 'Aug 10', action: 'Undo' },
-  { version: 'Orchid Lab v2', time: 'Aug 7', action: 'Applied' },
-  { version: 'Orchid Lab 1.2', time: 'Aug 4', action: 'Undo' },
-  { version: 'Orchid Lab v1', time: 'Aug 2', action: 'Undo' },
-  { version: 'Orchid Lab v0.1.1', time: 'Aug 1', action: 'Undo' },
-  { version: 'Orchid Lab v0.1', time: 'Aug 1', action: 'Undo' },
-]

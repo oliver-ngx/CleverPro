@@ -8,6 +8,12 @@ interface IconButtonProps {
   iconClassName: string
   className?: string
   onClick?: () => void
+  /**
+   * Refuses the press and halves the glyph. The design system defines no
+   * disabled state for these, so this borrows the one it does define — the
+   * 0.55 press dim — and holds it, rather than inventing a second treatment.
+   */
+  disabled?: boolean
 }
 
 /**
@@ -21,13 +27,21 @@ interface IconButtonProps {
  * 6px rather than more because the tightest rows here are 12px apart, so the targets
  * meet without overlapping and a tap never lands on the wrong one.
  */
-export function IconButton({ icon, label, iconClassName, className, onClick }: IconButtonProps) {
+export function IconButton({
+  icon,
+  label,
+  iconClassName,
+  className,
+  onClick,
+  disabled = false,
+}: IconButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
+      disabled={disabled}
       onClick={onClick}
-      className={`relative inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] pointer-coarse:after:absolute pointer-coarse:after:-inset-[6px] pointer-coarse:after:content-[''] ${className ?? ''}`}
+      className={`relative inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] disabled:cursor-default disabled:opacity-[0.35] pointer-coarse:after:absolute pointer-coarse:after:-inset-[6px] pointer-coarse:after:content-[''] ${className ?? ''}`}
     >
       <Icon name={icon} className={iconClassName} />
     </button>

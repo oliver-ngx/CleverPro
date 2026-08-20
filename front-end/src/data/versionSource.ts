@@ -140,12 +140,3 @@ export const VERSION_SOURCE: CodeToken[][] = [
   [],
 ]
 
-/** The note under the diff. */
-export const VERSION_NOTES = [
-  'Adding a function: Inserting a new block of code into a script.',
-  'Fixing a bug: Changing an incorrect variable name or math sign.',
-  'Updating configuration: Changing a port number or setting in a JSON or YAML file.',
-]
-
-/** When the open version landed. Fixed in the source. */
-export const VERSION_STAMP = 'Jul 24, 2026 at 08:26 PM'
