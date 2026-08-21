@@ -1,0 +1,34 @@
+# Tooling configuration only. The package is run from this directory rather
+# than installed, so there is no [project] table and no build backend.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Import mode "importlib" keeps tests/ from having to be on sys.path as a
+# side effect of collection; conftest.py adds the project root explicitly.
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # import sorting
+    "B",    # bugbear: mutable defaults, shadowed builtins, silent except
+    "UP",   # pyupgrade
+    "SIM",  # simplifiable constructs
+    "RUF",
+]
+ignore = [
+    # `type` shadows a builtin in ActivityEvent and _log_event. It is the
+    # field's name on the wire and renaming it would be an API change.
+    "A003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests import fixtures for their side effect of being fixtures, and assert
+# on private state deliberately.
+"tests/*" = ["E402"]

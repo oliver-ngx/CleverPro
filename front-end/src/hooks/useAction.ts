@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { ApiError } from '../api/client'
+import { ApiError } from '../api/http'
 
 /**
  * Runs one write at a time and remembers how it went.

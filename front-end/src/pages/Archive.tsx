@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { api } from '../api/client'
 import { toArchiveRows } from '../api/adapters'
 import { PageBody } from '../components/layout/PageBody'
@@ -46,7 +47,10 @@ interface ArchiveProps {
  */
 export default function Archive({ projectName }: ArchiveProps) {
   const archive = useResource((signal) => api.archive(signal), [])
-  const rows = archive.data === undefined ? [] : toArchiveRows(archive.data, projectName)
+  const rows = useMemo(
+    () => (archive.data === undefined ? [] : toArchiveRows(archive.data, projectName)),
+    [archive.data, projectName],
+  )
   const action = useAction()
 
   return (

@@ -23,3 +23,8 @@ design-system
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment overrides. .env.example is committed; these are not.
+.env
+.env.local
+.env.*.local

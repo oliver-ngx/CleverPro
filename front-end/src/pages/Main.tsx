@@ -145,8 +145,14 @@ export default function Main({
                 Not deployed
               </span>
             ) : (
+              // `noreferrer` because this leaves the app for a host the project
+              // chose: the deployed site has no business being told which
+              // internal screen the visit came from. The scheme is fixed here
+              // and the host is validated server-side as a bare hostname, so
+              // the value cannot smuggle in a scheme of its own.
               <a
                 href={`https://${project.deployHost}`}
+                rel="noreferrer"
                 className="min-w-0 truncate text-[13px] font-normal"
               >
                 {project.deployHost}

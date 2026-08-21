@@ -55,7 +55,14 @@ export interface DiffDto {
 export interface ActivityEventDto {
   event_id: string
   actor: string
-  type: 'commit' | 'push' | 'undo'
+  /**
+   * Not every ledger type reaches this feed -- merge, retract and deploy
+   * change a row that already exists rather than drawing one of their own.
+   * `role_changed` does appear, and only to the person it happened to: the
+   * product has no notification surface, so a role change arrives the way
+   * everything else does, as an addressed row.
+   */
+  type: 'commit' | 'push' | 'undo' | 'role_changed'
   description: string
   branch: string | null
   commit_id: string | null

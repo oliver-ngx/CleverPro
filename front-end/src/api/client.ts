@@ -1,4 +1,13 @@
+/**
+ * Every endpoint the app can reach, and nothing else.
+ *
+ * This is a list rather than a layer: the transport lives in `http.ts`, the
+ * wire shapes in `types.ts`, and turning those shapes into the ones the
+ * screens want is `adapters.ts`. What is here is the API's surface, so that
+ * adding a call means adding a line and finding one means reading a list.
+ */
 import { CURRENT_USER, PROJECT_ID } from '../config'
+import { get, post as rawPost, seg } from './http'
 import { bumpRevision } from './revision'
 import type {
   ActivityEventDto,
@@ -12,6 +21,8 @@ import type {
   OverviewDto,
   SettingsDto,
 } from './types'
+
+export { ApiError } from './http'
 
 /**
  * What a Commit or Push carries. The two halves are the attachment model the
@@ -62,94 +73,25 @@ function attachmentBody(attachment: AttachmentInput) {
 }
 
 /**
- * Everything goes through /api, which Vite proxies to the backend (see
- * vite.config.ts). Nothing here knows the API's real host, which is what
- * lets the same build run behind a single origin in production.
- */
-const BASE = '/api'
-
-/**
- * A failed request that still reached the server. `status` is kept because
- * the API distinguishes meaningfully: 403 is a role the actor does not have,
- * 422 an attachment that does not resolve, 404 a project that is not there.
- */
-export class ApiError extends Error {
-  // Declared and assigned rather than a constructor parameter property:
-  // tsconfig sets erasableSyntaxOnly, so no TypeScript-only syntax that
-  // emits runtime code is allowed.
-  readonly status: number
-
-  constructor(status: number, message: string) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-  }
-}
-
-async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`${BASE}${path}`, {
-    signal,
-    headers: { Accept: 'application/json' },
-  })
-
-  if (!response.ok) {
-    // FastAPI puts the human-readable reason in `detail`; fall back to the
-    // status line for anything that failed before a handler ran.
-    let detail = response.statusText
-    try {
-      const body: unknown = await response.json()
-      if (body !== null && typeof body === 'object' && 'detail' in body) {
-        detail = String(body.detail)
-      }
-    } catch {
-      // A non-JSON error body (a proxy 502, say) leaves statusText in place.
-    }
-    throw new ApiError(response.status, detail)
-  }
-
-  return response.json() as Promise<T>
-}
-
-/**
- * Every mutating route takes the acting member in its body -- the API has no
- * session, so identity travels with each call. Injecting it here rather than
- * at each call site means no component has to know that.
+ * A write, as the rest of the app sees it.
  *
- * A successful write bumps the revision counter, which is what makes the
- * screens behind the action refresh. A failed one deliberately does not:
- * nothing changed, so nothing is stale.
+ * Two things are added on top of the raw POST. The acting member, because the
+ * API has no session and identity travels in each body. And a bump of the
+ * revision counter on success, which is what makes every live read refetch —
+ * a failed write deliberately does not bump, because nothing changed and so
+ * nothing is stale.
  */
 async function post<T>(path: string, body: Record<string, unknown> = {}): Promise<T> {
-  const response = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ actor: CURRENT_USER, ...body }),
-  })
-
-  if (!response.ok) {
-    let detail = response.statusText
-    try {
-      const parsed: unknown = await response.json()
-      if (parsed !== null && typeof parsed === 'object' && 'detail' in parsed) {
-        detail = String(parsed.detail)
-      }
-    } catch {
-      // Non-JSON error body; statusText stands.
-    }
-    throw new ApiError(response.status, detail)
-  }
-
-  const result = (await response.json()) as T
+  const result = await rawPost<T>(path, CURRENT_USER, body)
   bumpRevision()
   return result
 }
 
-/** Path-safe encoding for the display names and branch names used as ids. */
-const seg = (value: string) => encodeURIComponent(value)
-
 const project = `/projects/${seg(PROJECT_ID)}`
 
 export const api = {
+  // ---- reads --------------------------------------------------------
+
   overview: (signal?: AbortSignal) => get<OverviewDto>(`${project}/overview`, signal),
 
   team: (signal?: AbortSignal) => get<MemberDto[]>(`${project}/team`, signal),

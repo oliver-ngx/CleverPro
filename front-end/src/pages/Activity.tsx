@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { api } from '../api/client'
 import { toActivityRows } from '../api/adapters'
 import { PageBody } from '../components/layout/PageBody'
@@ -39,7 +40,10 @@ const COLUMNS: DataTableColumn[] = [
  */
 export default function Activity() {
   const events = useResource((signal) => api.activity(CURRENT_USER, signal), [])
-  const rows = events.data === undefined ? [] : toActivityRows(events.data)
+  const rows = useMemo(
+    () => (events.data === undefined ? [] : toActivityRows(events.data)),
+    [events.data],
+  )
   const action = useAction()
 
   return (

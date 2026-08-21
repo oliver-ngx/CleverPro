@@ -1,0 +1,7 @@
+# Everything needed to run the test suite, on top of requirements.txt.
+-r requirements.txt
+
+pytest==9.1.1
+# Starlette's TestClient drives the app in-process over httpx, so no server
+# has to be running for the API tests.
+httpx==0.28.1

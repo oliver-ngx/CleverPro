@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import time
 
-from compiler_logic import Attachment, Project, Role
+from core import Attachment, Project, Role
 
 OWNER = "Oliver"
 EDEN = "Eden Sears"
@@ -170,5 +170,5 @@ def _backdate(p: Project) -> None:
     # Deploy records carry no id on their events, but they are created in the
     # same order those events are logged, so the two sequences zip.
     stamps = [e.timestamp for e in p.events if e.type in ("deploy", "undo")]
-    for rec, stamp in zip(p.deploy_history, stamps):
+    for rec, stamp in zip(p.deploy_history, stamps, strict=True):
         rec.timestamp = stamp

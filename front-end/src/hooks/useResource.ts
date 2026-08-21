@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ApiError } from '../api/client'
+import { ApiError } from '../api/http'
 import { useRevision } from '../api/revision'
 
 export interface Resource<T> {
