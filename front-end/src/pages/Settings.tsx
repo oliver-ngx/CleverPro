@@ -7,7 +7,10 @@ import { Button } from '../components/ui/Button'
 import { OptionSelect } from '../components/ui/OptionSelect'
 import { ResourceState } from '../components/ui/ResourceState'
 import { SettingsGroup } from '../components/ui/SettingsGroup'
+import { ConfirmAction } from '../components/ui/ConfirmAction'
+import { POPOVER_SURFACE } from '../components/ui/Popover'
 import { SettingsRow } from '../components/ui/SettingsRow'
+import { Swap } from '../components/ui/Swap'
 import { CURRENT_USER } from '../config'
 import { useAction } from '../hooks/useAction'
 import { useResource } from '../hooks/useResource'
@@ -108,48 +111,76 @@ export default function Settings({ projectName }: SettingsProps) {
               divider={mayGovern}
             />
             {/* Two steps, because the first is only a choice and the second is
-                irreversible: picking a name out of the menu arms the row, and the
-                row itself is what commits. */}
-            {mayGovern &&
-              (armed === 'transfer' && heir !== undefined ? (
-                <SettingsRow
-                  label="Move owner to"
-                  value={`Press again to hand it to ${heir}`}
-                  chevron
-                  divider={false}
-                  disabled={action.pending}
-                  onClick={() => {
-                    setArmed(undefined)
-                    // Transferring demotes you to Maintainer, which is a rank
-                    // too low to transfer it back.
-                    action.run(() => api.transferOwner(heir))
-                  }}
-                />
-              ) : (
-                <SettingsRow
-                  label="Move owner to"
-                  divider={false}
-                  // Nothing to open when there is nobody to open it onto, so the
-                  // row keeps its line rather than reserving room to grow.
-                  grows={candidates.length > 0}
-                  action={
-                    candidates.length === 0 ? (
-                      <span className="truncate">No one else on the project</span>
-                    ) : (
-                      <OptionSelect
-                        label="Move owner to"
-                        value={heir ?? 'Choose a member'}
-                        options={candidates}
-                        disabled={action.pending}
-                        onSelect={(name) => {
-                          setHeir(name)
-                          setArmed('transfer')
-                        }}
-                      />
-                    )
-                  }
-                />
-              ))}
+                irreversible: picking a name out of the menu turns the row into the
+                question, and answering it is what commits.
+
+                Chooser and question are two faces of one row rather than two rows,
+                so the card the chooser just closed reopens as the question instead
+                of one being swapped for the other under the pointer. Cancel gives
+                the choice back -- the row used to arm itself with no way out, so
+                the only exit from a mispress was the press being avoided.
+
+                The chooser reads "Choose a member" whether or not somebody has been
+                picked. A name only ever means "this is who the question is about",
+                and the question is on screen whenever there is one. */}
+            {mayGovern && (
+              <SettingsRow
+                label="Move owner to"
+                divider={false}
+                // Nothing to open when there is nobody to open it onto, so the row
+                // keeps its line rather than reserving room to grow.
+                grows={candidates.length > 0}
+                action={
+                  candidates.length === 0 ? (
+                    <span className="truncate">No one else on the project</span>
+                  ) : (
+                    <Swap
+                      className="flex min-w-0 flex-col items-end"
+                      swapped={armed === 'transfer' && heir !== undefined}
+                      front={
+                        <OptionSelect
+                          label="Move owner to"
+                          value="Choose a member"
+                          options={candidates}
+                          disabled={action.pending}
+                          onSelect={(name) => {
+                            setHeir(name)
+                            setArmed('transfer')
+                          }}
+                        />
+                      }
+                      // Absent until somebody has been picked, and kept afterwards:
+                      // the question has to outlive its own dismissal long enough to
+                      // fold away, and the next pick overwrites it anyway.
+                      back={
+                        heir === undefined ? undefined : (
+                          <div className="pt-[3px] pb-[10px]">
+                            <div className={POPOVER_SURFACE}>
+                              <ConfirmAction
+                                question={`Hand this project to ${heir}?`}
+                                // Stated here rather than left to be discovered:
+                                // this is the one act on this screen the actor
+                                // cannot walk back themselves.
+                                note={`You become a Maintainer, which cannot take it back. Only ${heir} could return it.`}
+                                confirmLabel={`Make ${heir} the owner`}
+                                disabled={action.pending}
+                                onConfirm={() => {
+                                  setArmed(undefined)
+                                  action.run(() => api.transferOwner(heir))
+                                }}
+                                onCancel={() => {
+                                  setArmed(undefined)
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      }
+                    />
+                  )
+                }
+              />
+            )}
           </SettingsGroup>
 
           {mayAdminister && (

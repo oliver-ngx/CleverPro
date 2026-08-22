@@ -15,6 +15,7 @@ import type {
   BranchDto,
   CommentDto,
   CreatedBranchDto,
+  FileContentDto,
   FileNodeDto,
   MemberActivityDto,
   MemberDto,
@@ -38,37 +39,50 @@ export { ApiError } from './http'
 export interface AttachmentInput {
   /** A whole version of the target branch, by its label ("V3", "Aug10"). */
   versionRef?: string
-  /** A folder read off the user's machine: real paths carrying real content. */
-  folder?: { name: string; files: Record<string, string> }
   /** Individual files, by full path. */
   paths?: string[]
+  /**
+   * Loose files read off the user's machine: paths that arrive with their own
+   * content rather than naming content the server already holds.
+   */
+  fileContents?: Record<string, string>
 }
 
 /**
- * The three kinds, on the wire.
+ * The two kinds, on the wire.
  *
- * A **folder** is the only one that carries content from this side: it was read
- * off the user's machine, so the snapshot travels with the request and replaces
- * the branch's tree wholesale.
+ * A **version** is the whole of a branch at a label. The client sends the label
+ * and the server assembles the bytes, which it is the only side holding; it is
+ * the one attachment that replaces a tree rather than editing it.
  *
- * A **version** carries content too, but the server assembles it — the client
- * sends a label and the backend resolves it to that version's stored files.
+ * **Files** are loose paths, and whether they carry content depends on where the
+ * path came from. One picked out of the branch's own tree has no bytes attached
+ * to it — that tree arrived over JSON as paths — so it goes into `loose_files`
+ * alone and the backend carries its existing content forward. One read off the
+ * user's machine travels with its text in `file_contents`, and the backend writes
+ * that over whatever the path held.
  *
- * **Files** carry none, and cannot. A path that came from a tree the browser was
- * handed over JSON has no bytes attached to it, so `file_contents` goes empty
- * and the backend carries each named path's existing content forward. That is
- * why attaching a folder is how you get new content into the project, and
- * attaching files is how you move what is already there.
+ * A folder picked off disk is the second kind, not a third: its files arrive as
+ * paths under the folder's own name, so attaching `scripts/` adds `scripts/` to
+ * the project. Only the named paths change and everything else on the branch is
+ * left alone, which is why nothing this client sends can delete a file.
+ *
+ * `folder_ref` and `tree_snapshot` are therefore never sent from here. They stay
+ * in the API because the server sets them itself when it resolves a `version_ref`,
+ * and because undo and the demo seed build attachments that genuinely are whole
+ * trees.
  */
 function attachmentBody(attachment: AttachmentInput) {
-  const folder = attachment.folder
+  const contents = attachment.fileContents ?? {}
+  // A path picked off disk may name a file the branch already has, in which case
+  // it is one entry carrying content, not two entries disagreeing about whether
+  // it has any.
+  const loose = [...new Set([...(attachment.paths ?? []), ...Object.keys(contents)])]
+
   return {
-    ...(folder === undefined
-      ? {}
-      : { folder_ref: folder.name, tree_snapshot: folder.files }),
     ...(attachment.versionRef === undefined ? {} : { version_ref: attachment.versionRef }),
-    loose_files: attachment.paths ?? [],
-    file_contents: {},
+    loose_files: loose,
+    file_contents: contents,
   }
 }
 
@@ -100,6 +114,21 @@ export const api = {
 
   branchFiles: (branch: string, signal?: AbortSignal) =>
     get<FileNodeDto[]>(`${project}/branches/${seg(branch)}/files`, signal),
+
+  /**
+   * One file's text, at one version of one branch.
+   *
+   * The path is a query parameter because it contains slashes -- as a path segment
+   * it could not be told apart from the route around it. Every version stays
+   * retrievable, so this is addressed by label rather than by "latest": the browser
+   * asks for the version it is currently showing.
+   */
+  fileContent: (branch: string, versionLabel: string, path: string, signal?: AbortSignal) =>
+    get<FileContentDto>(
+      `${project}/branches/${seg(branch)}/versions/${seg(versionLabel)}/files/content` +
+        `?path=${encodeURIComponent(path)}`,
+      signal,
+    ),
 
   activity: (viewer: string, signal?: AbortSignal) =>
     get<ActivityEventDto[]>(`${project}/activity/${seg(viewer)}`, signal),

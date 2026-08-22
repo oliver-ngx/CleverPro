@@ -43,11 +43,17 @@ class Settings:
 
     cors_origins: list[str] = field(default_factory=_origins)
 
-    # Attachment ceilings, matching front-end/src/lib/folder.ts so the browser
-    # refuses the same folder the server would.
-    max_tree_files: int = int(os.getenv("CLEVERPRO_MAX_TREE_FILES", "2000"))
-    max_file_chars: int = int(os.getenv("CLEVERPRO_MAX_FILE_CHARS", str(256 * 1024)))
-    max_total_chars: int = int(os.getenv("CLEVERPRO_MAX_TOTAL_CHARS", str(8 * 1024 * 1024)))
+    # Attachment ceilings, matching front-end/src/lib/picker.ts so the browser
+    # refuses the same selection the server would. The two must be changed
+    # together: a browser ceiling above the server's turns a file the picker
+    # accepted into a 422 at submit, which is the worst of both.
+    #
+    # These count characters where the picker counts bytes. UTF-8 never encodes
+    # a character in fewer than one byte, so a selection under the byte ceiling
+    # is always under the same number of characters, and the pairing holds.
+    max_tree_files: int = int(os.getenv("CLEVERPRO_MAX_TREE_FILES", "20000"))
+    max_file_chars: int = int(os.getenv("CLEVERPRO_MAX_FILE_CHARS", str(5 * 1024 * 1024)))
+    max_total_chars: int = int(os.getenv("CLEVERPRO_MAX_TOTAL_CHARS", str(50 * 1024 * 1024)))
 
     # The import endpoint reads its whole body into memory before parsing, so
     # it needs a ceiling of its own.

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '../api/client'
 import { toArchiveRows } from '../api/adapters'
 import { PageBody } from '../components/layout/PageBody'
@@ -44,12 +44,26 @@ interface ArchiveProps {
  * It is Maintainer-and-above, and that is not pre-empted here. The row keeps
  * its word and the server's refusal is shown if it comes, because release
  * authority is the kind of thing that changes under a page already open.
+ *
+ * A row's overflow menu offers to remove it, and that removal is this component's
+ * alone. Nothing on the shelf can actually be destroyed -- the backend's invariant 4
+ * has no record ever deleted, and there is no endpoint for it -- so a dismissed row
+ * is held here by its version label and returns on the next load. The interaction is
+ * being settled ahead of deciding what deletion should mean to the server.
  */
 export default function Archive({ projectName }: ArchiveProps) {
   const archive = useResource((signal) => api.archive(signal), [])
+  // Labels, not positions: applying a version refetches the shelf, and the row that
+  // was at a given index before is not the row there afterwards.
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set())
   const rows = useMemo(
-    () => (archive.data === undefined ? [] : toArchiveRows(archive.data, projectName)),
-    [archive.data, projectName],
+    () =>
+      archive.data === undefined
+        ? []
+        : toArchiveRows(archive.data, projectName).filter(
+            (row) => !dismissed.has(row.versionLabel),
+          ),
+    [archive.data, projectName, dismissed],
   )
   const action = useAction()
 
@@ -66,6 +80,10 @@ export default function Archive({ projectName }: ArchiveProps) {
           columns={COLUMNS}
           rows={rows}
           minWidth={560}
+          labelKey="version"
+          onDelete={(row) => {
+            setDismissed((current) => new Set(current).add(row.versionLabel))
+          }}
           onAction={(row) => {
             // "Applied" is a status, not a control -- that version is already live.
             if (row.action !== 'Undo') return

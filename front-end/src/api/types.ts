@@ -111,6 +111,13 @@ export interface ArchiveRowDto {
   action: 'Applied' | 'Undo'
 }
 
+/** GET /projects/{id}/branches/{branch}/versions/{label}/files/content */
+export interface FileContentDto {
+  path: string
+  version_label: string
+  content: string
+}
+
 /** GET /projects/{id}/settings */
 export interface SettingsDto {
   anyone_with_link: boolean

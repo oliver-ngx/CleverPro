@@ -1,3 +1,5 @@
+import { RowMenu } from './RowMenu'
+
 export interface DataTableColumn {
   key: string
   label: string
@@ -14,6 +16,17 @@ interface DataTableProps {
   /** Smallest width the grid stays readable at; below it the table scrolls. */
   minWidth?: number
   onAction?: (row: Record<string, string>, column: DataTableColumn) => void
+  /**
+   * Given, every row grows an overflow menu at its end offering to remove it.
+   * Withheld, no row has one — the table draws no control it was not handed a
+   * handler for.
+   */
+  onDelete?: (row: Record<string, string>) => void
+  /**
+   * Which column names the row in that menu's heading, since the menu floats away
+   * from the row it belongs to. Defaults to the first column.
+   */
+  labelKey?: string
 }
 
 const ALIGN = {
@@ -24,11 +37,13 @@ const ALIGN = {
 
 /**
  * Ported from the design system's `data/DataTable`: the Activity and Archive log
- * tables — 25px rows banded #E8E8E8 against #EFEFEF under semibold headers, with
- * plain words in the action column.
+ * tables — 25px rows banded #E8E8E8 against #EFEFEF, with plain words in the
+ * action column.
  *
- * Every row carries a fill, so the banding is between the two rather than between a
- * stripe and the page behind it. Only the header sits on the page's own colour.
+ * The header is drawn as a record row and nothing else: same 25px height, same
+ * inset, same 11px medium type, and the first, darker band. It rounds its top
+ * corners because it is the top of the block. The records pick the alternation up
+ * from there, so the row directly under the header is the lighter one.
  *
  * Bands run the full width of the table while the text is inset, so the horizontal
  * padding belongs to each row rather than to the table.
@@ -38,7 +53,15 @@ const ALIGN = {
  * A table cannot honour that and reflow at the same time, so below `minWidth` it
  * scrolls sideways rather than re-wrapping into rows it was never drawn for.
  */
-export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTableProps) {
+export function DataTable({
+  columns,
+  rows,
+  minWidth = 720,
+  onAction,
+  onDelete,
+  labelKey,
+}: DataTableProps) {
+  const nameColumn = labelKey ?? columns[0].key
   const grid = columns.map((column) => column.width ?? 'minmax(0,1fr)').join(' ')
 
   return (
@@ -53,7 +76,7 @@ export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTable
         <div
           role="row"
           style={{ gridTemplateColumns: grid }}
-          className="grid h-[20px] items-center px-[22px] text-[11px] font-semibold text-cp-text-primary"
+          className="grid h-[25px] items-center rounded-t-cp-nav bg-cp-stripe px-[22px] text-[11px] font-medium text-cp-text-primary"
         >
           {columns.map((column) => (
             <span key={column.key} className={ALIGN[column.align ?? 'left']}>
@@ -71,8 +94,10 @@ export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTable
             style={{ gridTemplateColumns: grid }}
             // The list stops rather than being cut off: the final row rounds its
             // bottom corners at the nav radius, which is what a 25px row can carry.
-            className={`grid h-[25px] items-center px-[22px] text-[11px] font-medium whitespace-pre text-cp-text-primary ${
-              index % 2 === 0 ? 'bg-cp-stripe' : 'bg-cp-stripe-alt'
+            // `group` is what the row's menu hangs its hover off, and `relative` is
+            // what it positions against. Both are inert until a row actually has one.
+            className={`group relative grid h-[25px] items-center px-[22px] text-[11px] font-medium whitespace-pre text-cp-text-primary ${
+              index % 2 === 0 ? 'bg-cp-stripe-alt' : 'bg-cp-stripe'
             } ${index === rows.length - 1 ? 'rounded-b-cp-nav' : ''}`}
           >
             {columns.map((column) => (
@@ -92,6 +117,15 @@ export function DataTable({ columns, rows, minWidth = 720, onAction }: DataTable
                 )}
               </span>
             ))}
+
+            {onDelete !== undefined && (
+              <RowMenu
+                label={row[nameColumn] ?? ''}
+                onDelete={() => {
+                  onDelete(row)
+                }}
+              />
+            )}
           </div>
         ))}
       </div>

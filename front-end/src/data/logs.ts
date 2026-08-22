@@ -15,6 +15,12 @@ export type ActivityAction = 'View' | 'Merge' | 'Undo'
  * implicit index signature that lets a row be handed to DataTable as a record.
  */
 export type ActivityEntry = {
+  /**
+   * The ledger's own id for this event. Never rendered, like `commitId` below:
+   * it is the row's identity, which is what lets the table be told to stop
+   * listing one particular row without depending on its position.
+   */
+  eventId: string
   who: string
   /**
    * The log line exactly as the server composed it. The backend renders a row

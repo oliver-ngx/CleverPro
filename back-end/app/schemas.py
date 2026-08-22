@@ -16,8 +16,9 @@ inline, and the store keeps every version's full tree in memory forever, so an
 unbounded `tree_snapshot` is an unbounded allocation on a public endpoint.
 Rejecting an oversized bundle here means it is refused at the edge, before any
 of it is copied into a project. The ceilings match the ones the browser
-enforces in `front-end/src/lib/folder.ts`, so a folder the picker accepted is a
-folder this will accept.
+enforces in `front-end/src/lib/picker.ts`, so a selection the picker accepted is
+a selection this will accept -- see `config.py` for why the pair has to move
+together.
 """
 
 from __future__ import annotations

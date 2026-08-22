@@ -150,8 +150,16 @@ describe('iconForFile', () => {
   it('chooses the glyph from the extension, and falls back for anything else', () => {
     expect(iconForFile('ContentView.swift').icon).toBe('swift')
     expect(iconForFile('README.md').icon).toBe('book-md')
+    expect(iconForFile('assets/logo.png').icon).toBe('image')
+    expect(iconForFile('NOTES.txt').icon).toBe('text-lines')
     expect(iconForFile('TableContent.css').icon).toBe('file')
     expect(iconForFile('no extension at all').icon).toBe('file')
+  })
+
+  it('gives code files the plain page, so only the four drawn kinds stand apart', () => {
+    expect(iconForFile('main.ts').icon).toBe('file')
+    expect(iconForFile('server.py').icon).toBe('file')
+    expect(iconForFile('index.html').icon).toBe('file')
   })
 })
 

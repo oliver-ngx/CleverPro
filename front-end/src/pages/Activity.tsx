@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '../api/client'
 import { toActivityRows } from '../api/adapters'
 import { PageBody } from '../components/layout/PageBody'
@@ -37,12 +37,25 @@ const COLUMNS: DataTableColumn[] = [
  * reverses it. Neither touches Main -- a merge is a private act, which is why
  * only your own view of the row changes. "View" is inert: the design defines no
  * detail screen to open from here.
+ *
+ * Each row's overflow menu offers to remove it, and that removal reaches no further
+ * than this component. The ledger behind this feed is append-only by design -- see
+ * invariant 4 in the backend's `core/project.py` -- and there is no endpoint that
+ * deletes an event, so a dismissed row is held here by its id and is back on the next
+ * load. That is the whole of it for now, deliberately: the interaction is settled
+ * first, and what deletion should mean to the server is a separate decision.
  */
 export default function Activity() {
   const events = useResource((signal) => api.activity(CURRENT_USER, signal), [])
+  // Ids, not positions: merging a commit refetches the feed, and an index into the
+  // old list would then point at somebody else's row.
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set())
   const rows = useMemo(
-    () => (events.data === undefined ? [] : toActivityRows(events.data)),
-    [events.data],
+    () =>
+      events.data === undefined
+        ? []
+        : toActivityRows(events.data).filter((row) => !dismissed.has(row.eventId)),
+    [events.data, dismissed],
   )
   const action = useAction()
 
@@ -58,6 +71,10 @@ export default function Activity() {
         <DataTable
           columns={COLUMNS}
           rows={rows}
+          labelKey="activity"
+          onDelete={(row) => {
+            setDismissed((current) => new Set(current).add(row.eventId))
+          }}
           onAction={(row) => {
             // Push and undo rows carry no commit, and their word is always
             // "View" -- there is nothing to act on.

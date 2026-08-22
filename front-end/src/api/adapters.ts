@@ -113,6 +113,7 @@ export function toTeam(members: MemberDto[], currentUser: string): TeamMember[] 
 export function toActivityRows(events: ActivityEventDto[]): ActivityEntry[] {
   return events
     .map((event) => ({
+      eventId: event.event_id,
       who: event.actor,
       activity: event.description,
       action: event.action,
@@ -150,11 +151,22 @@ export function toArchiveRows(rows: ArchiveRowDto[], projectName: string): Archi
   }))
 }
 
-/** The glyph a row wears is chosen by what kind of file its title names. */
+/**
+ * The glyph a row wears is chosen by what kind of file its title names.
+ *
+ * Four kinds are drawn apart -- markdown, pictures, plain text, and Swift, which
+ * keeps the full-colour language mark the design system says never to recolour.
+ * Everything else, code included, takes the grey page. Sizes are widths: each
+ * glyph has its own aspect ratio, and these hold them to a common optical height
+ * so a mixed list does not step up and down.
+ *
+ * First match wins, so the catch-all extension pattern stays last.
+ */
 const ICONS: { match: RegExp; icon: IconName; size: number }[] = [
   { match: /\.swift\b/i, icon: 'swift', size: 22 },
-  { match: /\.md\b/i, icon: 'book-md', size: 18 },
-  { match: /\.css\b/i, icon: 'file', size: 16 },
+  { match: /\.(?:md|markdown|mdx)\b/i, icon: 'book-md', size: 20 },
+  { match: /\.(?:png|jpe?g|gif|webp|avif|bmp|tiff?|ico|svg|heic)\b/i, icon: 'image', size: 20 },
+  { match: /\.(?:txt|text|log|rtf)\b/i, icon: 'text-lines', size: 18 },
   { match: /\.[a-z0-9]+\b/i, icon: 'file', size: 16 },
 ]
 

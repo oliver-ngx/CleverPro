@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import type { IconName } from './Icon'
 import { Icon } from './Icon'
 
@@ -7,7 +8,10 @@ interface IconButtonProps {
   /** Tailwind sizing/colour classes for the glyph itself. */
   iconClassName: string
   className?: string
-  onClick?: () => void
+  /** Handed the event, because a button that opens a menu is measured by its rect. */
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void
+  /** Set only on a button that opens something, which it then announces. */
+  expanded?: boolean
   /**
    * Refuses the press and halves the glyph. The design system defines no
    * disabled state for these, so this borrows the one it does define — the
@@ -33,12 +37,14 @@ export function IconButton({
   iconClassName,
   className,
   onClick,
+  expanded,
   disabled = false,
 }: IconButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
+      {...(expanded === undefined ? {} : { 'aria-haspopup': 'menu' as const, 'aria-expanded': expanded })}
       disabled={disabled}
       onClick={onClick}
       className={`relative inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] disabled:cursor-default disabled:opacity-[0.35] pointer-coarse:after:absolute pointer-coarse:after:-inset-[6px] pointer-coarse:after:content-[''] ${className ?? ''}`}

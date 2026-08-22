@@ -6,6 +6,7 @@ import { PageBody } from '../components/layout/PageBody'
 import { AddBranchSheet } from '../components/main/AddBranchSheet'
 import { BranchPanel } from '../components/main/BranchPanel'
 import { DetailRow } from '../components/main/DetailRow'
+import { FileBrowser } from '../components/main/FileBrowser'
 import { ProjectThumbnail } from '../components/main/ProjectThumbnail'
 import { VersionPanel } from '../components/main/VersionPanel'
 import { ResourceState } from '../components/ui/ResourceState'
@@ -37,6 +38,10 @@ interface MainProps {
   branch: string
   branches: string[]
   onSelectBranch: (branch: string) => void
+  /** Whether the expanded file browser is open. Owned by App -- see below. */
+  browsing: boolean
+  onBrowse: () => void
+  onCloseBrowser: () => void
 }
 
 /**
@@ -52,6 +57,9 @@ export default function Main({
   branch,
   branches,
   onSelectBranch,
+  browsing,
+  onBrowse,
+  onCloseBrowser,
 }: MainProps) {
   const [addingBranch, setAddingBranch] = useState(false)
   /**
@@ -89,6 +97,17 @@ export default function Main({
   const takenSubdomains = (branchRows.data ?? []).flatMap((row) =>
     row.deploy_subdomain === null ? [] : [row.deploy_subdomain],
   )
+  /**
+   * The bare label -- "V6" -- of the version this branch currently sits at, which is
+   * how the content endpoint addresses a file.
+   *
+   * Not `project.version`, which is the fused display string the Project row prints
+   * ("Orchid Lab V6") and is Main's version rather than this branch's. Null on a
+   * branch nothing has been pushed to, which is a real state: a branch made from
+   * Main has files but no version of its own until someone pushes one.
+   */
+  const branchVersion =
+    (branchRows.data ?? []).find((row) => row.name === branch)?.latest_version ?? undefined
   const checked = useMemo(
     () =>
       new Set(
@@ -119,94 +138,113 @@ export default function Main({
 
   return (
     <>
-      <PageBody className="gap-[24px] pt-[20px] pr-[16px] pl-[16px] md:gap-[35px] md:pt-[27px] md:pr-[48px] md:pl-[56px] xl:pr-[79px] xl:pl-[95px]">
-        {/* The four rows are one card, the same surface the file structure below
-            them wears. The rows keep their own insets, so the card is a fill under
-            them rather than a box they had to be re-laid out inside. */}
-        <div className="rounded-cp-panel bg-cp-card pt-[5px] pb-[9px]">
-          <DetailRow label="Preview" height={102}>
-            {project.previewSrc !== null && (
-              <ProjectThumbnail name={project.name} src={project.previewSrc} />
-            )}
-          </DetailRow>
+      {/* `relative` and nothing else: this is the box the browser measures itself
+          against, and it is exactly the room left under the header. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <PageBody className="gap-[24px] pt-[20px] pr-[16px] pl-[16px] md:gap-[35px] md:pt-[27px] md:pr-[48px] md:pl-[56px] xl:pr-[79px] xl:pl-[95px]">
+          {/* The four rows are one card, the same surface the file structure below
+              them wears. The rows keep their own insets, so the card is a fill under
+              them rather than a box they had to be re-laid out inside. */}
+          <div className="rounded-cp-panel bg-cp-card pt-[5px] pb-[9px]">
+            <DetailRow label="Preview" height={102}>
+              {project.previewSrc !== null && (
+                <ProjectThumbnail name={project.name} src={project.previewSrc} />
+              )}
+            </DetailRow>
 
-          <DetailRow label="Project" height={47}>
-            <span className="min-w-0 truncate text-[13px] font-semibold text-cp-text-tertiary">
-              {project.version}
-            </span>
-          </DetailRow>
-
-          {/* Empty until something is deployed: pushing to Main advances the
-              version above without changing what production serves, so this row
-              is legitimately blank on a project that has never been released. */}
-          <DetailRow label="Deploy" height={53}>
-            {project.deployHost === null ? (
-              <span className="min-w-0 truncate text-[13px] font-normal text-cp-text-tertiary">
-                Not deployed
+            <DetailRow label="Project" height={47}>
+              <span className="min-w-0 truncate text-[13px] font-semibold text-cp-text-tertiary">
+                {project.version}
               </span>
-            ) : (
-              // `noreferrer` because this leaves the app for a host the project
-              // chose: the deployed site has no business being told which
-              // internal screen the visit came from. The scheme is fixed here
-              // and the host is validated server-side as a bare hostname, so
-              // the value cannot smuggle in a scheme of its own.
-              <a
-                href={`https://${project.deployHost}`}
-                rel="noreferrer"
-                className="min-w-0 truncate text-[13px] font-normal"
-              >
-                {project.deployHost}
-              </a>
-            )}
-          </DetailRow>
+            </DetailRow>
 
-          {/* The value opens in place, so it grows this row rather than being a
-              separate thing beneath it — and the row growing is what extends the
-              card, since the card is only ever as tall as its rows. */}
-          <DetailRow label="Branches" height={BRANCH_ROW_HEIGHT} divider={false} grows>
-            <BranchPanel
-              id={branchPanelId}
-              open={branchesOpen}
-              onToggle={() => {
-                setBranchesOpen((current) => !current)
-              }}
-              current={branch}
-              branches={branches}
-              onSelect={(next) => {
-                onSelectBranch(next)
-                closeBranches()
-              }}
-              onAdd={
-                mayAddBranch
-                  ? () => {
-                      setAddingBranch(true)
-                      closeBranches()
-                    }
-                  : undefined
-              }
-              rowHeight={BRANCH_ROW_HEIGHT}
+            {/* Empty until something is deployed: pushing to Main advances the
+                version above without changing what production serves, so this row
+                is legitimately blank on a project that has never been released. */}
+            <DetailRow label="Deploy" height={53}>
+              {project.deployHost === null ? (
+                <span className="min-w-0 truncate text-[13px] font-normal text-cp-text-tertiary">
+                  Not deployed
+                </span>
+              ) : (
+                // `noreferrer` because this leaves the app for a host the project
+                // chose: the deployed site has no business being told which
+                // internal screen the visit came from. The scheme is fixed here
+                // and the host is validated server-side as a bare hostname, so
+                // the value cannot smuggle in a scheme of its own.
+                <a
+                  href={`https://${project.deployHost}`}
+                  rel="noreferrer"
+                  className="min-w-0 truncate text-[13px] font-normal"
+                >
+                  {project.deployHost}
+                </a>
+              )}
+            </DetailRow>
+
+            {/* The value opens in place, so it grows this row rather than being a
+                separate thing beneath it — and the row growing is what extends the
+                card, since the card is only ever as tall as its rows. */}
+            <DetailRow label="Branches" height={BRANCH_ROW_HEIGHT} divider={false} grows>
+              <BranchPanel
+                id={branchPanelId}
+                open={branchesOpen}
+                onToggle={() => {
+                  setBranchesOpen((current) => !current)
+                }}
+                current={branch}
+                branches={branches}
+                onSelect={(next) => {
+                  onSelectBranch(next)
+                  closeBranches()
+                }}
+                onAdd={
+                  mayAddBranch
+                    ? () => {
+                        setAddingBranch(true)
+                        closeBranches()
+                      }
+                    : undefined
+                }
+                rowHeight={BRANCH_ROW_HEIGHT}
+              />
+            </DetailRow>
+          </div>
+
+          <VersionPanel
+            projectName={project.name}
+            branch={branch}
+            files={files}
+            checked={checked}
+            onToggleFile={toggleFile}
+            onExpand={onBrowse}
+          >
+            <ResourceState
+              loading={tree.loading}
+              error={tree.error}
+              empty="Nothing has been pushed to this branch yet."
+              emptyWhen={files.length === 0}
             />
-          </DetailRow>
-        </div>
+          </VersionPanel>
+        </PageBody>
 
-        <VersionPanel
-          projectName={project.name}
-          branch={branch}
-          files={files}
-          checked={checked}
-          onToggleFile={toggleFile}
-        >
-          <ResourceState
-            loading={tree.loading}
-            error={tree.error}
-            empty="Nothing has been pushed to this branch yet."
-            emptyWhen={files.length === 0}
+        {/* The browser replaces the body and stops there. It is positioned against this
+            wrapper rather than against the pane, because the pane includes the header
+            bar and the frame keeps that bar visible and usable -- the cross that closes
+            the browser is in it. */}
+        {browsing && (
+          <FileBrowser
+            projectName={project.name}
+            branch={branch}
+            versionLabel={branchVersion}
+            files={files}
+            onDismiss={onCloseBrowser}
           />
-        </VersionPanel>
-      </PageBody>
+        )}
+      </div>
 
-      {/* Outside the scroll container: the sheet covers the pane, it does not ride
-          along with the content underneath it. */}
+      {/* Outside that wrapper, because unlike the browser the sheet is modal: it
+          covers the pane entire, header included. */}
       {sheetPresent && (
         <AddBranchSheet
           closing={!addingBranch}

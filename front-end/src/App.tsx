@@ -39,11 +39,17 @@ interface HeaderContent {
  * after your name in a lighter weight the way the source does.
  *
  * `actionOpen` reaches in because the leading glyph on a Self pane is the Action
- * window's switch, and the frame swaps it while the window is up.
+ * window's switch, and the frame swaps it while the window is up. `browsing` reaches
+ * in for the same reason on Main: `Main File Tree Expanded` draws a close cross in
+ * this pill while the file browser is open, and the pill is the only way back out of
+ * it -- the browser covers the body beneath the header but never the header itself.
  */
-function headerFor(view: View, actionOpen: boolean): HeaderContent {
+function headerFor(view: View, actionOpen: boolean, browsing: boolean): HeaderContent {
   if (view.kind === 'page') {
-    return { title: view.label, actions: ['at-sign', 'ellipsis'] }
+    return {
+      title: view.label,
+      actions: browsing ? ['close', 'ellipsis'] : ['at-sign', 'ellipsis'],
+    }
   }
 
   const { person } = view
@@ -78,6 +84,9 @@ function headerFor(view: View, actionOpen: boolean): HeaderContent {
  */
 function App() {
   const [view, setView] = useState<View>({ kind: 'page', label: 'Main' })
+  // Main's expanded file browser. It lives up here rather than in the page because
+  // the frame closes it from the header pill, and the pill is App's.
+  const [browsing, setBrowsing] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
   const [version, setVersion] = useState<PaneEntry | undefined>(undefined)
   // The overflow glyph on a teammate's pane, which is where role changes and
@@ -124,7 +133,7 @@ function App() {
     (overview.data?.branches ?? []).find((entry) => entry.name === branch)?.latest_version ??
     undefined
 
-  const { title, leading, actions } = headerFor(view, actionOpen)
+  const { title, leading, actions } = headerFor(view, actionOpen, browsing)
 
   // Every overlay belongs to the pane it was opened from, so leaving takes them
   // with you rather than dropping them onto whatever comes next.
@@ -133,6 +142,7 @@ function App() {
     setActionOpen(false)
     setVersion(undefined)
     setMemberMenuOpen(false)
+    setBrowsing(false)
   }
 
   const closeMemberMenu = useCallback(() => {
@@ -161,6 +171,13 @@ function App() {
         branch={branch}
         branches={branches}
         onSelectBranch={setSelectedBranch}
+        browsing={browsing}
+        onBrowse={() => {
+          setBrowsing(true)
+        }}
+        onCloseBrowser={() => {
+          setBrowsing(false)
+        }}
       />
     ),
     Activity: <Activity />,
@@ -203,7 +220,10 @@ function App() {
           leading={leading}
           actions={actions}
           onAction={(icon) => {
-            if (icon === 'archive-in' || icon === 'close') setActionOpen(icon === 'archive-in')
+            // On a page the cross can only be the browser's -- the Action window is a
+            // teammate's-pane control and never puts one here.
+            if (icon === 'close' && view.kind === 'page') setBrowsing(false)
+            else if (icon === 'archive-in' || icon === 'close') setActionOpen(icon === 'archive-in')
             if (icon === 'ellipsis' && view.kind === 'person') {
               setMemberMenuOpen((open) => !open)
             }
