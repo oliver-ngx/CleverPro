@@ -6,19 +6,25 @@ import { IconButton } from '../ui/IconButton'
 const ACTION_SIZE: Partial<Record<IconName, string>> = {
   'at-sign': 'size-[12px]',
   'archive-in': 'size-[13px]',
-  // Drawn as a plus: the source file has no plus glyph, so the designer made one
-  // by rotating the close cross.
-  close: 'size-[9px] rotate-45',
+  close: 'size-[9px]',
   filter: 'h-[8px] w-[14px]',
   ellipsis: 'h-[4px] w-[11px]',
 }
+
+/**
+ * The Self pane draws its Action toggle as a plus, and the source file has no plus
+ * glyph — the designer made one by rotating the close cross 45 degrees. So `close`
+ * means two different marks in this pill depending on the view, and only the view
+ * knows which: a cross that shuts something, or a plus that opens one.
+ */
+const CLOSE_AS_PLUS = 'rotate-45'
 
 const ACTION_LABEL: Partial<Record<IconName, string>> = {
   'at-sign': 'Mentions',
   // The archive glyph is the Action window's switch on a Self pane, and that is
   // the only place the header draws it — so it is named for what it does.
   'archive-in': 'Action',
-  close: 'Close Action',
+  close: 'Close',
   filter: 'Filter',
   ellipsis: 'More actions',
 }
@@ -47,6 +53,19 @@ interface PageHeaderProps {
    */
   menu?: ReactNode
   /**
+   * Whether that menu is open, as opposed to still on screen playing its exit. The
+   * caller keeps the node mounted for the length of that exit and flips this, which
+   * is the only way round that works: a dismissed menu that vanished from this prop
+   * would have nothing left to animate.
+   */
+  menuOpen?: boolean
+  /**
+   * Turns the close cross into a plus — see `CLOSE_AS_PLUS`. Set on the Self pane,
+   * whose leading glyph is drawn that way, and nowhere else: everywhere the pill
+   * carries a cross it is a cross, and shuts what is open.
+   */
+  closeAsPlus?: boolean
+  /**
    * True when a view has split the pane, which confines the title and its pill to the
    * list half. The detail's own controls are not passed through here — they belong to
    * the panel, so that the whole right side is one layer.
@@ -71,12 +90,18 @@ export function PageHeader({
   actions = ['at-sign', 'ellipsis'],
   onAction,
   menu,
+  menuOpen = true,
+  closeAsPlus = false,
   split = false,
 }: PageHeaderProps) {
   const name = <span className="truncate text-[15px] font-semibold">{title}</span>
 
   return (
-    <div className="flex shrink-0 items-start pt-[15px]">
+    // Lifted above the page body so the cards that hang off the pill are not painted
+    // over by whatever the view lists underneath. The bar itself never covers
+    // anything: a sheet is modal and sits above it at z-30, and Main's file browser
+    // sits below at z-10, which is what keeps this bar reachable while it is open.
+    <div className="relative z-20 flex shrink-0 items-start pt-[15px]">
       {/* Sized rather than flexed, so it takes the history's width alongside the
           columns below it. */}
       <span
@@ -105,31 +130,44 @@ export function PageHeader({
             </button>
           )}
         </h1>
-        <span
-          className={`relative inline-flex h-[26px] shrink-0 items-center gap-[12px] rounded-cp-pill bg-cp-pill-wide px-[11px] opacity-93 ${
-            split ? '@max-[860px]:hidden' : ''
-          }`}
-        >
-          {actions.map((action) => (
-            <IconButton
-              key={action}
-              icon={action}
-              label={ACTION_LABEL[action] ?? action}
-              iconClassName={`${ACTION_SIZE[action] ?? 'size-[12px]'} text-cp-text-primary`}
-              onClick={
-                onAction === undefined
-                  ? undefined
-                  : () => {
-                      onAction(action)
-                    }
-              }
-            />
-          ))}
+        {/* Two spans rather than one, and the split matters: the pill is drawn at 93%
+            and `opacity` applies to a whole subtree, so a menu rendered inside it was
+            93% too -- which is why the face behind it showed through. The opacity now
+            belongs to the pill alone, and the menu is its sibling. */}
+        <span className={`relative shrink-0 ${split ? '@max-[860px]:hidden' : ''}`}>
+          <span className="inline-flex h-[26px] items-center gap-[12px] rounded-cp-pill bg-cp-pill-wide px-[11px] opacity-93">
+            {actions.map((action) => (
+              <IconButton
+                key={action}
+                icon={action}
+                label={ACTION_LABEL[action] ?? action}
+                iconClassName={`${ACTION_SIZE[action] ?? 'size-[12px]'} ${
+                  action === 'close' && closeAsPlus ? CLOSE_AS_PLUS : ''
+                } text-cp-text-primary`}
+                onClick={
+                  onAction === undefined
+                    ? undefined
+                    : () => {
+                        onAction(action)
+                      }
+                }
+              />
+            ))}
+          </span>
 
           {/* Below the pill and flush with its right edge, so it reads as having
               come out of the glyph that opened it. */}
           {menu !== undefined && (
-            <span className="absolute top-[32px] right-0 z-20">{menu}</span>
+            // It grows out of the glyph that opened it and shrinks back into it,
+            // which is the branch popover's movement and its origin.
+            <span
+              inert={!menuOpen}
+              className={`absolute top-[32px] right-0 z-20 origin-top-right motion-reduce:animate-none ${
+                menuOpen ? 'animate-cp-popover-in' : 'animate-cp-popover-out'
+              }`}
+            >
+              {menu}
+            </span>
           )}
         </span>
       </span>

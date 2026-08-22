@@ -53,6 +53,16 @@ export interface PaneEntry {
   status?: 'pending' | 'merged' | 'pushed' | 'retracted'
   /** Whether this commit is flagged. Commit rows only. */
   flagged?: boolean
+  /**
+   * The paths this row is about: a commit's changed files, or nothing on a push,
+   * which is a whole tree rather than a set of names. What the detail pane opens
+   * with is decided from this — one path is a file, several are a structure.
+   */
+  files?: string[]
+  /** A push row's version, which is what its content is readable at. */
+  versionLabel?: string
+  /** The branch it landed on, which the content endpoint is addressed by. */
+  branch?: string
   /** When it landed, long-form, for the detail pane's stamp. */
   stamp: string
   /** Present only on the Self template's taller rows. */

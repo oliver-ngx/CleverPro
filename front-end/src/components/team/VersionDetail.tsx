@@ -3,11 +3,13 @@ import { memo, useState } from 'react'
 import { api } from '../../api/client'
 import type { CommentDto } from '../../api/types'
 import type { PaneEntry } from '../../data/team'
-import { VERSION_SOURCE } from '../../data/versionSource'
 import { useAction } from '../../hooks/useAction'
 import { useResource } from '../../hooks/useResource'
 import { CodeViewer } from '../ui/CodeViewer'
+import { VersionFiles } from './VersionFiles'
 import { CommentBlock } from '../ui/CommentBlock'
+import { highlight } from '../../lib/highlight'
+import { useMemo } from 'react'
 
 interface VersionDetailProps {
   entry: PaneEntry
@@ -19,6 +21,11 @@ interface VersionDetailProps {
    * whole of the interaction — there is no state either side needs to share.
    */
   noteRef?: RefObject<HTMLInputElement | null>
+  /**
+   * The branch's current version. A commit names paths but no version of its own, so
+   * this is where its files are read from — see `VersionFiles`.
+   */
+  fallbackVersion?: string
 }
 
 /**
@@ -41,12 +48,15 @@ function threadBlocks(comments: CommentDto[]) {
  * The right half of the split: when the version landed, the file it changed, and the
  * notes left on it.
  *
- * The source draws one version open — Eden's ContentView.swift v3 — so every version
- * shows that file. The listing itself is still the fixture: the API stores real
- * content per version, but reaching it needs the branch and version label that a
- * ledger row does not carry, so the viewer's body is the one thing on this screen
- * still drawn rather than fetched. Its header is real — the filename and glyph come
- * from the row you picked.
+ * The source draws one version open — Eden's ContentView.swift v3 — so it draws a
+ * single file's contents, and that is what a row naming one file still shows, now
+ * with the real thing in it rather than the fixture.
+ *
+ * A row that is not one file does not open that way. A push is a whole version and a
+ * commit may touch several paths; either is a *structure*, and showing one of its
+ * files' contents would be picking one at random and calling it the version. Those
+ * open onto the tree, and a file's contents appear underneath once one is picked —
+ * see `VersionFiles`.
  *
  * Directly beneath the viewer sits the commit's own message. It used to be the
  * history row's title, which meant the row read as a sentence and the message had
@@ -66,6 +76,7 @@ export const VersionDetail = memo(function VersionDetail({
   entry,
   author,
   noteRef,
+  fallbackVersion,
 }: VersionDetailProps) {
   const [draft, setDraft] = useState('')
   const post = useAction()
@@ -76,15 +87,38 @@ export const VersionDetail = memo(function VersionDetail({
   )
   const blocks = threadBlocks(thread.data ?? [])
 
+  // One named file is a file; a push, or a commit touching several, is a structure.
+  const paths = entry.files ?? []
+  const single = paths.length === 1 ? paths[0] : undefined
+  const structure = single === undefined
+
+  const branch = entry.branch
+  const label = entry.versionLabel ?? fallbackVersion
+  const source = useResource(
+    (signal) =>
+      single === undefined || branch === undefined || label === undefined
+        ? Promise.resolve(undefined)
+        : api.fileContent(branch, label, single, signal),
+    [single, branch, label],
+  )
+  const lines = useMemo(
+    () => (source.data === undefined ? [] : highlight(source.data.content)),
+    [source.data],
+  )
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto pt-[13px] pr-[11px] pb-[24px] pl-[14px]">
       <span className="mb-[8px] shrink-0 self-end text-[11px] font-normal text-cp-text-stamp">
         {entry.stamp}
       </span>
 
-      <div className="flex h-[497px] shrink-0">
-        <CodeViewer filename={entry.title} icon={entry.icon} lines={VERSION_SOURCE} />
-      </div>
+      {structure ? (
+        <VersionFiles entry={entry} fallbackVersion={fallbackVersion} />
+      ) : (
+        <div className="flex h-[497px] shrink-0">
+          <CodeViewer filename={single} icon={entry.icon} lines={lines} />
+        </div>
+      )}
 
       {/* The message its author typed in the Action window. It is read here,
           under the file it was written about, rather than on the history row --

@@ -13,6 +13,8 @@ import { useAction } from '../hooks/useAction'
 import { usePresence } from '../hooks/usePresence'
 import { useResource } from '../hooks/useResource'
 import { SHEET_EXIT_MS } from '../lib/motion'
+import type { HistorySort } from '../lib/sorting'
+import { sortHistory } from '../lib/sorting'
 
 interface TeamProps {
   person: TeamMember
@@ -33,6 +35,8 @@ interface TeamProps {
   /** The branch's current version label, which the Action window can attach whole. */
   versionLabel?: string
   onSelectBranch: (branch: string) => void
+  /** The order this pane's history is listed in, set from the header's sort glyph. */
+  historySort: HistorySort
 }
 
 /**
@@ -73,6 +77,7 @@ export default function Team({
   branches,
   versionLabel,
   onSelectBranch,
+  historySort,
 }: TeamProps) {
   // `person.name` carries the "(You)" suffix the rail draws; the API knows
   // the member by their bare name, so the byline below is also what we ask for.
@@ -82,8 +87,11 @@ export default function Team({
     () =>
       history.data === undefined
         ? []
-        : toPaneEntries(history.data, author, members, projectName),
-    [history.data, author, members, projectName],
+        : sortHistory(
+            toPaneEntries(history.data, author, members, projectName),
+            historySort,
+          ),
+    [history.data, author, members, projectName, historySort],
   )
   const split = version !== undefined
   // Closing clears the selection at once, but the panel needs 300ms to get off the
@@ -196,7 +204,14 @@ export default function Team({
             </div>
           )}
           {shownVersion !== undefined && (
-            <VersionDetail entry={shownVersion} author={author} noteRef={noteRef} />
+            <VersionDetail
+              entry={shownVersion}
+              author={author}
+              noteRef={noteRef}
+              // A commit carries paths but no version of its own, so its files are
+              // read at whatever the branch currently sits on.
+              fallbackVersion={versionLabel}
+            />
           )}
         </div>
       </div>

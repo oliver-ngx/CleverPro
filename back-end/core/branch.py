@@ -74,9 +74,19 @@ class Branch:
         from inside the project lock. Main counts versions (V1, V2); a branch
         stamps the date, since an experiment's history is read by when it
         happened rather than by how far along it is.
+
+        The counter is a proposal, not the answer: a push may be named by hand,
+        and somebody who names one "V4" has taken a label the counter would
+        otherwise reach later. So this walks forward until it finds a label
+        this line does not already hold, which keeps `_by_label` a bijection
+        however the two naming schemes interleave.
         """
-        self.version_counter += 1
-        if self.is_main:
-            return f"V{self.version_counter}"
-        stamp = time.strftime("%b%d", time.localtime())
-        return stamp + (f"-{self.version_counter}" if self.version_counter > 1 else "")
+        while True:
+            self.version_counter += 1
+            if self.is_main:
+                label = f"V{self.version_counter}"
+            else:
+                stamp = time.strftime("%b%d", time.localtime())
+                label = stamp + (f"-{self.version_counter}" if self.version_counter > 1 else "")
+            if label not in self._by_label:
+                return label

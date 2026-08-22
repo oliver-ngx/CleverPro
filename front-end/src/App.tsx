@@ -5,6 +5,8 @@ import { api } from './api/client'
 import { AppWindow } from './components/layout/AppWindow'
 import { MobileNav } from './components/layout/MobileNav'
 import { PageHeader } from './components/layout/PageHeader'
+import { Popover } from './components/ui/Popover'
+import { SortMenu } from './components/ui/SortMenu'
 import { Sidebar } from './components/layout/Sidebar'
 import { MemberMenu } from './components/team/MemberMenu'
 import { Avatar } from './components/ui/Avatar'
@@ -13,6 +15,10 @@ import { CURRENT_USER } from './config'
 import type { PageLabel } from './data/navigation'
 import { NAV_ITEMS } from './data/navigation'
 import type { PaneEntry, TeamMember } from './data/team'
+import type { HistorySort, TeamSort } from './lib/sorting'
+import { HISTORY_SORTS, sortTeam } from './lib/sorting'
+import { usePresence } from './hooks/usePresence'
+import { POPOVER_EXIT_MS } from './lib/motion'
 import { useAction } from './hooks/useAction'
 import { useOverlayDismiss } from './hooks/useOverlayDismiss'
 import { useResource } from './hooks/useResource'
@@ -87,12 +93,28 @@ function App() {
   // Main's expanded file browser. It lives up here rather than in the page because
   // the frame closes it from the header pill, and the pill is App's.
   const [browsing, setBrowsing] = useState(false)
+  // The two sort orders. Neither is persisted and neither reaches the server: they
+  // are a view of a list, so a reload puts both back to how the data arrives.
+  const [teamSort, setTeamSort] = useState<TeamSort>('name-asc')
+  const [historySort, setHistorySort] = useState<HistorySort>('newest')
+  /**
+   * Which card is hanging off the header pill, if either.
+   *
+   * One value rather than a flag each, because the pill has one slot and the two were
+   * already written to close one another. It also gives the exit something to draw:
+   * `lastPillMenu` keeps the last card that was open, so a dismissed one stays on
+   * screen for the length of its animation instead of vanishing on the frame it was
+   * dismissed.
+   */
+  const [pillMenu, setPillMenu] = useState<'sort' | 'member' | undefined>(undefined)
+  const [lastPillMenu, setLastPillMenu] = useState<'sort' | 'member'>('sort')
+  if (pillMenu !== undefined && pillMenu !== lastPillMenu) setLastPillMenu(pillMenu)
+  const pillMenuPresent = usePresence(pillMenu !== undefined, POPOVER_EXIT_MS)
   const [actionOpen, setActionOpen] = useState(false)
   const [version, setVersion] = useState<PaneEntry | undefined>(undefined)
   // The overflow glyph on a teammate's pane, which is where role changes and
   // removals live -- the product has no roster screen, so administration hangs
   // off the person it affects.
-  const [memberMenuOpen, setMemberMenuOpen] = useState(false)
   const administer = useAction()
 
   // One overview call serves three things — the project card, the branch list
@@ -109,8 +131,9 @@ function App() {
     [overview.data],
   )
   const team = useMemo(
-    () => (members.data === undefined ? [] : toTeam(members.data, CURRENT_USER)),
-    [members.data],
+    () =>
+      members.data === undefined ? [] : sortTeam(toTeam(members.data, CURRENT_USER), teamSort),
+    [members.data, teamSort],
   )
 
   // The server owns the branch list outright now: creating one POSTs, which
@@ -141,16 +164,18 @@ function App() {
     setView(next)
     setActionOpen(false)
     setVersion(undefined)
-    setMemberMenuOpen(false)
+    setPillMenu(undefined)
     setBrowsing(false)
   }
 
-  const closeMemberMenu = useCallback(() => {
-    setMemberMenuOpen(false)
+  const closePillMenu = useCallback(() => {
+    setPillMenu(undefined)
   }, [])
 
   // Escape shuts it, as it shuts everything else in the product.
-  useOverlayDismiss(closeMemberMenu, memberMenuOpen)
+  // Escape shuts it as it shuts every other overlay. There is no click-catcher to go
+  // with it: the card hangs off the pill, and pressing that glyph again closes it.
+  useOverlayDismiss(closePillMenu, pillMenu !== undefined)
 
   // Who is signed in, and whose pane is open. Both are needed before the menu
   // can say what this member is allowed to do to that one.
@@ -198,6 +223,8 @@ function App() {
     onSelectPerson: (selected: TeamMember) => {
       show({ kind: 'person', person: selected })
     },
+    teamSort,
+    onSortTeam: setTeamSort,
   }
 
   return (
@@ -219,17 +246,36 @@ function App() {
           title={title}
           leading={leading}
           actions={actions}
+          // The Self pane's leading glyph is a plus drawn from the close cross; the
+          // cross the browser puts here is a real one.
+          closeAsPlus={view.kind === 'person'}
           onAction={(icon) => {
             // On a page the cross can only be the browser's -- the Action window is a
             // teammate's-pane control and never puts one here.
             if (icon === 'close' && view.kind === 'page') setBrowsing(false)
             else if (icon === 'archive-in' || icon === 'close') setActionOpen(icon === 'archive-in')
-            if (icon === 'ellipsis' && view.kind === 'person') {
-              setMemberMenuOpen((open) => !open)
+            // Only a pane carries either of these, and the pill holds one at a
+            // time — pressing a glyph that is already open shuts it.
+            if (view.kind === 'person' && (icon === 'ellipsis' || icon === 'filter')) {
+              const wanted = icon === 'ellipsis' ? 'member' : 'sort'
+              setPillMenu((current) => (current === wanted ? undefined : wanted))
             }
           }}
+          menuOpen={pillMenu !== undefined}
           menu={
-            memberMenuOpen && view.kind === 'person' && subject !== undefined ? (
+            !pillMenuPresent || view.kind !== 'person' ? undefined : (pillMenu ??
+              lastPillMenu) === 'sort' ? (
+              <Popover width="fit" minWidth={126}>
+                <SortMenu
+                  value={historySort}
+                  options={HISTORY_SORTS}
+                  onSelect={(order) => {
+                    setHistorySort(order)
+                    closePillMenu()
+                  }}
+                />
+              </Popover>
+            ) : subject !== undefined ? (
               <MemberMenu
                 name={subject.name}
                 role={subject.role}
@@ -242,7 +288,7 @@ function App() {
                       next === 'maintainer'
                         ? api.grantMaintainer(subject.name)
                         : api.revokeMaintainer(subject.name),
-                    closeMemberMenu,
+                    closePillMenu,
                   )
                 }}
                 onRemove={() => {
@@ -284,6 +330,7 @@ function App() {
             branches={branches}
             versionLabel={versionLabel}
             onSelectBranch={setSelectedBranch}
+            historySort={historySort}
           />
         ) : (
           pages[view.label]

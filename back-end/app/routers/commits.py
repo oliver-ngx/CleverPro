@@ -33,6 +33,7 @@ def commit(project: ProjectDep, body: CommitRequest) -> dict[str, str]:
         attachment=build_attachment(project, body),
         comment=body.comment,
         view_by=body.view_by,
+        name=body.name,
     )
     return {"commit_id": record.id, "branch": record.branch, "author": record.author}
 
@@ -44,6 +45,7 @@ def push(project: ProjectDep, body: PushRequest) -> dict[str, str]:
         branch=body.branch,
         attachment=build_attachment(project, body),
         comment=body.comment,
+        version_label=body.name,
     )
     return {
         "push_id": record.id,

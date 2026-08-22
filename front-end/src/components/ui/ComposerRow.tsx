@@ -6,6 +6,13 @@ interface ComposerRowProps {
   children?: ReactNode
   /** Hairline beneath the row. The last row in the window omits it. */
   divider?: boolean
+  /**
+   * The value can grow taller than the row and the row grows with it — the mention
+   * field opens its suggestions inside the row rather than over it. 50 then sets
+   * where the row starts rather than where it ends, and the label holds its line
+   * instead of drifting down beside whatever the value has become.
+   */
+  grows?: boolean
 }
 
 /**
@@ -18,10 +25,19 @@ interface ComposerRowProps {
  *
  * The box is `relative` because the Branches row's popover anchors to it.
  */
-export function ComposerRow({ label, children, divider = true }: ComposerRowProps) {
+export function ComposerRow({
+  label,
+  children,
+  divider = true,
+  grows = false,
+}: ComposerRowProps) {
   return (
     <>
-      <div className="relative flex h-[50px] shrink-0 items-start justify-between gap-[16px] px-[5px] pt-[17px]">
+      <div
+        className={`relative flex shrink-0 items-start justify-between gap-[16px] px-[5px] pt-[17px] ${
+          grows ? 'min-h-[50px] pb-[14px]' : 'h-[50px]'
+        }`}
+      >
         <span className="shrink-0 text-[14px] font-medium text-cp-text-composer">{label}</span>
         {children}
       </div>

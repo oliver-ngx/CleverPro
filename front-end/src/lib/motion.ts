@@ -15,3 +15,15 @@ export const SHEET_EXIT_MS = 160
 
 /** Matches `--animate-cp-popover-out`. The branch menu. */
 export const POPOVER_EXIT_MS = 140
+
+/** Matches `--animate-cp-browser-out`. Main's expanded file browser. */
+export const BROWSER_EXIT_MS = 170
+
+/**
+ * How long a folder takes to open or shut in the file browser's tree.
+ *
+ * Unlike the constants above this one is not duplicated in `index.css`: the
+ * disclosure is a transition rather than a keyframe animation, so `Disclosure`
+ * applies this number to the element directly and there is only ever one of it.
+ */
+export const DISCLOSURE_MS = 200

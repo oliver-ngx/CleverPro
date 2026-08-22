@@ -230,14 +230,21 @@ export function toPaneEntries(
       // Paths, because the API addresses files by their full path; the row
       // shows the leaf, which is the name anyone would say out loud.
       const files = (row.files ?? []).map((path) => path.split('/').pop() ?? path)
-      const title = files.length === 0 ? row.comment.trim() : files.join(', ')
-      const { icon, size } = iconForFile(files[0] ?? title)
+      // A name its author chose beats one derived from the contents, which is
+      // the whole point of letting them choose. The glyph still comes from the
+      // files, because it says what the row *is* rather than what it is called.
+      const derived = files.length === 0 ? row.comment.trim() : files.join(', ')
+      const title = row.name ?? derived
+      const { icon, size } = iconForFile(files[0] ?? derived)
       return {
         id: row.event_id,
         icon,
         iconSize: size,
         title,
         comment: row.comment,
+        ...(row.files === undefined ? {} : { files: row.files }),
+        ...(row.version_label === undefined ? {} : { versionLabel: row.version_label }),
+        ...(row.branch === null ? {} : { branch: row.branch }),
         stamp: longStamp(row.timestamp),
         avatars: others,
         ...(row.commit_id === null ? {} : { commitId: row.commit_id }),
@@ -247,6 +254,45 @@ export function toPaneEntries(
       }
     })
     .reverse()
+}
+
+/**
+ * The reverse of `flattenFilePaths`: a set of paths back into a tree.
+ *
+ * A commit names the files it changed and nothing else — it is a set of paths, not a
+ * tree, because it is a proposal about parts of one. The detail pane still wants to
+ * draw those parts in their folders, so the folders are inferred from the paths that
+ * mention them, which is exactly what the backend does when it builds a real tree.
+ *
+ * Sorted the way `toFiles` sorts, folders before files at every level, so a commit's
+ * files and a version's read alike.
+ */
+export function filesFromPaths(paths: string[]): ProjectFile[] {
+  const root: ProjectFile[] = []
+
+  for (const path of [...paths].sort((a, b) => a.localeCompare(b))) {
+    let level = root
+    const parts = path.split('/')
+
+    parts.forEach((part, index) => {
+      const isFile = index === parts.length - 1
+      const here = parts.slice(0, index + 1).join('/')
+      let node = level.find((entry) => entry.name === part && entry.isFolder !== isFile)
+
+      if (node === undefined) {
+        node = { name: part, path: here, isFolder: !isFile, children: [] }
+        level.push(node)
+      }
+      level = node.children
+    })
+  }
+
+  const order = (list: ProjectFile[]): ProjectFile[] =>
+    list
+      .map((entry) => ({ ...entry, children: order(entry.children) }))
+      .sort((a, b) => (a.isFolder === b.isFolder ? 0 : a.isFolder ? -1 : 1))
+
+  return order(root)
 }
 
 /**

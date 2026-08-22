@@ -96,6 +96,16 @@ export interface MemberActivityDto {
   status?: 'pending' | 'merged' | 'pushed' | 'retracted'
   /** Commit rows only: whether its author or a reader has flagged it. */
   flagged?: boolean
+  /**
+   * Commit rows only: what its author called it. Required of anything the
+   * composer sends, so it is optional here only for commits that predate
+   * naming -- the demo seed builds its ledger against the domain directly, and
+   * those rows still name themselves after the files they changed.
+   *
+   * A push has no equivalent field because a pushed name *is* its
+   * `version_label`.
+   */
+  name?: string
   /** Push rows only: the version the push produced, "V3" or a branch date-stamp. */
   version_label?: string
   diff?: DiffDto

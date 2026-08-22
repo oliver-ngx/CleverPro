@@ -1,5 +1,6 @@
 import type { ProjectFile } from '../../data/project'
 import { iconForFile } from '../../api/adapters'
+import { Disclosure } from '../ui/Disclosure'
 import { Icon } from '../ui/Icon'
 
 interface BrowserTreeProps {
@@ -32,6 +33,11 @@ const ROW =
  * the icon their extension earns — at 14px on the 2204 source, so 10px here, with
  * the disclosure chevron pointing right when shut and down when open. Children are
  * indented 24 in the source and so 15 here.
+ *
+ * A folder's contents open to their own height rather than appearing — see
+ * `Disclosure`, which is also why the rows nest here instead of being flattened into
+ * one list. Each folder owns the box its children open inside, so a folder opening
+ * two levels down pushes the ones beneath it rather than redrawing the column.
  */
 export function BrowserTree({
   files,
@@ -40,49 +46,55 @@ export function BrowserTree({
   selected,
   onSelectFile,
 }: BrowserTreeProps) {
-  const rows = (list: ProjectFile[], depth: number): React.ReactNode[] =>
-    list.flatMap((file) => {
+  const rows = (list: ProjectFile[], depth: number) =>
+    list.map((file) => {
       const disclosed = open.has(file.path)
       const isSelected = !file.isFolder && file.path === selected
 
-      return [
-        <button
-          key={file.path}
-          type="button"
-          style={{ paddingLeft: 8 + depth * 15 }}
-          aria-expanded={file.isFolder ? disclosed : undefined}
-          aria-current={isSelected ? 'true' : undefined}
-          onClick={() => {
-            if (file.isFolder) onToggleFolder(file.path)
-            else onSelectFile(file.path)
-          }}
-          className={`${ROW} ${isSelected ? 'bg-cp-popover' : 'bg-transparent hover:bg-cp-hover'}`}
-        >
-          {file.isFolder ? (
-            <Icon name="folder" className="h-[8px] w-[10px] shrink-0" />
-          ) : (
-            <Icon
-              name={iconForFile(file.name).icon}
-              className="h-auto w-[8px] shrink-0"
-            />
-          )}
+      return (
+        <div key={file.path} className="flex flex-col">
+          <button
+            type="button"
+            style={{ paddingLeft: 8 + depth * 15 }}
+            aria-expanded={file.isFolder ? disclosed : undefined}
+            aria-current={isSelected ? 'true' : undefined}
+            onClick={() => {
+              if (file.isFolder) onToggleFolder(file.path)
+              else onSelectFile(file.path)
+            }}
+            className={`${ROW} ${isSelected ? 'bg-cp-popover' : 'bg-transparent hover:bg-cp-hover'}`}
+          >
+            {file.isFolder ? (
+              <Icon name="folder" className="h-[8px] w-[10px] shrink-0" />
+            ) : (
+              <Icon
+                name={iconForFile(file.name).icon}
+                className="h-auto w-[8px] shrink-0"
+              />
+            )}
 
-          <span className="min-w-0 flex-1 truncate">{file.name}</span>
+            <span className="min-w-0 flex-1 truncate">{file.name}</span>
 
-          {/* Only a folder has anything to disclose; a file keeps the space so the
-              two kinds of row still end on the same line. */}
+            {/* Only a folder has anything to disclose; a file keeps the space so the
+                two kinds of row still end on the same line. */}
+            {file.isFolder && (
+              <Icon
+                name="chevron-small"
+                className={`h-[5px] w-[3px] shrink-0 opacity-50 transition-transform duration-150 ease-out motion-reduce:transition-none ${
+                  disclosed ? 'rotate-[270deg]' : 'rotate-90'
+                }`}
+              />
+            )}
+          </button>
+
           {file.isFolder && (
-            <Icon
-              name="chevron-small"
-              className={`h-[5px] w-[3px] shrink-0 opacity-50 transition-transform duration-150 ease-out motion-reduce:transition-none ${
-                disclosed ? 'rotate-[270deg]' : 'rotate-90'
-              }`}
-            />
+            <Disclosure open={disclosed}>
+              <div className="flex flex-col">{rows(file.children, depth + 1)}</div>
+            </Disclosure>
           )}
-        </button>,
-        ...(file.isFolder && disclosed ? rows(file.children, depth + 1) : []),
-      ]
+        </div>
+      )
     })
 
-  return <div className="flex flex-col items-stretch gap-[2px]">{rows(files, 0)}</div>
+  return <div className="flex flex-col items-stretch">{rows(files, 0)}</div>
 }

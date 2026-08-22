@@ -1,7 +1,11 @@
 import type { NavItem, PageLabel } from '../../data/navigation'
 import type { TeamMember } from '../../data/team'
 import type { PersonName } from '../ui/Avatar'
+import type { TeamSort } from '../../lib/sorting'
+import { TEAM_SORTS } from '../../lib/sorting'
+import { FloatingMenu } from '../ui/FloatingMenu'
 import { IconButton } from '../ui/IconButton'
+import { SortMenu } from '../ui/SortMenu'
 import { SidebarNavItem } from './SidebarNavItem'
 import { SidebarPerson } from './SidebarPerson'
 
@@ -15,6 +19,9 @@ interface SidebarProps {
   /** id of the teammate whose pane is open, if any. */
   activePerson?: PersonName
   onSelectPerson: (person: TeamMember) => void
+  /** The order the list below the Team heading is shown in. */
+  teamSort: TeamSort
+  onSortTeam: (order: TeamSort) => void
 }
 
 /**
@@ -33,6 +40,8 @@ export function Sidebar({
   team,
   activePerson,
   onSelectPerson,
+  teamSort,
+  onSortTeam,
 }: SidebarProps) {
   return (
     <div className="hidden w-[299px] shrink-0 overflow-hidden bg-cp-sidebar md:block">
@@ -61,11 +70,33 @@ export function Sidebar({
 
         <div className="mr-[30px] ml-[25px] flex h-[18px] items-center justify-between">
           <span className="text-[12px] font-medium text-cp-text-label">Team</span>
-          <IconButton
-            icon="filter"
-            label="Filter team"
-            iconClassName="h-[7px] w-[12px] text-cp-text-primary"
-          />
+          {/* The glyph floats its card rather than unfolding one under the heading.
+              The in-place pattern is for a row that *displays* a value -- the value
+              collapses and the card's heading arrives where it was. A bare glyph
+              displays nothing, so there is no value to swap and nothing for the card
+              to grow out of. */}
+          <FloatingMenu
+            trigger={({ open, onClick }) => (
+              <IconButton
+                icon="filter"
+                label="Sort the team list"
+                expanded={open}
+                iconClassName="h-[7px] w-[12px] text-cp-text-primary"
+                onClick={onClick}
+              />
+            )}
+          >
+            {(close) => (
+              <SortMenu
+                value={teamSort}
+                options={TEAM_SORTS}
+                onSelect={(order) => {
+                  onSortTeam(order)
+                  close()
+                }}
+              />
+            )}
+          </FloatingMenu>
         </div>
 
         <div className="h-[10px]" />

@@ -15,8 +15,17 @@ from .conftest import CONTRIBUTOR, MAINTAINER, OWNER
 PROJECT = "/projects/proj_test"
 
 
-def push(client, comment="v1", files=None):
-    """Put a version on Main and return its label."""
+def push(client, comment="v1", files=None, name=None):
+    """
+    Put a version on Main and return its label.
+
+    Every push over HTTP has to be named, so this names them in sequence --
+    V1, V2, V3 -- for the tests that only care that a version exists. That is
+    the sequence the domain picked on its own before naming became the
+    sender's job, which is why the assertions below still read "V1".
+    """
+    if name is None:
+        name = f"V{len(client.get(f'{PROJECT}/archive').json()) + 1}"
     response = client.post(
         f"{PROJECT}/push",
         json={
@@ -25,6 +34,7 @@ def push(client, comment="v1", files=None):
             "folder_ref": "tree",
             "tree_snapshot": files or {"README.md": "# One\n", "src/app.py": "print(1)\n"},
             "comment": comment,
+            "name": name,
         },
     )
     assert response.status_code == 200, response.text
@@ -98,6 +108,7 @@ def test_commit_then_merge_then_unmerge(client):
             "file_contents": {"README.md": "# Two\n"},
             "comment": "a proposal",
             "view_by": [OWNER],
+            "name": "Readme pass",
         },
     ).json()["commit_id"]
 
@@ -127,6 +138,7 @@ def test_a_version_ref_is_resolved_server_side(client):
             "branch": "main",
             "version_ref": label,
             "comment": "restore the first tree",
+            "name": "V3",
         },
     )
     assert response.status_code == 200, response.text
@@ -147,6 +159,7 @@ def test_a_mixed_push_is_422(client):
             "version_ref": "V1",
             "loose_files": ["README.md"],
             "comment": "mixed",
+            "name": "Mixed",
         },
     )
     assert response.status_code == 422
@@ -182,7 +195,7 @@ def test_comments_round_trip(client):
     push(client)
     commit_id = client.post(
         f"{PROJECT}/commit",
-        json={"actor": OWNER, "branch": "main", "comment": "c", "view_by": []},
+        json={"actor": OWNER, "branch": "main", "comment": "c", "view_by": [], "name": "c"},
     ).json()["commit_id"]
 
     client.post(
@@ -197,7 +210,7 @@ def test_flag_toggles(client):
     push(client)
     commit_id = client.post(
         f"{PROJECT}/commit",
-        json={"actor": OWNER, "branch": "main", "comment": "c", "view_by": []},
+        json={"actor": OWNER, "branch": "main", "comment": "c", "view_by": [], "name": "c"},
     ).json()["commit_id"]
 
     client.post(f"{PROJECT}/commits/{commit_id}/flag", json={"actor": OWNER, "flagged": True})
@@ -223,3 +236,105 @@ def test_member_activity_carries_the_pieces_apart(client):
     assert rows[0]["comment"] == "Orchid Lab V1"
     assert rows[0]["version_label"] == "V1"
     assert rows[0]["diff"]["added"] > 0
+
+
+# ---- naming a commit or a push -------------------------------------------
+
+
+def test_a_push_can_be_named(client):
+    """The Action window's Name field: the label is the author's, not the counter's."""
+    body = client.post(
+        f"{PROJECT}/push",
+        json={
+            "actor": OWNER,
+            "branch": "main",
+            "folder_ref": "tree",
+            "tree_snapshot": {"README.md": "# One\n"},
+            "comment": "first",
+            "name": "Ocean rewrite",
+        },
+    ).json()
+    assert body["version_label"] == "Ocean rewrite"
+
+    # And it is a real label everywhere labels are used, not a display string.
+    assert [row["version_label"] for row in client.get(f"{PROJECT}/archive").json()] == [
+        "Ocean rewrite"
+    ]
+    files = client.get(f"{PROJECT}/branches/main/versions/Ocean rewrite/files").json()
+    assert [node["name"] for node in files] == ["README.md"]
+
+
+def test_a_nameless_push_is_refused(client):
+    """
+    There is no automatic option over HTTP. A push arrives named or it does
+    not arrive, which is the whole of the rule the composer enforces at the
+    other end.
+    """
+    push(client)
+    for body in (
+        {"actor": OWNER, "branch": "main", "loose_files": ["README.md"], "comment": "c"},
+        {**{"actor": OWNER, "branch": "main", "comment": "c"}, "name": ""},
+        {**{"actor": OWNER, "branch": "main", "comment": "c"}, "name": "   "},
+    ):
+        assert client.post(f"{PROJECT}/push", json=body).status_code == 422, body
+
+
+def test_a_nameless_commit_is_refused(client):
+    push(client)
+    for name in (None, "", "   "):
+        body = {"actor": OWNER, "branch": "main", "comment": "c", "view_by": []}
+        if name is not None:
+            body["name"] = name
+        assert client.post(f"{PROJECT}/commit", json=body).status_code == 422, body
+
+
+def test_a_duplicate_version_name_is_refused(client):
+    push(client, comment="first")
+    response = client.post(
+        f"{PROJECT}/push",
+        json={
+            "actor": OWNER,
+            "branch": "main",
+            "loose_files": ["README.md"],
+            "comment": "again",
+            "name": "V1",
+        },
+    )
+    assert response.status_code == 400
+    assert "already a version" in response.json()["detail"]
+
+
+def test_a_version_name_cannot_carry_a_slash(client):
+    """A label addresses a version in a URL path, so it may not contain route structure."""
+    push(client)
+    response = client.post(
+        f"{PROJECT}/push",
+        json={
+            "actor": OWNER,
+            "branch": "main",
+            "loose_files": ["README.md"],
+            "comment": "bad",
+            "name": "feature/ocean",
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_a_commit_can_be_named(client):
+    push(client)
+    client.post(
+        f"{PROJECT}/commit",
+        json={
+            "actor": OWNER,
+            "branch": "main",
+            "loose_files": ["README.md"],
+            "comment": "tidied the readme",
+            "view_by": [],
+            "name": "Readme pass",
+        },
+    )
+    row = client.get(f"{PROJECT}/team/{OWNER}/activity").json()[-1]
+    assert row["type"] == "commit"
+    assert row["name"] == "Readme pass"
+    # The comment is still the log line; the name does not replace it.
+    assert row["comment"] == "tidied the readme"

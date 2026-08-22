@@ -16,6 +16,8 @@ interface FileBrowserProps {
   files: ProjectFile[]
   /** Escape closes it; the header pill's cross is the drawn way out. */
   onDismiss: () => void
+  /** True while the exit is running, after which the page unmounts it. */
+  closing?: boolean
 }
 
 /**
@@ -55,8 +57,11 @@ export function FileBrowser({
   versionLabel,
   files,
   onDismiss,
+  closing = false,
 }: FileBrowserProps) {
-  useOverlayDismiss(onDismiss)
+  // Not while it is leaving: a browser mid-exit has nothing left to close, and the
+  // listener it kept would swallow the Escape meant for whatever is underneath.
+  useOverlayDismiss(onDismiss, !closing)
 
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set())
   const [selected, setSelected] = useState<string | undefined>(undefined)
@@ -86,8 +91,19 @@ export function FileBrowser({
   }
 
   return (
-    <div className="absolute inset-0 z-30 flex animate-cp-page-in flex-col p-[16px] motion-reduce:animate-none md:px-[30px] md:pt-[10px] md:pb-[35px]">
-      <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-cp-panel bg-cp-white shadow-cp-popover">
+    // The whole layer moves, card and padding together, so the browser grows out of
+    // the page rather than the card sliding around inside a box already at full size.
+    <div
+      inert={closing}
+      className={`absolute inset-0 z-10 flex flex-col p-[16px] motion-reduce:animate-none md:px-[30px] md:pt-[10px] md:pb-[35px] ${
+        closing ? 'animate-cp-browser-out' : 'animate-cp-browser-in'
+      }`}
+    >
+      {/* The same #EFEFEF and the same 30 radius as the detail card and the version
+          panel underneath it, so opening the file structure reads as that card
+          growing rather than as a different surface arriving over it. The frame
+          draws this white; the user asked for it to match the page's own cards. */}
+      <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-cp-panel bg-cp-card">
         {/* The tree column. It scrolls on its own, because a deep project outruns the
             card long before the file beside it does. */}
         <div className="flex w-[159px] shrink-0 flex-col overflow-auto border-r border-cp-hairline px-[14px] pt-[21px] pb-[20px]">

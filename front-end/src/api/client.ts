@@ -115,6 +115,13 @@ export const api = {
   branchFiles: (branch: string, signal?: AbortSignal) =>
     get<FileNodeDto[]>(`${project}/branches/${seg(branch)}/files`, signal),
 
+  /** One version's whole file tree, which is what a push row opens onto. */
+  versionFiles: (branch: string, versionLabel: string, signal?: AbortSignal) =>
+    get<FileNodeDto[]>(
+      `${project}/branches/${seg(branch)}/versions/${seg(versionLabel)}/files`,
+      signal,
+    ),
+
   /**
    * One file's text, at one version of one branch.
    *
@@ -179,23 +186,45 @@ export const api = {
       team: team ?? null,
     }),
 
-  /** A proposal, routed to `viewBy` -- empty meaning the whole team. */
+  /**
+   * A proposal, routed to `viewBy` -- empty meaning the whole team.
+   *
+   * `name` is what its author calls it, and is required: there is no automatic
+   * one, and a blank one is refused with a 422. It is only ever displayed --
+   * the row in a member's pane titles itself with it instead of with the files
+   * the commit changed.
+   */
   commit: (
     branch: string,
     comment: string,
     attachment: AttachmentInput,
     viewBy: string[],
+    name: string,
   ) =>
     post(`${project}/commit`, {
       branch,
       comment,
       ...attachmentBody(attachment),
       view_by: viewBy,
+      name,
     }),
 
-  /** Promotes the attachment onto the branch as a new version. */
-  push: (branch: string, comment: string, attachment: AttachmentInput) =>
-    post(`${project}/push`, { branch, comment, ...attachmentBody(attachment) }),
+  /**
+   * Promotes the attachment onto the branch as a new version.
+   *
+   * `name` becomes that version's label -- the string Archive lists, undo
+   * names and the file browser reads by -- and like a commit's it is required.
+   * Two versions cannot answer to one name, so a name the branch already holds
+   * is refused with a 400 rather than adjusted into something the sender did
+   * not choose.
+   */
+  push: (branch: string, comment: string, attachment: AttachmentInput, name: string) =>
+    post(`${project}/push`, {
+      branch,
+      comment,
+      ...attachmentBody(attachment),
+      name,
+    }),
 
   /**
    * Withdraw your own proposal. Valid only while it is still pending -- once

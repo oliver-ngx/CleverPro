@@ -147,7 +147,7 @@ def test_an_oversized_tree_is_refused(client):
     response = client.post(
         f"{PROJECT}/push",
         json={"actor": OWNER, "branch": "main", "folder_ref": "t",
-              "tree_snapshot": huge, "comment": "too big"},
+              "tree_snapshot": huge, "comment": "too big", "name": "V1"},
     )
     assert response.status_code == 422
 
@@ -157,7 +157,7 @@ def test_an_oversized_single_file_is_refused(client):
     response = client.post(
         f"{PROJECT}/push",
         json={"actor": OWNER, "branch": "main", "folder_ref": "t",
-              "tree_snapshot": {"big.txt": over}, "comment": "too big"},
+              "tree_snapshot": {"big.txt": over}, "comment": "too big", "name": "V1"},
     )
     assert response.status_code == 422
 
@@ -166,7 +166,7 @@ def test_an_empty_comment_is_refused(client):
     response = client.post(
         f"{PROJECT}/push",
         json={"actor": OWNER, "branch": "main", "folder_ref": "t",
-              "tree_snapshot": {"a.txt": "a"}, "comment": ""},
+              "tree_snapshot": {"a.txt": "a"}, "comment": "", "name": "V1"},
     )
     assert response.status_code == 422
 
@@ -248,7 +248,7 @@ def test_deploy_subdomain_must_be_one_label(client):
 def test_a_renamed_project_reprovisions_its_domain(client):
     client.post(f"{PROJECT}/rename", json={"actor": OWNER, "value": "Violet Works"})
     push_body = {"actor": OWNER, "branch": "main", "folder_ref": "t",
-                 "tree_snapshot": {"a.txt": "a"}, "comment": "v1"}
+                 "tree_snapshot": {"a.txt": "a"}, "comment": "v1", "name": "V1"}
     client.post(f"{PROJECT}/push", json=push_body)
     client.post(f"{PROJECT}/deploy", json={"actor": OWNER})
     assert client.get(f"{PROJECT}/overview").json()["deploy_url"] == "violet-works.cleverpro.com"

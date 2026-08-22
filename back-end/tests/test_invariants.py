@@ -246,3 +246,27 @@ def test_file_tree_nests_and_marks_leaves(project, tree):
     assert by_name["README.md"]["type"] == "file"
     assert by_name["src"]["type"] == "folder"
     assert [child["path"] for child in by_name["src"]["children"]] == ["src/app.py"]
+
+
+def test_a_hand_picked_label_never_collides_with_the_automatic_one(project, tree):
+    """
+    Every version is addressed by its label, so two of them may never share
+    one. The API makes naming the sender's job, but the domain still names
+    versions itself for the callers that have no sender to ask — the demo seed,
+    and promoting somebody else's commit. Those two schemes have to interleave
+    without ever meeting in the middle.
+    """
+    assert project.push(OWNER, "main", snapshot(tree), "v1").version_label == "V1"
+
+    # A label the counter would have reached later, claimed by hand now.
+    project.push(OWNER, "main", Attachment(), "named", version_label="V2")
+
+    # The counter steps over what is taken rather than minting a second "V2".
+    assert project.push(OWNER, "main", Attachment(), "v3").version_label == "V3"
+    assert len(project.branches["main"]._by_label) == 3
+
+
+def test_a_duplicate_version_label_is_refused(project, tree):
+    project.push(OWNER, "main", snapshot(tree), "v1")
+    with pytest.raises(ValueError):
+        project.push(OWNER, "main", Attachment(), "again", version_label="V1")

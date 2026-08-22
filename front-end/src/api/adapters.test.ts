@@ -209,6 +209,18 @@ describe('toPaneEntries', () => {
     expect(entry.title).toBe('refined ContentView.js v2.1')
   })
 
+  it('prefers the name its author chose over the one the files imply', () => {
+    const [entry] = toPaneEntries(
+      [{ ...commitRow, name: 'Readme pass' }],
+      'Oliver',
+      team,
+      'Orchid Lab',
+    )
+    expect(entry.title).toBe('Readme pass')
+    // The glyph still says what the row is, which the name cannot.
+    expect(entry.icon).toBe('file')
+  })
+
   it('titles a push by the project at the version it produced', () => {
     const [entry] = toPaneEntries(
       [

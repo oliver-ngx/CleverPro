@@ -48,6 +48,12 @@ class Commit:
     # permitted to see the branch.
     view_by: list[str]
     timestamp: float
+    # What its author called it. The API requires one of every commit it
+    # accepts; the default is here for the callers that build history without
+    # an author to ask, which is the demo seed. Those commits fall back to
+    # being named by the files they changed. Unlike a push's name this one is
+    # only ever displayed, so nothing about its shape is constrained.
+    name: str = ""
     retracted: bool = False
     merged_by: set[str] = field(default_factory=set)
     pushed: bool = False

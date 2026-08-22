@@ -46,6 +46,40 @@ _HOSTNAME = re.compile(
 # the product's own domain, never a host in its own right.
 _LABEL = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
 
+# What a version may not be called. A label is not decoration: it addresses the
+# version in a URL path (`/branches/{b}/versions/{label}/files`) and keys the
+# branch's label index, so a slash would be read as route structure and a
+# control character would not survive the round trip. Everything else a person
+# might type — spaces, punctuation, another alphabet — is allowed, because
+# there is no reason a version cannot be called "Ocean rewrite".
+_LABEL_FORBIDDEN = ("/", "\\")
+
+
+def _resolve_version_label(branch: Branch, requested: str | None) -> str:
+    """
+    The label this push will carry: the one its author asked for, or the next
+    one on the line if they asked for nothing.
+
+    A chosen label is refused rather than adjusted when it is already taken.
+    Silently appending a "-2" would give somebody a version under a name they
+    did not choose, and the labels here are what every other surface addresses
+    a version by — Archive's rows, undo, the file browser. Better to say so.
+    """
+    if requested is None or not requested.strip():
+        return branch.next_version_label()
+    label = requested.strip()
+    if any(bad in label for bad in _LABEL_FORBIDDEN) or any(ch < " " for ch in label):
+        raise ValueError(
+            f"'{label}' is not a usable version name: a name cannot contain a slash "
+            "or a control character."
+        )
+    if branch.version(label) is not None:
+        raise ValueError(
+            f"'{label}' is already a version on {branch.name}. Versions are addressed "
+            "by name, so two of them cannot share one."
+        )
+    return label
+
 
 def synchronized[F: Callable[..., Any]](method: F) -> F:
     """
@@ -426,6 +460,7 @@ class Project:
         attachment: Attachment,
         comment: str,
         view_by: list[str],
+        name: str | None = None,
     ) -> Commit:
         # Every role can commit — a proposal is the one thing anybody on the
         # project may make.
@@ -460,6 +495,9 @@ class Project:
             comment=comment,
             view_by=view_by,
             timestamp=time.time(),
+            # Required of anything arriving over the API; blank only for the
+            # seed, whose commits are named by the files they changed.
+            name=(name or "").strip(),
             diff_stats=diff_stats,
             total_added=total_added,
             total_removed=total_removed,
@@ -569,7 +607,14 @@ class Project:
         return f"{actor} undid their merge of commit {commit_id}."
 
     @synchronized
-    def push(self, actor: str, branch: str, attachment: Attachment, comment: str) -> PushRecord:
+    def push(
+        self,
+        actor: str,
+        branch: str,
+        attachment: Attachment,
+        comment: str,
+        version_label: str | None = None,
+    ) -> PushRecord:
         """
         Promote a version onto the target line.
 
@@ -577,6 +622,12 @@ class Project:
         unambiguous next state. A ``folder_ref`` replaces the tree wholesale
         from ``tree_snapshot``; ``loose_files`` merge onto the previous
         version, so only the named paths change.
+
+        ``version_label`` is what the author called this version. The API
+        requires one of every push it accepts, so passing none is for the
+        callers that have no author to ask — the demo seed, and promoting
+        somebody else's commit — and takes the next label on the line instead.
+        See ``_resolve_version_label``.
         """
         # Every role can push. Authority in this product gates release, not
         # contribution.
@@ -588,6 +639,10 @@ class Project:
                 "individual loose files — ambiguous whether loose files override or "
                 "duplicate what's in the folder. Resolve to one or the other before pushing."
             )
+
+        # Before any of the work: a name that cannot be used should refuse the
+        # push rather than be discovered after the tree has been assembled.
+        label = _resolve_version_label(b, version_label)
 
         previous_files = b.current_files
         if attachment.folder_ref:
@@ -609,7 +664,7 @@ class Project:
             attachment=attachment,
             comment=comment,
             timestamp=time.time(),
-            version_label=b.next_version_label(),
+            version_label=label,
             files=new_files,
             diff_stats=diff_stats,
             total_added=total_added,
@@ -845,6 +900,8 @@ class Project:
                 # the surface has to know which one this is before offering it.
                 row["status"] = commit.status
                 row["flagged"] = commit.flagged
+                if commit.name:
+                    row["name"] = commit.name
             else:
                 push = self.find_push(event.push_id or "")
                 row["diff"] = {"added": push.total_added, "removed": push.total_removed}

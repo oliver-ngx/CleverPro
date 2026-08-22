@@ -90,6 +90,27 @@ class AttachmentBody(ActorRequest):
     file_contents: dict[str, str] = Field(default_factory=dict)
     tree_snapshot: dict[str, str] | None = None
     comment: str = Field(..., min_length=1, max_length=2000)
+    # What the author calls this commit or push. Required: the composer makes
+    # every sender name what they are sending rather than falling back to a
+    # generated label, and a rule the client enforces alone is not a rule — an
+    # endpoint that quietly accepts a nameless push would make the field
+    # decorative. The domain keeps its automatic naming for the callers that
+    # genuinely have no author typing: the demo seed, and promoting a commit
+    # somebody else wrote.
+    #
+    # The two ends mean different things by a name — a push's becomes the
+    # version's label, a commit's is only ever displayed — so what makes a
+    # *usable* one is decided in the domain, next to the label index and the
+    # routes those labels have to survive. All this layer decides is that there
+    # has to be one.
+    name: str = _NAME
+
+    @field_validator("name", "comment")
+    @classmethod
+    def _not_only_spaces(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("This field cannot be blank.")
+        return value
 
     @field_validator("loose_files")
     @classmethod

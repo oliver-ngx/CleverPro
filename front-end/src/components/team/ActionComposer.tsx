@@ -11,6 +11,7 @@ import { pickFiles, pickProjectFolder } from '../../lib/picker'
 import { BranchSelect } from '../main/BranchSelect'
 import { ComposerRow } from '../ui/ComposerRow'
 import { FloatingMenu, MENU_ITEM } from '../ui/FloatingMenu'
+import { MentionField } from './MentionField'
 import { Icon } from '../ui/Icon'
 import { IconButton } from '../ui/IconButton'
 import { Sheet } from '../ui/Sheet'
@@ -120,7 +121,12 @@ export function ActionComposer({
   useOverlayDismiss(onDismiss)
 
   const [comment, setComment] = useState('')
-  const [viewBy, setViewBy] = useState<ReadonlySet<string>>(new Set())
+  // What this commit or push will be called. Required, like the comment: there
+  // is no automatic name to fall back to -- see the Name row.
+  const [name, setName] = useState('')
+  // A list rather than a set: the frame writes the mentions out in the order they
+  // were typed, so that order is data now and not an accident of iteration.
+  const [viewBy, setViewBy] = useState<readonly string[]>([])
   const [source, setSource] = useState<PickedSource | undefined>(undefined)
   const [reading, setReading] = useState(false)
   const action = useAction()
@@ -154,9 +160,14 @@ export function ActionComposer({
   const empty = !whole && loose === 0
 
   const label = comment.trim()
-  // The comment is the log line the rest of the team reads, so neither button
-  // works without one; beyond that the two differ only by the rule above.
-  const ready = label !== '' && !empty && !action.pending && !reading
+  const chosenName = name.trim()
+  // Two strings the sender has to write. The comment is the log line the rest
+  // of the team reads; the name is what the thing itself will be called, and
+  // on a push it becomes the version's label. Nothing generates either, so
+  // neither button works until both are there; beyond that the two buttons
+  // differ only by the rule above.
+  const ready =
+    label !== '' && chosenName !== '' && !empty && !action.pending && !reading
   const attachment: AttachmentInput = {
     ...(versionAttached ? { versionRef: versionLabel } : {}),
     ...(diskPaths.length === 0 ? {} : { fileContents: diskFiles }),
@@ -174,15 +185,6 @@ export function ActionComposer({
       .finally(() => {
         setReading(false)
       })
-  }
-
-  const toggleRecipient = (name: string) => {
-    setViewBy((current) => {
-      const next = new Set(current)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
-      return next
-    })
   }
 
   const togglePath = (path: string) => {
@@ -252,7 +254,7 @@ export function ActionComposer({
             iconClassName="h-[15px] w-[22px] text-cp-text-primary"
             onClick={() => {
               action.run(
-                () => api.commit(branch, label, attachment, [...viewBy]),
+                () => api.commit(branch, label, attachment, [...viewBy], chosenName),
                 onDismiss,
               )
             }}
@@ -263,39 +265,45 @@ export function ActionComposer({
             disabled={!ready || mixed}
             iconClassName="h-[16px] w-[23px] text-cp-text-primary"
             onClick={() => {
-              action.run(() => api.push(branch, label, attachment), onDismiss)
+              action.run(() => api.push(branch, label, attachment, chosenName), onDismiss)
             }}
           />
         </>
       }
     >
       {/* Empty means the whole team, which is what the API does with an empty
-          view_by — so no recipient selected is a broadcast, not a mistake.
+          view_by — so naming nobody is a broadcast, not a mistake. The field says as
+          much in its placeholder rather than in a caption beside it.
 
-          The row is captioned rather than hidden or dimmed. Routing applies to a
-          commit and to nothing else: a pushed version is on the branch and visible
-          to everyone regardless of what is picked here. Saying so once is clearer
-          than a control that greys in and out as the attachment changes shape. */}
-      <ComposerRow label="View by:">
-        <span className="flex flex-wrap items-center justify-end gap-[8px]">
-          <span className="text-[11px] font-normal text-cp-text-composer">Commit only</span>
-          {members.map((member) => (
-            <button
-              key={member.name}
-              type="button"
-              onClick={() => {
-                toggleRecipient(member.name)
-              }}
-              className={`cursor-pointer rounded-cp-pill border-none px-[10px] py-[3px] text-[11px] font-medium transition-colors duration-150 ease-out motion-reduce:transition-none ${
-                viewBy.has(member.name)
-                  ? 'bg-cp-row-active text-cp-text-primary'
-                  : 'bg-cp-field text-cp-text-subtle hover:bg-cp-row-hover'
-              }`}
-            >
-              {member.name}
-            </button>
-          ))}
-        </span>
+          Routing applies to a commit and to nothing else: a pushed version is on the
+          branch and visible to everyone regardless of who is named here. */}
+      <ComposerRow label="View by:" grows>
+        <MentionField members={members} chosen={viewBy} onChange={setViewBy} />
+      </ComposerRow>
+
+      {/* What the thing being sent is called, written by the person sending it.
+          There is deliberately no generated fallback: the branch could mint a
+          label of its own ("V4" on Main, a date stamp elsewhere) and a commit
+          could be named after the files it touched, but a name nobody chose is
+          a name nobody recognises later, so both buttons stay dead until this
+          is filled in.
+
+          It is not decoration either. On a push it becomes the version's label,
+          which is what Archive lists, what undo names, and what the file browser
+          reads a version's contents by -- so the server refuses one the branch
+          already holds rather than quietly adjusting it, and says so in the
+          error above the tile. The placeholder is an example rather than an
+          instruction, matching the Comment row below. */}
+      <ComposerRow label="Name:">
+        <input
+          type="text"
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value)
+          }}
+          placeholder="e.g.  V4"
+          className="min-w-0 flex-1 border-none bg-transparent text-right text-[14px] font-medium text-cp-text-file outline-none placeholder:text-cp-text-composer"
+        />
       </ComposerRow>
 
       {/* The comment is the log line: the backend renders the Activity row as

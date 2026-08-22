@@ -16,7 +16,7 @@ import { useOverlayDismiss } from '../hooks/useOverlayDismiss'
 import { usePresence } from '../hooks/usePresence'
 import { useResource } from '../hooks/useResource'
 import { canCreateBranch } from '../lib/authority'
-import { SHEET_EXIT_MS } from '../lib/motion'
+import { BROWSER_EXIT_MS, SHEET_EXIT_MS } from '../lib/motion'
 
 /**
  * The Branches row's closed height. Shared with the panel inside it, which centres the
@@ -77,6 +77,9 @@ export default function Main({
   // The sheet outlives `addingBranch` by the length of its exit, then unmounts and
   // takes the half-typed branch name with it.
   const sheetPresent = usePresence(addingBranch, SHEET_EXIT_MS)
+  // The browser outlives its own dismissal by the length of its exit, then unmounts
+  // and takes its open folders and its open file with it.
+  const browserPresent = usePresence(browsing, BROWSER_EXIT_MS)
   const create = useAction()
 
   const tree = useResource((signal) => api.branchFiles(branch, signal), [branch])
@@ -232,12 +235,13 @@ export default function Main({
             wrapper rather than against the pane, because the pane includes the header
             bar and the frame keeps that bar visible and usable -- the cross that closes
             the browser is in it. */}
-        {browsing && (
+        {browserPresent && (
           <FileBrowser
             projectName={project.name}
             branch={branch}
             versionLabel={branchVersion}
             files={files}
+            closing={!browsing}
             onDismiss={onCloseBrowser}
           />
         )}
