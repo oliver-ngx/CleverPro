@@ -8,6 +8,12 @@ collapsed into "latest".
 A React client and a FastAPI service. The client is transcribed from a Figma
 prototype; the service enforces the rules the client draws.
 
+Two documents sit beside this one and answer different questions.
+[FEATURES.md](FEATURES.md) is the status — every feature, with separate columns
+for the API and the UI, because the two are not at the same place.
+[NEXT-STEPS.md](NEXT-STEPS.md) is what to do about it, in order, with the
+decisions that need making first.
+
 ---
 
 ## Read this part first: the words do not mean what git means
@@ -67,6 +73,12 @@ below them each open a pane.
 | **Archive** | The shelf: every version ever pushed to Main, newest first. Exactly one row reads "Applied" — what production serves. Every other row's "Undo" makes that version live. | [pages/Archive.tsx](front-end/src/pages/Archive.tsx) |
 | **Settings** | Grouped rows over one destructive card. **Each role sees a different page**, not the same page greyed out. | [pages/Settings.tsx](front-end/src/pages/Settings.tsx) |
 | **A person's pane** | That member's history. Opening a row splits the pane to show the file, its comment thread and a toolbar. Your *own* pane also has the Action composer, which is where commits and pushes are made. | [pages/Team.tsx](front-end/src/pages/Team.tsx) |
+| **A person's settings** | Pressing their face and name in the header opens it: their role, how it got that way, the branches they are on, and removal. There is no roster screen by design — authority moves with the person, so to change what somebody can do you go to them. | [pages/MemberSettings.tsx](front-end/src/pages/MemberSettings.tsx) |
+
+One more screen is not reached from the rail at all: `/join/<token>` opens
+[pages/Join.tsx](front-end/src/pages/Join.tsx), which is what somebody following
+the project's invite link sees. They are either admitted outright or queued for
+the Owner, according to the project's own setting.
 
 ---
 
@@ -91,10 +103,15 @@ npm run dev                       # http://localhost:5173
 The client calls `/api`, which Vite proxies to the API. The browser only ever
 sees one origin, so no request is cross-origin and CORS never applies.
 
-**There is no login.** The signed-in user is a constant —
-[`CURRENT_USER`](front-end/src/config.ts) — and so is the open project,
-`PROJECT_ID`. Both must match the demo data the API seeds on startup; change one
-and you must change the other, or every screen 404s. See that file for why.
+**There is no login.** The app starts as
+[`DEFAULT_USER`](front-end/src/config.ts) and can act as any member from the
+switch under "More" in the rail — the API has no sessions, so "be somebody else"
+is a name in a request body ([`session.ts`](front-end/src/session.ts)). That is
+worth using: the Activity feed's action word, which pane has the Action
+composer, and how much of Settings renders are all computed per viewer.
+
+The open project is a constant too, `PROJECT_ID`. Both it and the starting user
+must match the demo data the API seeds on startup, or every screen 404s.
 
 > If animations do not play, that is your OS "reduce motion" setting. Every
 > transition in the app honours it deliberately.
@@ -102,8 +119,8 @@ and you must change the other, or every screen 404s. See that file for why.
 ### Checks
 
 ```bash
-cd back-end  && python -m pytest && python -m ruff check .   # 64 tests
-cd front-end && npm test && npm run lint && npm run build    # 31 tests
+cd back-end  && python -m pytest && python -m ruff check .   # 105 tests
+cd front-end && npm test && npm run lint && npm run build    # 42 tests
 ```
 
 ---
@@ -141,8 +158,8 @@ Pressing **Merge** on an Activity row:
 
 1. [`Activity.tsx`](front-end/src/pages/Activity.tsx) calls `api.merge(commitId)`.
 2. [`api/client.ts`](front-end/src/api/client.ts) POSTs to
-   `/api/projects/proj_1/merge/{id}`, injecting `actor: CURRENT_USER` — the API
-   has no session, so identity travels in each body.
+   `/api/projects/proj_1/merge/{id}`, injecting whoever `session.ts` says the
+   app is acting as — the API has no session, so identity travels in each body.
 3. FastAPI routes it to `app/routers/commits.py`, which calls
    `project.merge(...)` in `core/project.py`.
 4. The domain checks the actor was a recipient, adds them to the commit's
@@ -159,7 +176,7 @@ Pressing **Merge** on an Activity row:
 | | Contributor | Maintainer | Owner |
 | --- | :-: | :-: | :-: |
 | Commit, push, merge, comment, flag | ● | ● | ● |
-| Deploy, roll back, invite, remove a contributor | | ● | ● |
+| Deploy, roll back, invite, remove a contributor, export | | ● | ● |
 | Production visibility, custom domain, invite link | | ● | ● |
 | Grant Maintainer, transfer ownership, delete project | | | ● |
 | Create a branch | by setting | ● | ● |
@@ -183,12 +200,14 @@ back-end/            FastAPI service — see back-end/README.md
   tests/             invariants · API surface · fixed defects · concurrency
 
 front-end/           React 19 + Vite + Tailwind v4 — see front-end/README.md
-  src/config.ts      the two constants that stand in for auth and routing
+  src/config.ts      where the app starts: the project id and the first user
+  src/session.ts     who it is acting as now — the stand-in for a session
+  src/Entry.tsx      the whole of routing: is this an invite link, or the app?
   src/api/           transport · endpoint list · wire types · wire→screen adapters
-  src/pages/         the five screens
+  src/pages/         the six screens, plus the join card
   src/components/    layout · per-screen · the shared ui kit
   src/hooks/         reads, writes, overlay presence and dismissal
-  src/lib/           folder picking, permission mirrors, animation timings
+  src/lib/           folder picking, permission mirrors, formatters, motion timings
   src/data/          row-shape types (the rows themselves come from the API)
   design-system/     generated from the Figma prototype — present, but not in git
 ```

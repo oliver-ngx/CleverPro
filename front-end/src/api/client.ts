@@ -8,7 +8,7 @@
  */
 import { PROJECT_ID } from '../config'
 import { currentUser } from '../session'
-import { get, post as rawPost, seg } from './http'
+import { get, getImmutable, post as rawPost, seg } from './http'
 import { bumpRevision } from './revision'
 import type {
   ActivityEventDto,
@@ -22,7 +22,9 @@ import type {
   JoinResultDto,
   MemberActivityDto,
   MemberDto,
+  MemberProfileDto,
   OverviewDto,
+  RoleNoticeDto,
   SettingsDto,
 } from './types'
 
@@ -116,14 +118,35 @@ export const api = {
 
   team: (signal?: AbortSignal) => get<MemberDto[]>(`${project}/team`, signal),
 
+  /** One person in full: their role, and the branches they are on. */
+  member: (name: string, signal?: AbortSignal) =>
+    get<MemberProfileDto>(`${project}/team/${seg(name)}`, signal),
+
+  /**
+   * Why somebody's role is what it is. Read by that member or by the Owner, so
+   * the reader names themselves; anyone else is refused, and their profile
+   * simply does not draw the row.
+   */
+  roleNotice: (member: string, actor: string, signal?: AbortSignal) =>
+    get<RoleNoticeDto | null>(
+      `${project}/team/${seg(member)}/role-notice?actor=${encodeURIComponent(actor)}`,
+      signal,
+    ),
+
   branches: (signal?: AbortSignal) => get<BranchDto[]>(`${project}/branches`, signal),
 
   branchFiles: (branch: string, signal?: AbortSignal) =>
     get<FileNodeDto[]>(`${project}/branches/${seg(branch)}/files`, signal),
 
-  /** One version's whole file tree, which is what a push row opens onto. */
+  /**
+   * One version's whole file tree, which is what a push row opens onto.
+   *
+   * Immutable, and read as such: a version is a snapshot, so its tree is fixed
+   * the moment it is pushed. Contrast `branchFiles` above, which is the tree of
+   * whatever that branch holds *now* and moves with every push.
+   */
   versionFiles: (branch: string, versionLabel: string, signal?: AbortSignal) =>
-    get<FileNodeDto[]>(
+    getImmutable<FileNodeDto[]>(
       `${project}/branches/${seg(branch)}/versions/${seg(versionLabel)}/files`,
       signal,
     ),
@@ -134,10 +157,11 @@ export const api = {
    * The path is a query parameter because it contains slashes -- as a path segment
    * it could not be told apart from the route around it. Every version stays
    * retrievable, so this is addressed by label rather than by "latest": the browser
-   * asks for the version it is currently showing.
+   * asks for the version it is currently showing. Being addressed that way is
+   * also what makes it cacheable -- see `getImmutable`.
    */
   fileContent: (branch: string, versionLabel: string, path: string, signal?: AbortSignal) =>
-    get<FileContentDto>(
+    getImmutable<FileContentDto>(
       `${project}/branches/${seg(branch)}/versions/${seg(versionLabel)}/files/content` +
         `?path=${encodeURIComponent(path)}`,
       signal,

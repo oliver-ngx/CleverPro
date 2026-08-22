@@ -37,22 +37,16 @@ def rename_project(project: ProjectDep, body: StringSettingRequest) -> dict[str,
 
 
 @router.get("/projects/{project_id}/export")
-def export_project(project: ProjectDep, project_id: str) -> JSONResponse:
+def export_project(project: ProjectDep, project_id: str, actor: str) -> JSONResponse:
     """
-    A snapshot of the project as JSON.
+    Download the project as JSON.
 
-    Note what this hands out: the full team roster and one member's activity
-    feed, to anyone who can reach the URL. With no authentication in front of
-    it that is a deliberate demo affordance rather than a safe default, and it
-    is the first route that should move behind a real session.
+    Named `actor` in the query string because this is a read and reads in this
+    API carry no body. Who may ask, and what they get back, is
+    `Project.export_snapshot` — this route is the header and nothing else.
     """
-    team = project.team_view()
     return JSONResponse(
-        content={
-            "team": [{"name": m.name, "role": m.role.value} for m in team],
-            "activity": project.activity_feed_for_viewer(team[0].name) if team else [],
-            "deployed_version": project.deployed_version,
-        },
+        content=project.export_snapshot(actor),
         headers={"Content-Disposition": f'attachment; filename="{project_id}_export.json"'},
     )
 

@@ -171,6 +171,38 @@ def test_an_empty_comment_is_refused(client):
     assert response.status_code == 422
 
 
+# ---- export ---------------------------------------------------------------
+
+
+def test_export_names_its_reader(client):
+    """The most revealing read in the API does not answer an anonymous caller."""
+    assert client.get(f"{PROJECT}/export").status_code == 422
+
+
+def test_export_refuses_a_contributor(client):
+    response = client.get(f"{PROJECT}/export", params={"actor": CONTRIBUTOR})
+    assert response.status_code == 403
+
+
+def test_export_refuses_a_stranger(client):
+    response = client.get(f"{PROJECT}/export", params={"actor": "Nobody"})
+    assert response.status_code == 403
+
+
+def test_export_gives_a_maintainer_their_own_feed(client):
+    """
+    The feed in an export is the exporter's. A viewer-specific feed belongs to
+    the person it was computed for, so handing out somebody else's would export
+    a view of the project that is not the exporter's to see.
+    """
+    response = client.get(f"{PROJECT}/export", params={"actor": MAINTAINER})
+    assert response.status_code == 200
+    body = response.json()
+    assert {member["name"] for member in body["team"]} == {OWNER, MAINTAINER, CONTRIBUTOR}
+    mine = client.get(f"{PROJECT}/activity/{MAINTAINER}").json()
+    assert body["activity"] == mine
+
+
 # ---- upload ---------------------------------------------------------------
 
 

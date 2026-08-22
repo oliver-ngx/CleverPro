@@ -37,14 +37,6 @@ export const HISTORY_SORTS: { value: HistorySort; label: string }[] = [
   { value: 'oldest', label: 'Oldest first' },
 ]
 
-/** The label a menu heads itself with, given what is currently selected. */
-export function labelFor<T extends string>(
-  options: { value: T; label: string }[],
-  value: T,
-): string {
-  return options.find((option) => option.value === value)?.label ?? ''
-}
-
 /**
  * The rail's member list.
  *

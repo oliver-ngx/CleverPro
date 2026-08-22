@@ -38,9 +38,9 @@ interface PageHeaderProps {
    */
   leading?: ReactNode
   /**
-   * A press on that profile. Optional, and nothing passes one yet — the profile is a
-   * real button either way, the same way most of the version toolbar's glyphs are
-   * controls the source defines no behaviour for.
+   * A press on that profile, which opens that member's settings. Optional, because
+   * a page title is not a person and has nowhere to lead; the profile is a real
+   * button either way.
    */
   onSelectProfile?: () => void
   /** The pill's contents. Each screen in the source carries a different set. */
@@ -48,8 +48,10 @@ interface PageHeaderProps {
   /** Called with the glyph that was pressed. Only some screens act on it. */
   onAction?: (icon: IconName) => void
   /**
-   * A panel hanging off the pill, anchored to its right edge. The overflow glyph
-   * on a teammate's pane opens the member menu into it; nothing else uses it yet.
+   * A panel hanging off the pill, anchored to its right edge. The filter glyph on
+   * a teammate's pane opens the history's sort order into it; nothing else uses it.
+   * Member administration used to hang here too and now has a page of its own —
+   * the overflow glyph opens that instead.
    */
   menu?: ReactNode
   /**

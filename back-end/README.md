@@ -36,7 +36,7 @@ seed. There is no database.
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest                # 101 tests, ~2s
+python -m pytest                # 105 tests, ~2s
 python -m ruff check .
 ```
 
@@ -198,7 +198,8 @@ real reasons and explains them better than the client could invent.
 | `GET {p}/overview` | The Main screen's top card, in one call |
 | `POST {p}/rename` | Rename, and re-provision the default domain |
 | `POST /projects` | Create a project (unused by the client) |
-| `GET {p}/export` · `POST /import` | JSON snapshot in and out |
+| `GET {p}/export?actor=` | The roster, that actor's own feed, and the live version. Maintainer only — it is the most revealing read here |
+| `POST /import` | Inspect an uploaded JSON file and report its top-level keys |
 
 **Team**
 | | |
@@ -295,7 +296,7 @@ What *is* handled — each with a test in `tests/test_security.py`:
   A deleted project 404s rather than 403s, so an anonymous caller cannot learn
   which ids were once real.
 - **Attachments are bounded** per file, per tree and in total, matching the
-  limits the browser applies in `front-end/src/lib/folder.ts`. Content travels
+  limits the browser applies in `front-end/src/lib/picker.ts`. Content travels
   inline and every version is kept in memory, so an unbounded push was an
   unbounded allocation on an open endpoint.
 - **Uploads are bounded and defensively parsed.** `POST /import` used to read an
@@ -306,11 +307,16 @@ What *is* handled — each with a test in `tests/test_security.py`:
   member is refused rather than overwriting their entry.
 - **CORS** is restricted to configured origins with credentials off — this API
   has no cookies, so there is no ambient authority to attach.
+- **Export names its reader.** It used to hand the whole roster and one member's
+  feed to anyone who could reach the URL. It now takes an `actor`, requires
+  Maintainer, and returns *that actor's own* feed — a viewer-specific feed
+  belongs to the person it was computed for, so exporting somebody else's would
+  hand out a view of the project that is not the exporter's to see. The rule
+  lives in `Project.export_snapshot`, with the read it guards, rather than in
+  the route.
 
-Known gaps, in the order they matter: no authentication; no rate limiting;
-`GET {p}/export` hands the team roster and an activity feed to anyone who can
-reach the URL; and the store is a dictionary, so everything is lost when the
-process exits.
+Known gaps, in the order they matter: no authentication; no rate limiting; and
+the store is a dictionary, so everything is lost when the process exits.
 
 ### One performance trap, documented so it is not "fixed" again
 

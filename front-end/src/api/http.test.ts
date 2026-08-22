@@ -7,7 +7,7 @@
  * loads, or as one component's unmount cancelling another's data.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, get, post } from './http'
+import { ApiError, get, getImmutable, post } from './http'
 
 /** A fetch that resolves when the test says so, so overlap is deterministic. */
 function deferredFetch() {
@@ -135,6 +135,46 @@ describe('get', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
     calls[1].resolve([])
     expect(await second).toEqual([])
+  })
+})
+
+describe('getImmutable', () => {
+  it('asks once and answers from memory afterwards', async () => {
+    const { calls, fetchMock } = deferredFetch()
+    // A version's bytes cannot change, so the second read is the interesting
+    // one: a revision bump re-runs every live read, and this is what stops
+    // that turning into a request for something already known.
+    const first = getImmutable<{ n: number }>('/versions/V1/files/content?path=a.txt')
+    calls[0].resolve({ n: 1 })
+    expect(await first).toEqual({ n: 1 })
+
+    const again = await getImmutable<{ n: number }>('/versions/V1/files/content?path=a.txt')
+    expect(again).toEqual({ n: 1 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps its answers apart by path', async () => {
+    const { calls, fetchMock } = deferredFetch()
+    const a = getImmutable<{ n: number }>('/versions/V2/files/content?path=a.txt')
+    const b = getImmutable<{ n: number }>('/versions/V2/files/content?path=b.txt')
+    calls[0].resolve({ n: 1 })
+    calls[1].resolve({ n: 2 })
+
+    expect(await a).toEqual({ n: 1 })
+    expect(await b).toEqual({ n: 2 })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not remember a failure', async () => {
+    const { calls, fetchMock } = deferredFetch()
+    const failing = getImmutable('/versions/V3/files/content?path=gone.txt')
+    calls[0].reject(new Error('network'))
+    await expect(failing).rejects.toThrow()
+
+    const retry = getImmutable<{ n: number }>('/versions/V3/files/content?path=gone.txt')
+    calls[1].resolve({ n: 7 })
+    expect(await retry).toEqual({ n: 7 })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
 

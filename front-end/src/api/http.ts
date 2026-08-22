@@ -168,6 +168,63 @@ function attach<T>(path: string, entry: Entry, signal?: AbortSignal): Promise<T>
 }
 
 /**
+ * Responses that cannot change, kept so they are not asked for twice.
+ *
+ * A version is a snapshot. Its file tree and the text of each file in it are
+ * fixed the moment it is pushed -- history here is append-only, labels are
+ * never reused, and nothing in the product edits a version in place. So a
+ * response addressed by (branch, version, path) is answerable from memory for
+ * as long as the tab is open, and correctness does not depend on how long it
+ * is held.
+ *
+ * The win is not the second click on the same file. It is that every
+ * successful write bumps the revision counter and re-runs *every* live read
+ * (see `revision.ts`), so merging a commit used to refetch the bytes of the
+ * code you were reading, unchanged, every time. Now it does not go out at all.
+ *
+ * Both ceilings are here rather than spread through the file, and neither is
+ * meant to be reached in ordinary use: a session would have to open two
+ * hundred files, or sixteen megabytes of them, before anything is dropped.
+ * Insertion order is eviction order -- a plain Map iterates oldest-first, so
+ * the entry that goes is the one longest unlooked-at.
+ */
+const IMMUTABLE_MAX_ENTRIES = 200
+const IMMUTABLE_MAX_CHARS = 8_000_000
+
+const immutable = new Map<string, { value: unknown; chars: number }>()
+let immutableChars = 0
+
+function remember(path: string, value: unknown, chars: number) {
+  immutable.set(path, { value, chars })
+  immutableChars += chars
+
+  for (const [key, entry] of immutable) {
+    if (immutable.size <= IMMUTABLE_MAX_ENTRIES && immutableChars <= IMMUTABLE_MAX_CHARS) break
+    immutable.delete(key)
+    immutableChars -= entry.chars
+  }
+}
+
+/**
+ * A GET whose answer the caller guarantees can never change.
+ *
+ * Only ever for a resource addressed by a version -- see the note above. Using
+ * it on anything the project can advance (a branch's current tree, the roster,
+ * the feed) would show stale data forever, so the guarantee belongs to the
+ * caller and the list of callers is `client.ts`.
+ */
+export async function getImmutable<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const hit = immutable.get(path)
+  if (hit !== undefined) return hit.value as T
+
+  const value = await get<T>(path, signal)
+  // Measured after the fact rather than from a header: the response has already
+  // been parsed, and its serialised length is what it costs to keep.
+  remember(path, value, JSON.stringify(value).length)
+  return value
+}
+
+/**
  * A POST, with the acting member injected into every body.
  *
  * The API has no session, so identity travels with each call. Injecting it

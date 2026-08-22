@@ -15,9 +15,7 @@ import { useCurrentUser } from '../session'
 import { useAction } from '../hooks/useAction'
 import { useResource } from '../hooks/useResource'
 import { canGovern, canRelease } from '../lib/authority'
-
-/** The API stores lowercase enums; the rows print them capitalised. */
-const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
+import { titleCase } from '../lib/format'
 
 const onOff = (enabled: boolean) => (enabled ? 'On' : 'Off')
 

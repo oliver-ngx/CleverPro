@@ -1,7 +1,7 @@
 # What works, and what doesn't
 
 A feature-by-feature status of CleverPro Compiler, current as of commit
-`3bb1743` plus the error boundary and documentation fixes on top of it.
+`ac0d58b` plus the member settings page and the hardening pass on top of it.
 
 The interesting thing about this project is that the two halves are not at the
 same place. The API is substantially ahead of the client: several capabilities
@@ -30,7 +30,7 @@ answers correctly over HTTP, and that the only ways to exercise it today are
   production, roll production back.
 - **Collaboration plumbing is finished on the server and invisible in the
   client**: working copies, role-change notices, leaving a project, branching
-  from an older version, and four single-object reads.
+  from an older version, and three of the four single-object reads.
 - **There is no identity system.** A member is a display name in a request body.
   This is the single largest thing that is not built, and much else follows from
   it.
@@ -58,10 +58,12 @@ answers correctly over HTTP, and that the only ways to exercise it today are
 | --- | --- | --- | --- |
 | Three roles, enforced server-side | Done | Done | Contributor / Maintainer / Owner. `lib/authority.ts` mirrors the rules to hide controls, and says in its own doc comment that it is a courtesy and never the enforcement. |
 | Role-dependent screens | n/a | Done | Settings renders *fewer sections* to a Contributor rather than the same page greyed out, which is what the product spec asks for. |
-| Grant / revoke Maintainer | Done | Done | On the member's own pane, via the overflow glyph. There is no roster screen by design. |
-| Remove a Contributor | Done | Done | Same menu. Maintainer and above, and only ever a Contributor. |
-| Transfer ownership | Done | Done | Settings → Badge → "Move owner to". The outgoing Owner keeps Maintainer, so the transfer cannot be taken back. |
-| Role-change notice | Done | — | Who changed your authority, from what to what, and when. Readable by that member or the Owner. Deliberately *not* a row in the team's feed. Nothing displays it, so a role change is currently silent to the person it happened to. |
+| A member's settings page | n/a | Done | Pressing a teammate's face and name in the header opens their settings, which is where everything in the next four rows lives. There is no roster screen by design: authority moves with the person, so to change what somebody can do you go to them. The overflow glyph on the same pane leads to the same place. |
+| Grant / revoke Maintainer | Done | Done | The Role row on that page, which unfolds into the two ranks. Owner is deliberately not among them — it transfers rather than being granted. |
+| Remove a Contributor | Done | Done | The destructive card at the foot of that page, behind a two-press confirmation. Maintainer and above, and only ever a Contributor. |
+| Transfer ownership | Done | Done | Two ways in, both two-press: Settings → Badge → "Move owner to" picks a recipient, and "Move ownership here" on a member's page skips the picking. The outgoing Owner keeps Maintainer, so the transfer cannot be taken back. |
+| Role-change notice | Done | Done | Who changed your authority, from what to what, and when. Read on the member settings page — "Your role changed" on your own, "Role last changed" on somebody else's. The server shows it to that member and to the Owner and refuses everybody else, so a viewer with no business reading it gets no row rather than an error. Deliberately *not* a row in the team's feed. |
+| A member in full | Done | Done | `GET /team/{member}` — their role and the branches they are on, which is what the settings page reads. |
 | Who may create branches | Done | Partial | The client reads `branch_creation_open_to_contributors` to gate the button, but `POST /settings/branch-creation-authority` has no control — the setting can only be changed over HTTP. |
 
 ## Branches and versions
@@ -77,7 +79,7 @@ answers correctly over HTTP, and that the only ways to exercise it today are
 | Version labels are the author's own | Done | Done | A push's name *becomes* the version label. A name the branch already holds is refused rather than silently adjusted. |
 | One branch's version history | Done | — | `GET /branches/{b}/versions`. Archive answers a different question and covers Main only, so a non-Main branch's history has no screen. |
 | One branch, in full | Done | — | `GET /branches/{b}` — members, head, version and commit counts. |
-| Rename or delete a branch | — | — | No endpoint. |
+| Rename or delete a branch | — | — | No endpoint, and now no domain method either. A `delete_branch` existed, unreachable, and dropped the branch while leaving the commit and push indexes, the working copies and every ledger row naming it behind — anything wired to it would have resolved commits on a branch that no longer existed. Deleting a branch means deciding what happens to the history hanging off it. |
 
 ## Proposals: commit, merge, push, retract
 
@@ -152,7 +154,7 @@ spec — and **who may create branches** has no control, as noted above.
 
 | Feature | API | UI | Notes |
 | --- | --- | --- | --- |
-| Create, rename, import, export a project | Done | — | Four endpoints with no client at all. The design opens straight into one project with no picker and no create flow, and `PROJECT_ID` is a constant that must match the API's seed. |
+| Create, rename, import, export a project | Done | — | Four endpoints with no client at all. The design opens straight into one project with no picker and no create flow, and `PROJECT_ID` is a constant that must match the API's seed. Export is the one of the four with teeth: it hands out the roster and a feed in one response, so it names its reader, takes Maintainer, and returns that reader's own feed. |
 
 ## Platform
 
@@ -168,7 +170,8 @@ spec — and **who may create branches** has no control, as noted above.
 | Surviving a crash | Done | Two error boundaries. The inner one wraps the open view and is keyed on it, so a broken screen can be walked away from and the rail stays usable; the outer one wraps the document and catches what the first cannot. A component throwing now shows a line and a Reload button instead of a blank page. |
 | Dark mode, empty states | — | The design system states outright that these do not exist in the source, and asks that they not be guessed at. |
 | Accessibility | Partial | Labelled controls, focus rings for keyboard users only, Escape closes every overlay, and every transition honours "reduce motion". Not audited against WCAG. |
-| Tests | Done | 101 backend tests, 39 front-end. The five product invariants each have one in `back-end/tests/test_invariants.py`. |
+| Wasted refetching | Done | A version is a snapshot, so its file tree and file contents can never change. Those reads are answered from memory once seen, which is what stops a write — every one of which re-runs every live read — from refetching the bytes of the code you are reading. Bounded at 200 entries or 8M characters, whichever comes first. |
+| Tests | Done | 105 backend tests, 42 front-end. The five product invariants each have one in `back-end/tests/test_invariants.py`. |
 
 ---
 
@@ -199,8 +202,8 @@ section used to list are done.
 
 Then the largest item on this page, which postdates that older list entirely:
 **the capabilities built with no way to reach them.** Working copies are the one
-that matters, because they make merging visible; the rest — role notices,
-leaving, branching from an older version — are a screen or a row each.
+that matters, because they make merging visible; the rest — leaving, branching
+from an older version — are a screen or a row each.
 
 Then the Deploy button, once you have said where it goes. Then logins, then
 persistence, in that order: a saved database with no logins is worse than no
@@ -209,8 +212,8 @@ database at all.
 ## Checking any of this yourself
 
 ```bash
-cd back-end  && python -m pytest && python -m ruff check .
-cd front-end && npm test && npm run lint && npm run build
+cd back-end  && python -m pytest && python -m ruff check .   # 105 tests
+cd front-end && npm test && npm run lint && npm run build    # 42 tests
 ```
 
 The unwired capabilities are easiest to reach through the API's own docs at

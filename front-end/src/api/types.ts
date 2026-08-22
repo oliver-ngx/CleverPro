@@ -36,6 +36,37 @@ export interface MemberDto {
   role: 'contributor' | 'maintainer' | 'owner'
 }
 
+/**
+ * GET /projects/{id}/team/{member} — one person in full.
+ *
+ * Their role is public to the team; how it got that way is not, which is what
+ * the role notice below is for.
+ */
+export interface MemberProfileDto {
+  name: string
+  role: MemberDto['role']
+  /** Every line they are on, Main included, sorted by name. */
+  branches: string[]
+}
+
+/**
+ * GET /projects/{id}/team/{member}/role-notice — how somebody finds out their
+ * authority changed.
+ *
+ * Readable by that member or by the Owner and by nobody else, so the reader
+ * names themselves in the query string. Null means their role has never been
+ * changed, which is a fact rather than a missing record — hence a 200 and not a
+ * 404. Only the most recent is kept: a role has one history worth reading, the
+ * one that explains what it is now.
+ */
+export interface RoleNoticeDto {
+  member: string
+  old_role: string
+  new_role: string
+  changed_by: string
+  timestamp: number
+}
+
 /** A node in any of the file-tree endpoints. Folders nest; files are leaves. */
 export interface FileNodeDto {
   name: string

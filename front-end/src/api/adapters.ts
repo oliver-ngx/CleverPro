@@ -20,6 +20,7 @@ import type {
   MemberDto,
   OverviewDto,
 } from './types'
+import { longStamp, shortDate } from '../lib/format'
 
 export function toProject(dto: OverviewDto) {
   return {
@@ -102,22 +103,6 @@ export function toActivityRows(events: ActivityEventDto[]): ActivityEntry[] {
       commitId: event.commit_id ?? '',
     }))
     .reverse()
-}
-
-/** "Jul 24, 2026 at 08:26 PM" -- the long-form stamp the detail pane draws. */
-function longStamp(epochSeconds: number): string {
-  const at = new Date(epochSeconds * 1000)
-  const day = at.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const time = at.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-  return `${day} at ${time}`
-}
-
-/** "Aug 7" -- the terse stamp the archive table draws, from epoch seconds. */
-function shortDate(epochSeconds: number): string {
-  return new Date(epochSeconds * 1000).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  })
 }
 
 export function toArchiveRows(rows: ArchiveRowDto[], projectName: string): ArchiveEntry[] {

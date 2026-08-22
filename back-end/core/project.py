@@ -686,16 +686,14 @@ class Project:
             n += 1
         return f"{base}-{n}"
 
-    @synchronized
-    def delete_branch(self, actor: str, name: str) -> None:
-        if name == "main":
-            raise ValueError("Cannot delete Main.")
-        self._require_branch(name)
-        # Any project member may delete a branch. The product treats branches
-        # as disposable working space rather than as shared history, so there
-        # is no forced cleanup and no stricter floor than membership.
-        self._require_role(actor, Role.CONTRIBUTOR, "delete a branch")
-        del self.branches[name]
+    # There is deliberately no delete_branch. One existed, unreachable — no
+    # route, no test, no control in the design — and it dropped the branch from
+    # `self.branches` and nothing else: the commit and push indexes, the working
+    # copies keyed by (member, branch), and every ledger row naming that branch
+    # all stayed behind. Anything wired to it would have been resolving commits
+    # on a branch that no longer existed. Deleting a branch means deciding what
+    # happens to the history hanging off it, and the product has not asked that
+    # question yet — see NEXT-STEPS.md rather than reintroducing the shortcut.
 
     # ---- commit / push / merge -------------------------------------------
 
@@ -1165,13 +1163,6 @@ class Project:
     # ---- read-only surfaces ---------------------------------------------
 
     @synchronized
-    def activity_feed(self) -> list[Commit]:
-        """Every non-retracted proposal across the project, oldest first."""
-        out: list[Commit] = []
-        for branch in self.branches.values():
-            out.extend(c for c in branch.commits if not c.retracted)
-        return sorted(out, key=lambda c: c.timestamp)
-
     @synchronized
     def activity_feed_for_viewer(self, viewer: str) -> list[dict[str, Any]]:
         """
@@ -1289,6 +1280,31 @@ class Project:
                 row["version_label"] = push.version_label
             rows.append(row)
         return rows
+
+    @synchronized
+    def export_snapshot(self, actor: str) -> dict[str, Any]:
+        """
+        The whole project in one object: who is on it, what has happened, and
+        what production is serving.
+
+        Assembled here rather than in the route because it is three domain
+        reads with one rule over them, and the rule is the interesting part.
+        This is the most revealing read in the API — a roster and a feed in a
+        single response — so it takes Maintainer, the tier that already
+        administers the project.
+
+        The feed is the actor's own. A viewer-specific feed belongs to the
+        person it was computed for: the same commit reads "Merge" to a
+        recipient and "View" to its author, so handing somebody else's out
+        would be exporting a view of the project that is not the exporter's
+        to see.
+        """
+        self._require_role(actor, Role.MAINTAINER, "export this project")
+        return {
+            "team": [{"name": m.name, "role": m.role.value} for m in self.team_view()],
+            "activity": self.activity_feed_for_viewer(actor),
+            "deployed_version": self.deployed_version,
+        }
 
     @synchronized
     def member_view(self, member: str) -> dict[str, Any]:

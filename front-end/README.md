@@ -10,7 +10,7 @@ they mean in git, and the components are named after the product's meanings.
 ```bash
 npm install
 npm run dev        # http://localhost:5173 — /api proxied to 127.0.0.1:8000
-npm test           # vitest, 31 tests
+npm test           # vitest, 42 tests
 npm run lint       # eslint, type-aware
 npm run build      # tsc -b && vite build
 ```
@@ -20,22 +20,34 @@ screen renders its error state.
 
 ---
 
-## The two constants that stand in for everything missing
+## What stands in for auth and routing
 
-[`src/config.ts`](src/config.ts) holds two values, and understanding them
-explains several things that otherwise look wrong:
+[`src/config.ts`](src/config.ts) holds where the app *starts*:
 
 ```ts
-export const PROJECT_ID  = 'proj_1'   // must match the id the API seeds
-export const CURRENT_USER = 'Oliver'  // must be a seeded member's exact name
+export const PROJECT_ID   = 'proj_1'   // must match the id the API seeds
+export const DEFAULT_USER = 'Oliver'   // must be a seeded member's exact name
 ```
 
-There is no router and no login. The design opens straight into one project with
-no picker, and the API has no sessions — every mutating request carries an
-`actor` string the server matches by display name. `CURRENT_USER` is therefore
-**load-bearing on reads too, not only on writes**: it is in the Activity feed's
-URL path, because the same commit reads "Merge" to a recipient and "View" to its
-author.
+There is no login. The API has no sessions — every mutating request carries an
+`actor` string the server matches by display name — so a name stands in for one.
+Who the app is *currently* acting as lives in
+[`src/session.ts`](src/session.ts), not in `config.ts`: it can be switched at
+runtime from the rail, it is remembered in `localStorage`, and switching bumps
+the revision counter so every live read refetches as that person. Read it from
+`session.ts` or you will be reading the answer from before the switch.
+
+It is **load-bearing on reads, not only on writes**: the actor is in the
+Activity feed's URL path, decides which Settings sections render, and decides
+which pane has the Action composer. Being able to switch is how any of that gets
+looked at.
+
+Routing is one question, answered in [`src/Entry.tsx`](src/Entry.tsx): did
+somebody arrive through a project's link? `/join/<token>` opens the join screen
+and every other path is the app. A router would be a dependency and a set of
+concepts for one branch. The token is taken at mount and stripped from the
+address bar the moment it is spent, so a reload does not re-ask a member to
+join and the link does not sit in browser history.
 
 ---
 
@@ -65,6 +77,13 @@ cheaper than a cache layer and it cannot go subtly wrong. Swap it for a query
 library when the payload sizes or the endpoint count make the dependency worth
 it.
 
+One read does not take part in that: a **version** is a snapshot, so its file
+tree and the text of each file in it can never change. Those two go through
+`getImmutable` and are answered from memory once seen, which is what stops a
+merge from refetching the bytes of the code you are reading. Only ever use it
+for something addressed by a version — on anything the project can advance it
+would show stale data forever.
+
 Two details in `useResource` that are easy to undo by accident:
 
 - **A refetch does not re-raise `loading`.** The previous result stays on screen
@@ -86,6 +105,9 @@ reading in full before anything else.
 | `selectedBranch` | Two screens choose from the same branch list — Main's detail row and the Action composer — so a branch made on one must be visible to the other. Held as a *name*, not an index, so it survives the list arriving. |
 | `version` | The open history row. Setting it splits a person's pane. |
 | `actionOpen` | The Action composer, which only your own pane has. |
+| `memberSettings` | Whether the open pane shows that person's settings rather than their history. Here for the reason `browsing` is: the way out of it is the header pill, and the pill is App's. |
+| `browsing` | Main's expanded file browser, closed from that same pill. |
+| `sortOpen` | The sort card hanging off the pill on a person's pane. |
 | `overview` / `members` | Fetched once here and passed down: one overview call serves the project card, the branch switcher, and the Archive version prefix. |
 
 Pages hold only what is theirs: Main holds the file-tree tick state and the Add
@@ -107,12 +129,14 @@ rail entry that does nothing.
 | Archive | [`pages/Archive.tsx`](src/pages/Archive.tsx) | The shelf. "Applied" is a status, not a control. "Undo" here means *re-release*, not un-merge — a different endpoint from the identically-labelled Activity action. |
 | Settings | [`pages/Settings.tsx`](src/pages/Settings.tsx) | **Each role sees a different page**, not the same page greyed out: a row that would always be refused advertises a capability and then withholds it. |
 | A person's pane | [`pages/Team.tsx`](src/pages/Team.tsx) | One component for both templates — your own pane and a teammate's differ in *row shape*, not in page. Opening a row slides in the detail panel; below 860px it covers the pane outright. |
+| A person's settings | [`pages/MemberSettings.tsx`](src/pages/MemberSettings.tsx) | Reached by pressing their face and name in the header, or the overflow glyph. Role, the notice saying how it got that way, their branches, and removal. There is no roster screen by design: authority moves with the person. |
+| Join | [`pages/Join.tsx`](src/pages/Join.tsx) | Not reached from the rail — it is what `/join/<token>` opens, for somebody who is not a member yet. Two endings drawn apart: admitted, or queued for the Owner. |
 
 ---
 
 ## Components
 
-Forty-two, in four groups. Anything shared belongs in `ui/`; the other three
+Fifty-five, in five groups. Anything shared belongs in `ui/`; the other four
 folders are per-screen and reach across to each other exactly once — the Action
 composer borrows `main/BranchSelect`, because picking a branch is one control
 wherever it appears. Treat a second such import as a sign the component has
@@ -121,7 +145,10 @@ become shared and should move to `ui/`.
 - **`layout/`** — the frame. `AppWindow` (the desktop backdrop and the floating
   1400×805 window), `Sidebar` (the 299px rail: nav items above, teammates below),
   `SidebarNavItem` / `SidebarPerson` (its two row kinds), `MobileNav` (the same
-  selection drawn as a tab bar, below `md`), `PageHeader`, `PageBody`.
+  selection drawn as a tab bar, below `md`), `PageHeader`, `PageBody`,
+  `ActingMember` (the acting-member switch, a testing control drawn as one), and
+  `ErrorBoundary` — the only class component in the app, because
+  `getDerivedStateFromError` has no hook.
 - **`ui/`** — the kit: `Button`, `IconButton`, `Checkbox`, `TextField`,
   `FieldLabel`, `Avatar`, `AvatarStack`, `Icon`, `Popover`, `Sheet`, `DataTable`,
   `VersionRow`, `SettingsRow`, `SettingsGroup`, `ComposerRow`, `OptionSelect`,
@@ -129,10 +156,11 @@ become shared and should move to `ui/`.
 - **`main/`** — the Main screen: `DetailRow`, `ProjectThumbnail`, `FileTree`,
   `VersionPanel`, `BranchPanel`/`BranchList`/`BranchMenu`/`BranchSelect`/`BranchTrigger`,
   `AddBranchSheet`.
-- **`team/`** — a person's pane: `ActionComposer`, `VersionDetail`,
-  `VersionToolbar`, `MemberMenu`.
+- **`team/`** — a person's pane: `ActionComposer`, `MentionField`,
+  `VersionDetail`, `VersionFiles`, `VersionToolbar`.
+- **`settings/`** — `JoinRequests`, the Owner's queue of people at the door.
 
-`Icon` is a closed union of 29 names. **Tint is baked into each asset** at the
+`Icon` is a closed union of 32 names. **Tint is baked into each asset** at the
 value the source uses — Activity green, Archive purple, Settings blue — so a
 glyph renders correctly with no extra styling. Glyphs the source left untinted
 follow `currentColor`.
@@ -214,13 +242,18 @@ Vitest, on the pure logic — no DOM rendering.
 
 | File | Covers |
 | --- | --- |
-| `src/api/http.test.ts` | Request coalescing, and what happens to a shared request when one caller aborts. Invisible when it works, subtle when it does not. |
+| `src/api/http.test.ts` | Request coalescing, the immutable-response cache, and what happens to a shared request when one caller aborts. Invisible when they work, subtle when they do not. |
 | `src/api/adapters.test.ts` | The wire → drawing translation, so a server rename this file does not follow fails a test rather than emptying a row. |
 | `src/lib/authority.test.ts` | The permission mirrors, each with a counterpart in `back-end/tests/`. |
+| `src/lib/highlight.test.ts` | The code viewer's tokeniser, which is pure and easy to break silently. |
 
 ---
 
 ## Recipes
+
+**Format a value** — `lib/format.ts` holds `titleCase` and the two timestamps.
+Do not write a third copy in a page: a formatter copied is a formatter that
+drifts, and the same stamp then reads two ways on two screens.
 
 **Call a new endpoint** — add the DTO to `api/types.ts`, a line to `api/client.ts`,
 and a mapping in `api/adapters.ts` if the screen wants a different shape. Read it

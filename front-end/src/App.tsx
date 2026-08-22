@@ -9,7 +9,6 @@ import { PageHeader } from './components/layout/PageHeader'
 import { Popover } from './components/ui/Popover'
 import { SortMenu } from './components/ui/SortMenu'
 import { Sidebar } from './components/layout/Sidebar'
-import { MemberMenu } from './components/team/MemberMenu'
 import { Avatar } from './components/ui/Avatar'
 import type { IconName } from './components/ui/Icon'
 import { useCurrentUser } from './session'
@@ -20,12 +19,12 @@ import type { HistorySort, TeamSort } from './lib/sorting'
 import { HISTORY_SORTS, sortTeam } from './lib/sorting'
 import { usePresence } from './hooks/usePresence'
 import { POPOVER_EXIT_MS } from './lib/motion'
-import { useAction } from './hooks/useAction'
 import { useOverlayDismiss } from './hooks/useOverlayDismiss'
 import { useResource } from './hooks/useResource'
 import Activity from './pages/Activity'
 import Archive from './pages/Archive'
 import Main from './pages/Main'
+import MemberSettings from './pages/MemberSettings'
 import Settings from './pages/Settings'
 import Team from './pages/Team'
 
@@ -51,7 +50,12 @@ interface HeaderContent {
  * this pill while the file browser is open, and the pill is the only way back out of
  * it -- the browser covers the body beneath the header but never the header itself.
  */
-function headerFor(view: View, actionOpen: boolean, browsing: boolean): HeaderContent {
+function headerFor(
+  view: View,
+  actionOpen: boolean,
+  browsing: boolean,
+  memberSettings: boolean,
+): HeaderContent {
   if (view.kind === 'page') {
     return {
       title: view.label,
@@ -61,11 +65,15 @@ function headerFor(view: View, actionOpen: boolean, browsing: boolean): HeaderCo
 
   const { person } = view
 
+  // Their settings fill the pane while they are open, and the pill is the way
+  // back out -- the same arrangement Main's file browser has. Nothing else in
+  // the pill would mean anything there: there is no history to sort and no
+  // overflow to open, since this *is* what the overflow opens.
   if (person.self !== true) {
     return {
       title: person.name,
       leading: <Avatar person={person.id} size={28} />,
-      actions: ['filter', 'ellipsis'],
+      actions: memberSettings ? ['close'] : ['filter', 'ellipsis'],
     }
   }
 
@@ -77,7 +85,9 @@ function headerFor(view: View, actionOpen: boolean, browsing: boolean): HeaderCo
         {name} <span className="font-normal">(You)</span>
       </>
     ),
-    actions: [actionOpen ? 'close' : 'archive-in', 'filter', 'ellipsis'],
+    actions: memberSettings
+      ? ['close']
+      : [actionOpen ? 'close' : 'archive-in', 'filter', 'ellipsis'],
   }
 }
 
@@ -99,24 +109,20 @@ function App() {
   const [teamSort, setTeamSort] = useState<TeamSort>('name-asc')
   const [historySort, setHistorySort] = useState<HistorySort>('newest')
   /**
-   * Which card is hanging off the header pill, if either.
-   *
-   * One value rather than a flag each, because the pill has one slot and the two were
-   * already written to close one another. It also gives the exit something to draw:
-   * `lastPillMenu` keeps the last card that was open, so a dismissed one stays on
-   * screen for the length of its animation instead of vanishing on the frame it was
-   * dismissed.
+   * The sort card hanging off the header pill. `usePresence` keeps it mounted for
+   * the length of its exit, so a dismissed card folds away instead of vanishing on
+   * the frame it was dismissed.
    */
-  const [pillMenu, setPillMenu] = useState<'sort' | 'member' | undefined>(undefined)
-  const [lastPillMenu, setLastPillMenu] = useState<'sort' | 'member'>('sort')
-  if (pillMenu !== undefined && pillMenu !== lastPillMenu) setLastPillMenu(pillMenu)
-  const pillMenuPresent = usePresence(pillMenu !== undefined, POPOVER_EXIT_MS)
+  const [sortOpen, setSortOpen] = useState(false)
+  const sortPresent = usePresence(sortOpen, POPOVER_EXIT_MS)
   const [actionOpen, setActionOpen] = useState(false)
   const [version, setVersion] = useState<PaneEntry | undefined>(undefined)
-  // The overflow glyph on a teammate's pane, which is where role changes and
-  // removals live -- the product has no roster screen, so administration hangs
-  // off the person it affects.
-  const administer = useAction()
+  /**
+   * Whether the open pane is showing that person's settings rather than their
+   * history. It lives here rather than in `Team` for the reason `browsing` does:
+   * the way out of it is the header pill, and the pill is App's.
+   */
+  const [memberSettings, setMemberSettings] = useState(false)
 
   // One overview call serves three things — the project card, the branch list
   // and the Archive table's version prefix — so it is fetched once up here
@@ -160,7 +166,7 @@ function App() {
     (overview.data?.branches ?? []).find((entry) => entry.name === branch)?.latest_version ??
     undefined
 
-  const { title, leading, actions } = headerFor(view, actionOpen, browsing)
+  const { title, leading, actions } = headerFor(view, actionOpen, browsing, memberSettings)
 
   // Every overlay belongs to the pane it was opened from, so leaving takes them
   // with you rather than dropping them onto whatever comes next.
@@ -168,26 +174,30 @@ function App() {
     setView(next)
     setActionOpen(false)
     setVersion(undefined)
-    setPillMenu(undefined)
+    setSortOpen(false)
     setBrowsing(false)
+    setMemberSettings(false)
   }
 
-  const closePillMenu = useCallback(() => {
-    setPillMenu(undefined)
+  // Their settings replace the pane, so everything the pane had open goes with it.
+  const openMemberSettings = () => {
+    setMemberSettings(true)
+    setActionOpen(false)
+    setVersion(undefined)
+    setSortOpen(false)
+  }
+
+  const closeSort = useCallback(() => {
+    setSortOpen(false)
   }, [])
 
-  // Escape shuts it, as it shuts everything else in the product.
   // Escape shuts it as it shuts every other overlay. There is no click-catcher to go
   // with it: the card hangs off the pill, and pressing that glyph again closes it.
-  useOverlayDismiss(closePillMenu, pillMenu !== undefined)
+  useOverlayDismiss(closeSort, sortOpen)
 
-  // Who is signed in, and whose pane is open. Both are needed before the menu
-  // can say what this member is allowed to do to that one.
-  const viewerRole = (members.data ?? []).find((member) => member.name === actor)?.role
-  const subject =
-    view.kind === 'person'
-      ? (members.data ?? []).find((member) => member.name === view.person.name.split(' (')[0])
-      : undefined
+  // The pane's subject, by the name the API knows them by -- the rail's copy
+  // carries a "(You)" that is presentation and not part of anyone's name.
+  const subject = view.kind === 'person' ? view.person.name.split(' (')[0] : undefined
 
   // Keyed by label rather than switched on, so adding a nav item without a screen to
   // open is a type error rather than a rail entry that does nothing. Only the element
@@ -254,77 +264,68 @@ function App() {
           // The Self pane's leading glyph is a plus drawn from the close cross; the
           // cross the browser puts here is a real one.
           closeAsPlus={view.kind === 'person'}
+          onSelectProfile={openMemberSettings}
           onAction={(icon) => {
+            // An open settings pane owns the pill outright: one glyph, and it is
+            // the way back to the history underneath.
+            if (memberSettings) {
+              if (icon === 'close') setMemberSettings(false)
+              return
+            }
             // On a page the cross can only be the browser's -- the Action window is a
             // teammate's-pane control and never puts one here.
             if (icon === 'close' && view.kind === 'page') setBrowsing(false)
             else if (icon === 'archive-in' || icon === 'close') setActionOpen(icon === 'archive-in')
-            // Only a pane carries either of these, and the pill holds one at a
-            // time — pressing a glyph that is already open shuts it.
-            if (view.kind === 'person' && (icon === 'ellipsis' || icon === 'filter')) {
-              const wanted = icon === 'ellipsis' ? 'member' : 'sort'
-              setPillMenu((current) => (current === wanted ? undefined : wanted))
+            if (view.kind === 'person') {
+              // Both affordances on a pane lead to the same place: the overflow
+              // glyph and the person's own face and name.
+              if (icon === 'ellipsis') openMemberSettings()
+              // Pressing the glyph that is already open shuts it.
+              else if (icon === 'filter') setSortOpen((current) => !current)
             }
           }}
-          menuOpen={pillMenu !== undefined}
+          menuOpen={sortOpen}
           menu={
-            !pillMenuPresent || view.kind !== 'person' ? undefined : (pillMenu ??
-              lastPillMenu) === 'sort' ? (
+            !sortPresent || view.kind !== 'person' ? undefined : (
               <Popover width="fit" minWidth={126}>
                 <SortMenu
                   value={historySort}
                   options={HISTORY_SORTS}
                   onSelect={(order) => {
                     setHistorySort(order)
-                    closePillMenu()
+                    closeSort()
                   }}
                 />
               </Popover>
-            ) : subject !== undefined ? (
-              <MemberMenu
-                name={subject.name}
-                role={subject.role}
-                viewerRole={viewerRole}
-                self={view.person.self === true}
-                pending={administer.pending}
-                onSetRole={(next) => {
-                  administer.run(
-                    () =>
-                      next === 'maintainer'
-                        ? api.grantMaintainer(subject.name)
-                        : api.revokeMaintainer(subject.name),
-                    closePillMenu,
-                  )
-                }}
-                onRemove={() => {
-                  administer.run(() => api.removeMember(subject.name), () => {
-                    // Their pane is gone along with them, so there is nowhere
-                    // to stay -- the project opens where it opened.
-                    show({ kind: 'page', label: 'Main' })
-                  })
-                }}
-              />
-            ) : undefined
+            )
           }
           split={version !== undefined}
         />
 
-        {administer.error !== undefined && (
-          <div
-            role="alert"
-            className="shrink-0 px-[22px] pt-[8px] text-[11px] font-medium text-cp-text-primary"
-          >
-            {administer.error}
-          </div>
-        )}
         {/*
           Keyed on the open view, which is what lets a broken screen be walked
           away from: React never resets a boundary by itself, so switching views
           has to remount this one. The rail and the header sit outside it and
           stay usable while a page is broken.
         */}
-        <ErrorBoundary key={view.kind === 'page' ? view.label : view.person.id}>
-          {view.kind === 'person' ? (
+        <ErrorBoundary
+          key={
+            view.kind === 'page'
+              ? view.label
+              : `${view.person.id}${memberSettings ? ':settings' : ''}`
+          }
+        >
+          {view.kind === 'person' && subject !== undefined && memberSettings ? (
+            <MemberSettings
+              member={subject}
+              members={members.data ?? []}
+              onRemoved={() => {
+                // Their pane is gone along with them, so there is nowhere to
+                // stay -- the project opens where it opened.
+                show({ kind: 'page', label: 'Main' })
+              }}
+            />
+          ) : view.kind === 'person' ? (
             <Team
               person={view.person}
               members={members.data ?? []}
