@@ -4,12 +4,11 @@
  * Types only. Members come from GET /team and pane rows from
  * GET /team/{member}/activity; api/adapters.ts maps both onto these.
  */
-import type { PersonName } from '../components/ui/Avatar'
 import type { IconName } from '../components/ui/Icon'
 
 export interface TeamMember {
-  /** Matches the avatar asset filename. */
-  id: PersonName
+  /** The member's display name, which the API already treats as their id. */
+  id: string
   name: string
   online: boolean
   /** The signed-in user. Their pane uses the Self template, everyone else's Other. */
@@ -69,5 +68,5 @@ export interface PaneEntry {
   subtitle?: string
   /** Present only on the Other template. */
   diff?: { added: number; removed: number }
-  avatars: PersonName[]
+  avatars: string[]
 }

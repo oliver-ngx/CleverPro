@@ -14,6 +14,9 @@ Read this file as a set of invariants rather than as a set of methods:
    record pointing at an old version, and no record is ever deleted.
 5. A branch preview reflects that branch's latest push automatically; Main's
    preview is production, which does not.
+6. Every member has their own copy of a branch, and only their own merges
+   change it. Authoring a commit is a proposal to other people, never an edit
+   of your own files.
 """
 
 from __future__ import annotations
@@ -25,12 +28,21 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from .attachments import Attachment, build_file_tree
+from .attachments import Attachment, apply_attachment, build_file_tree
 from .branch import Branch
 from .diffing import diff_stats_for_change
 from .errors import PermissionError_, PushInvalidError
 from .ids import new_invite_token, next_id
-from .records import ActivityEvent, Comment, Commit, DeployRecord, PushRecord
+from .records import (
+    ActivityEvent,
+    Comment,
+    Commit,
+    DeployRecord,
+    JoinRequest,
+    PushRecord,
+    RoleNotice,
+    WorkingVersion,
+)
 from .roles import Member, Role, at_least
 
 # A hostname and nothing else: labels of letters, digits and hyphens joined by
@@ -45,6 +57,30 @@ _HOSTNAME = re.compile(
 # A deploy subdomain is one label of the same alphabet — it is a prefix onto
 # the product's own domain, never a host in its own right.
 _LABEL = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
+
+# What the shared Activity feed shows, and therefore what it does not.
+#
+# Two kinds of event are deliberately absent even though both are recorded.
+# Deployments — "deploy" and "undo" — belong to the Archive, which answers what
+# production is running and what it ran before; repeating them here would put
+# the same fact on two surfaces that can then disagree. Role changes are
+# addressed to one person and are read as a notice they are shown directly,
+# rather than as a line in a history everybody scrolls.
+#
+# The rest of the ledger is here: who joined or left, what changed about the
+# project, and the work itself. Kept as one named set so that changing what the
+# feed carries is this list rather than a walk through the function below.
+_FEED_TYPES = frozenset({
+    "commit",
+    "push",
+    "branch_created",
+    "member_invited",
+    "member_joined",
+    "join_requested",
+    "member_removed",
+    "branch_members_changed",
+    "settings_changed",
+})
 
 # What a version may not be called. A label is not decoration: it addresses the
 # version in a URL path (`/branches/{b}/versions/{label}/files`) and keys the
@@ -132,6 +168,40 @@ class Project:
         self._commits: dict[str, Commit] = {}
         self._pushes: dict[str, PushRecord] = {}
 
+        # Each member's own copy of each branch, as an ordered history that is
+        # appended to and never truncated -- (member, branch) -> states, oldest
+        # first. This is what an undo restores *from*: without real content
+        # here, "unmerge" could only forget a flag.
+        self._working: dict[tuple[str, str], list[WorkingVersion]] = {}
+
+        # People asking to be let in, by name. A set rather than a log: a second
+        # request from the same person is refused rather than queued.
+        self._join_requests: dict[str, JoinRequest] = {}
+
+        # The latest "your role changed" message per member, overwritten on each
+        # change. Read by that member and by the Owner, and by nobody else.
+        self._role_notices: dict[str, RoleNotice] = {}
+
+        # Main starts at a version rather than at nothing. A project is created
+        # whole — Owner, branch, membership, access link and a state to branch
+        # from — so there is never a window in which the project exists but has
+        # no version anybody can point at. It is recorded directly rather than
+        # through push(): nobody pushed it, and it should not read as though
+        # somebody did. The label sits outside the counter's sequence, so the
+        # first real push is still V1.
+        initial = PushRecord(
+            id=next_id("push"),
+            author=owner_name,
+            branch="main",
+            attachment=Attachment(folder_ref="initial", tree_snapshot={}),
+            comment="Project created",
+            timestamp=time.time(),
+            version_label="V0",
+            files={},
+        )
+        main.record_push(initial)
+        self._pushes[initial.id] = initial
+
         # Identity and the deploy URL. `domain` is auto-provisioned from the
         # name; `custom_domain` is optional and overrides it once set.
         self.name: str = name or f"{owner_name}'s project"
@@ -205,6 +275,7 @@ class Project:
             raise ValueError("A project name cannot be empty.")
         self.name = cleaned
         self.domain = self._slugify(cleaned) + ".cleverpro.com"
+        self._log_event(actor, "settings_changed", f"Project renamed to {cleaned}")
 
     @synchronized
     def set_preview_image(self, actor: str, image_ref: str) -> None:
@@ -238,6 +309,10 @@ class Project:
         return event
 
     # ---- helpers ---------------------------------------------------------
+
+    def _owner(self) -> str:
+        """Whose project this is. Exactly one member holds the role."""
+        return next(name for name, m in self.members.items() if m.role == Role.OWNER)
 
     def _member(self, name: str) -> Member:
         if name not in self.members:
@@ -300,6 +375,90 @@ class Project:
         self._log_event(actor, "member_invited", f"Invited {new_member} as {role.value}")
 
     @synchronized
+    def request_join(self, token: str, name: str) -> dict[str, Any]:
+        """
+        Somebody arriving through the project's link.
+
+        The link is an access mechanism and never an authority: it decides
+        whether you may ask to come in, not what you may do once you are here.
+        Which of the two things it does is the project's own setting — either it
+        admits people outright at the default invite role, or it opens a request
+        the Owner answers.
+
+        Both refusals here are about the same thing: a request is a thing you
+        have or have not made, not something that queues. Somebody already in
+        has nothing to ask for, and somebody already waiting is already waiting.
+        """
+        if token != self.invite_token:
+            raise PermissionError_("That link is not valid for this project.")
+        name = name.strip()
+        if not name:
+            raise ValueError("A member needs a name.")
+        if name in self.members:
+            raise ValueError(f"{name} is already a member of this project.")
+        if name in self._join_requests:
+            raise ValueError(f"{name} has already asked to join this project.")
+
+        if self.anyone_with_link:
+            self._admit(name, self.default_invite_role, actor=name)
+            return {"status": "joined", "role": self.default_invite_role.value}
+
+        self._join_requests[name] = JoinRequest(name=name, requested_at=time.time())
+        # Addressed to the Owner: it is a thing only they can act on, and the
+        # rest of the team has no business knowing who asked and was refused.
+        self._log_event(
+            name,
+            "join_requested",
+            f"{name} asked to join the project",
+            visible_to=[self._owner()],
+        )
+        return {"status": "pending"}
+
+    def _admit(self, name: str, role: Role, actor: str) -> None:
+        """Put somebody on the project. One event type, however they got here."""
+        self.members[name] = Member(name, role)
+        self.branches["main"].members.add(name)
+        self._log_event(actor, "member_joined", f"{name} joined the project")
+
+    @synchronized
+    def join_requests(self, actor: str) -> list[dict[str, Any]]:
+        """Who is waiting, oldest first. The Owner's list and nobody else's."""
+        self._require_role(actor, Role.OWNER, "see who has asked to join")
+        return [
+            {"name": request.name, "requested_at": request.requested_at}
+            for request in sorted(self._join_requests.values(), key=lambda r: r.requested_at)
+        ]
+
+    @synchronized
+    def approve_join(self, actor: str, name: str, role: Role | None = None) -> None:
+        """
+        Let a waiting person in, at a chosen role or the project's default.
+
+        Admission logs the same event as an instant join, because it is the same
+        fact: this person is on the project now. How long they waited for it is
+        not something the team's history needs to distinguish.
+        """
+        self._require_role(actor, Role.OWNER, "approve a join request")
+        if name not in self._join_requests:
+            raise KeyError(f"{name} has not asked to join this project.")
+        del self._join_requests[name]
+        self._admit(name, role or self.default_invite_role, actor=actor)
+
+    @synchronized
+    def reject_join(self, actor: str, name: str) -> None:
+        """
+        Turn a request down.
+
+        Deliberately silent: no event, no notice, nothing the rejected person
+        can read. A refusal that announces itself to the team is a judgement
+        published about somebody who is not there to answer it.
+        """
+        self._require_role(actor, Role.OWNER, "reject a join request")
+        if name not in self._join_requests:
+            raise KeyError(f"{name} has not asked to join this project.")
+        del self._join_requests[name]
+
+    @synchronized
     def remove_contributor(self, actor: str, target: str) -> None:
         self._require_role(actor, Role.MAINTAINER, "remove a contributor")
         target_member = self._member(target)
@@ -310,7 +469,36 @@ class Project:
         del self.members[target]
         for branch in self.branches.values():
             branch.members.discard(target)
+        # Their own copy of every branch goes with them. Somebody re-invited
+        # under the same name is a new arrival, not a returning session: they
+        # start from where the project is now, rather than resuming a working
+        # state assembled from commits that may since have been pushed,
+        # retracted, or superseded.
+        for key in [key for key in self._working if key[0] == target]:
+            del self._working[key]
+        self._role_notices.pop(target, None)
         self._log_event(actor, "member_removed", f"Removed {target} from the project")
+
+    def _change_role(self, actor: str, member: Member, new_role: Role, description: str) -> None:
+        """
+        Move a member between roles, leaving both trails behind.
+
+        Two records, not one, and they answer different questions. The activity
+        event is the project's audit line — it happened, this is who did it, and
+        it is never overwritten. The notice is what the affected member reads to
+        find out, and it is overwritten each time because what they need is
+        their role now, not a list of every role they have held.
+        """
+        old_role = member.role
+        member.role = new_role
+        self._log_event(actor, "role_changed", description, visible_to=[member.name])
+        self._role_notices[member.name] = RoleNotice(
+            member=member.name,
+            old_role=old_role.value,
+            new_role=new_role.value,
+            changed_by=actor,
+            timestamp=time.time(),
+        )
 
     @synchronized
     def grant_maintainer(self, actor: str, target: str) -> None:
@@ -318,20 +506,42 @@ class Project:
         member = self._member(target)
         if member.role == Role.OWNER:
             raise ValueError("The Owner already outranks Maintainer.")
-        member.role = Role.MAINTAINER
-        self._log_event(
-            actor, "role_changed", f"Made {target} a Maintainer", visible_to=[target]
-        )
+        self._change_role(actor, member, Role.MAINTAINER, f"Made {target} a Maintainer")
 
     @synchronized
     def revoke_maintainer(self, actor: str, target: str) -> None:
         self._require_role(actor, Role.OWNER, "revoke Maintainer")
         member = self._member(target)
         if member.role == Role.MAINTAINER:
-            member.role = Role.CONTRIBUTOR
-            self._log_event(
-                actor, "role_changed", f"{target} is now a Contributor", visible_to=[target]
+            self._change_role(
+                actor, member, Role.CONTRIBUTOR, f"{target} is now a Contributor"
             )
+
+    @synchronized
+    def role_notice(self, actor: str, member: str) -> dict[str, Any] | None:
+        """
+        The "your role changed" message for one member, or None if their role
+        has never been changed.
+
+        Readable by that member and by the Owner, and by nobody else: it names
+        who changed somebody's authority and to what, which is the Owner's
+        business and the affected member's, not the whole team's.
+        """
+        self._member(member)
+        if actor != member and self._member(actor).role != Role.OWNER:
+            raise PermissionError_(
+                "A role-change notice is read by the member it is about, or by the Owner."
+            )
+        notice = self._role_notices.get(member)
+        if notice is None:
+            return None
+        return {
+            "member": notice.member,
+            "old_role": notice.old_role,
+            "new_role": notice.new_role,
+            "changed_by": notice.changed_by,
+            "timestamp": notice.timestamp,
+        }
 
     @synchronized
     def transfer_ownership(self, actor: str, new_owner: str) -> None:
@@ -343,13 +553,20 @@ class Project:
         self._member(new_owner)  # must already be a member
         if new_owner == actor:
             raise ValueError("You already own this project.")
-        self.members[actor].role = Role.MAINTAINER
-        self.members[new_owner].role = Role.OWNER
-        self._log_event(
+        # Both people's authority changes, so both are told. The outgoing Owner
+        # needs to know as much as the incoming one — more, arguably, since
+        # theirs is the authority that was given away.
+        self._change_role(
             actor,
-            "role_changed",
+            self.members[new_owner],
+            Role.OWNER,
             f"Transferred ownership to {new_owner}",
-            visible_to=[new_owner],
+        )
+        self._change_role(
+            actor,
+            self.members[actor],
+            Role.MAINTAINER,
+            f"{actor} stepped down to Maintainer",
         )
 
     @synchronized
@@ -374,7 +591,17 @@ class Project:
         name: str,
         members: set[str] | None = None,
         deploy_subdomain: str | None = None,
+        from_version: str | None = None,
     ) -> Branch:
+        """
+        Open a line off Main.
+
+        ``from_version`` names the version of Main to start from; without one a
+        branch starts from wherever Main is now, which is what somebody
+        branching to try something almost always means. Naming one is how you
+        branch off a state the project has since moved past — reopening a
+        version to carry on from it rather than to put it back.
+        """
         if not self.branches_feature_enabled:
             raise PermissionError_(
                 "Branches are turned off for this project "
@@ -410,18 +637,38 @@ class Project:
         branch.members = set(members) if members is not None else set(self.members)
         self.branches[name] = branch
 
-        # A new branch starts from Main's current snapshot. Seeded by reusing
-        # push() rather than by copying the file-merge logic, so a branch's
-        # first version is produced the same way every later one is.
-        main_files = self.branches["main"].current_files
+        # Seeded by reusing push() rather than by copying the file-merge logic,
+        # so a branch's first version is produced the same way every later one
+        # is.
+        main = self.branches["main"]
+        if from_version is None:
+            main_files = main.current_files
+            source = "Main"
+        else:
+            version = main.version(from_version)
+            if version is None:
+                raise KeyError(f"'{from_version}' is not a version that exists on Main.")
+            main_files = version.files
+            source = from_version
         if main_files:
             self.push(
                 actor=actor,
                 branch=name,
                 attachment=Attachment(folder_ref="seed-from-main", tree_snapshot=main_files),
-                comment="Branch created from Main",
+                comment=f"Branch created from {source}",
             )
         self._log_event(actor, "branch_created", f"Created branch {name}", branch=name)
+        # Being put on a branch is a thing that happened to you, so it is said
+        # to you. Addressed rather than broadcast: the team already has the
+        # branch-created row above, and does not need one line per person on it.
+        for member in sorted(branch.members - {actor}):
+            self._log_event(
+                actor,
+                "branch_members_changed",
+                f"You were added to branch {name}",
+                branch=name,
+                visible_to=[member],
+            )
         return branch
 
     def _default_branch_name(self) -> str:
@@ -507,7 +754,13 @@ class Project:
         self._log_event(
             actor,
             "commit",
-            f"Committed {comment}",
+            # The row names what was committed, not what was said about it. The
+            # two used to be one field and the log line had to quote the message
+            # for want of anything better; a commit now carries its own name, so
+            # the message is free to be a paragraph and is read under the file it
+            # was written about instead. The fallback is for the callers the API
+            # does not reach -- the demo seed builds history directly.
+            f"Committed {record.name or comment}",
             branch=branch,
             visible_to=view_by,
             commit_id=record.id,
@@ -560,11 +813,17 @@ class Project:
     @synchronized
     def merge(self, actor: str, commit_id: str) -> str:
         """
-        A recipient adopts a received commit into their own working version.
+        A recipient adopts a received commit into their own working copy.
 
-        Does not change Main. It records that this viewer has merged it, which
-        is what drives the asymmetric Activity label — the same row reads
-        "Merge" to a recipient who has not taken it and "Undo" to one who has.
+        Does not change Main, and does not change anybody else's files. It
+        resolves the commit's attachment onto this member's own state and
+        appends the result to their history, which is also what drives the
+        asymmetric Activity label — the same row reads "Merge" to a recipient
+        who has not taken it and "Undo" to one who has.
+
+        Adopting the same commit twice is refused rather than ignored. A second
+        merge would apply a change to files that already carry it, and the undo
+        that followed would restore a state the member was never in.
         """
         commit = self.find_commit(commit_id)
         if commit.retracted:
@@ -572,11 +831,17 @@ class Project:
         if not commit.visible_to_member(actor):
             raise PermissionError_(f"{actor} was not a recipient of this commit.")
         self._require_role(actor, Role.CONTRIBUTOR, "merge")
+        if actor in commit.merged_by:
+            raise ValueError(f"{actor} has already merged this commit.")
+
+        base = self._working_files(actor, commit.branch)
+        new_files, _ = apply_attachment(base, commit.attachment)
+        self._record_working(actor, commit.branch, new_files, merged_commit=commit.id)
         commit.merged_by.add(actor)
         self._log_event(
             actor,
             "merge",
-            f"Merged {commit.comment}",
+            f"Merged {commit.name or commit.comment}",
             branch=commit.branch,
             commit_id=commit.id,
         )
@@ -588,23 +853,131 @@ class Project:
     @synchronized
     def unmerge(self, actor: str, commit_id: str) -> str:
         """
-        The "Undo" on an already-merged commit: the viewer reverses their own
-        adoption. Removes only this viewer from ``merged_by``, so it does not
-        affect anyone else who also merged it, and it never touches Main or
-        production — merging never did either.
+        The "Undo" on an already-merged commit: the member reverses their own
+        adoption. It affects nobody else who also merged it, and it never
+        touches Main or production — merging never did either.
+
+        Only the most recent merge on that branch can be undone. A later merge
+        was resolved against files this one had already changed, so pulling this
+        one out from under it would produce a state that is neither before nor
+        after either change. The refusal names the merge to undo first rather
+        than guessing.
+
+        The restore is itself an append: the member's history gains an entry
+        holding the pre-merge files, so every state they have been in stays
+        reachable.
         """
         commit = self.find_commit(commit_id)
         if actor not in commit.merged_by:
             raise ValueError(f"{actor} hasn't merged this commit — nothing to undo.")
+
+        history = self._working.get((actor, commit.branch), [])
+        # Merges still in effect, newest last. A merge this member has already
+        # undone is in the history for good -- nothing here is removed -- but it
+        # is no longer something they are carrying, so it is not what the next
+        # undo has to go through. `merged_by` is the record of what is currently
+        # adopted, which is exactly that distinction.
+        merges = [
+            entry
+            for entry in history
+            if entry.merged_commit is not None
+            and actor in self.find_commit(entry.merged_commit).merged_by
+        ]
+        latest = merges[-1] if merges else None
+        if latest is None:
+            raise ValueError("There is nothing to undo on this branch.")
+        if latest.merged_commit != commit_id:
+            later = self.find_commit(latest.merged_commit or "")
+            raise ValueError(
+                "Only the most recent merge can be undone. Undo "
+                f"{later.name or later.comment} first."
+            )
+
+        index = history.index(latest)
+        if index > 0:
+            before = history[index - 1].files
+        else:
+            before = self._require_branch(commit.branch).current_files
+        self._record_working(actor, commit.branch, dict(before), restored_from=latest.id)
         commit.merged_by.discard(actor)
         self._log_event(
             actor,
             "unmerge",
-            f"Undid merge of {commit.comment}",
+            f"Undid merge of {commit.name or commit.comment}",
             branch=commit.branch,
             commit_id=commit.id,
         )
         return f"{actor} undid their merge of commit {commit_id}."
+
+    def _record_working(
+        self,
+        member: str,
+        branch: str,
+        files: dict[str, str],
+        merged_commit: str | None = None,
+        restored_from: str | None = None,
+    ) -> WorkingVersion:
+        """Append one state to a member's history on a branch. Never replaces."""
+        entry = WorkingVersion(
+            id=next_id("working"),
+            member=member,
+            branch=branch,
+            files=files,
+            timestamp=time.time(),
+            merged_commit=merged_commit,
+            restored_from=restored_from,
+        )
+        self._working.setdefault((member, branch), []).append(entry)
+        return entry
+
+    def _working_files(self, member: str, branch: str) -> dict[str, str]:
+        """
+        What this member is currently working from on this branch.
+
+        A member who has merged nothing is working from the branch itself, so
+        this falls through to the branch's own files rather than to an empty
+        tree — you start from where the project is, not from nothing.
+
+        Unlocked, because every caller inside this class already holds the lock.
+        """
+        history = self._working.get((member, branch), [])
+        if history:
+            return dict(history[-1].files)
+        return dict(self._require_branch(branch).current_files)
+
+    @synchronized
+    def working_files(self, actor: str, member: str, branch: str) -> dict[str, str]:
+        """
+        A member's own files on a branch, readable by that member alone.
+
+        Everyone authors in their own environment and keeps it private until
+        they commit, so this is not a window onto what somebody else is halfway
+        through.
+        """
+        self._member(member)
+        self._require_branch(branch)
+        if actor != member:
+            raise PermissionError_("A member's working copy is their own.")
+        return self._working_files(member, branch)
+
+    @synchronized
+    def working_history(self, actor: str, member: str, branch: str) -> list[dict[str, Any]]:
+        """That member's states on a branch, oldest first. Same privacy rule."""
+        self._member(member)
+        self._require_branch(branch)
+        if actor != member:
+            raise PermissionError_("A member's working copy is their own.")
+        return [
+            {
+                "id": entry.id,
+                "branch": entry.branch,
+                "timestamp": entry.timestamp,
+                "merged_commit": entry.merged_commit,
+                "restored_from": entry.restored_from,
+                "file_count": len(entry.files),
+            }
+            for entry in self._working.get((member, branch), [])
+        ]
 
     @synchronized
     def push(
@@ -645,14 +1018,7 @@ class Project:
         label = _resolve_version_label(b, version_label)
 
         previous_files = b.current_files
-        if attachment.folder_ref:
-            new_files = dict(attachment.tree_snapshot or {})
-            changed_paths = list(new_files)
-        else:
-            new_files = dict(previous_files)
-            for path in attachment.loose_files:
-                new_files[path] = attachment.file_contents.get(path, new_files.get(path, ""))
-            changed_paths = attachment.loose_files
+        new_files, changed_paths = apply_attachment(previous_files, attachment)
         diff_stats, total_added, total_removed = diff_stats_for_change(
             previous_files, new_files, changed_paths
         )
@@ -675,7 +1041,13 @@ class Project:
         self._log_event(
             actor,
             "push",
-            f"Pushed {comment or record.version_label} to {branch}",
+            # The version, not the message written about it -- the same rule the
+            # commit row follows. A push's name *is* its version label: it is
+            # what the author typed into the Action window's Name field, and it
+            # is what Archive, undo and every file read address this version by.
+            # So there is nothing to fall back to and no `or` here: a push always
+            # has a label, whether its author chose one or the branch did.
+            f"Pushed {record.version_label} to {branch}",
             branch=branch,
             push_id=record.id,
         )
@@ -703,6 +1075,11 @@ class Project:
             comment=comment or commit.comment,
         )
         commit.pushed = True
+        # "View by" was routing -- who needed to look at this while it was a
+        # proposal -- and a promoted commit is not a proposal any more. It is on
+        # the branch, so it is everyone's, and an empty recipient list is how
+        # this project spells "the whole team".
+        commit.view_by = []
         return record
 
     # ---- deploy / undo ---------------------------------------------------
@@ -820,6 +1197,13 @@ class Project:
         self._member(viewer)
         rows: list[dict[str, Any]] = []
         for event in self.events:
+            # `_FEED_TYPES` is the whole of what this surface carries, and the
+            # comment on it says why each absence is deliberate. Everything
+            # else either belongs to another surface or changes a row that is
+            # already here — merge, unmerge and retract all alter a commit row
+            # rather than drawing one of their own.
+            if event.type not in _FEED_TYPES:
+                continue
             commit: Commit | None = None
             if event.type == "commit":
                 commit = self.find_commit(event.commit_id or "")
@@ -831,20 +1215,14 @@ class Project:
                     action = "Undo"
                 else:
                     action = "Merge"
-            elif event.type in ("push", "undo"):
-                action = "View"
-            elif event.type == "role_changed" and viewer in event.visible_to:
-                # A role change has to reach the person it happened to, rather
-                # than being discovered as a new Settings section on some later
-                # visit. There is no notification surface in this product, so
-                # it arrives the way everything else does: as a ledger row,
-                # addressed. An entry with an explicit `visible_to` is exactly
-                # that — meant for somebody in particular, shown to nobody else.
-                action = "View"
             else:
-                # merge / unmerge / retract / deploy / member_* change a row
-                # that already exists rather than drawing one of their own.
-                continue
+                # An entry naming recipients is meant for them in particular —
+                # a join request the Owner has to answer, a branch somebody was
+                # added to — and is shown to nobody else. One with none is the
+                # project's shared history and is shown to everyone.
+                if event.visible_to and viewer not in event.visible_to:
+                    continue
+                action = "View"
 
             row: dict[str, Any] = {
                 "event_id": event.id,
@@ -911,6 +1289,96 @@ class Project:
                 row["version_label"] = push.version_label
             rows.append(row)
         return rows
+
+    @synchronized
+    def member_view(self, member: str) -> dict[str, Any]:
+        """One person's profile. Their role is public to the team; how it got
+        that way is not, which is what the role notice is for."""
+        found = self._member(member)
+        return {
+            "name": found.name,
+            "role": found.role.value,
+            "branches": sorted(b.name for b in self.branches.values() if member in b.members),
+        }
+
+    @synchronized
+    def leave_project(self, actor: str) -> None:
+        """
+        Show yourself out, taking your working copies with you.
+
+        The Owner cannot: a project with nobody who can administer it is a
+        project nobody can ever fix, so leaving is transferring ownership first
+        and then leaving — two deliberate acts rather than one that quietly
+        strands the team.
+        """
+        member = self._member(actor)
+        if member.role == Role.OWNER:
+            raise PermissionError_(
+                "The Owner cannot leave a project. Transfer ownership first."
+            )
+        del self.members[actor]
+        for branch in self.branches.values():
+            branch.members.discard(actor)
+        for key in [key for key in self._working if key[0] == actor]:
+            del self._working[key]
+        self._role_notices.pop(actor, None)
+        self._log_event(actor, "member_removed", f"{actor} left the project")
+
+    @synchronized
+    def commit_view(self, commit_id: str) -> dict[str, Any]:
+        """One proposal, in full — what it carries, who it went to, where it got to."""
+        commit = self.find_commit(commit_id)
+        return {
+            "commit_id": commit.id,
+            "author": commit.author,
+            "branch": commit.branch,
+            "name": commit.name,
+            "comment": commit.comment,
+            "status": commit.status,
+            "flagged": commit.flagged,
+            "view_by": list(commit.view_by),
+            "merged_by": sorted(commit.merged_by),
+            "files": list(commit.diff_stats),
+            "diff": {"added": commit.total_added, "removed": commit.total_removed},
+            "timestamp": commit.timestamp,
+            "comment_count": len(commit.comments),
+        }
+
+    @synchronized
+    def branch_view(self, branch_name: str) -> dict[str, Any]:
+        """One line of development, and where it currently stands."""
+        branch = self._require_branch(branch_name)
+        return {
+            "name": branch.name,
+            "is_main": branch.is_main,
+            "deploy_subdomain": branch.deploy_subdomain,
+            "members": sorted(branch.members),
+            "latest_version": branch.head.version_label if branch.head else None,
+            "version_count": len(branch.pushes),
+            "commit_count": len(branch.commits),
+        }
+
+    @synchronized
+    def version_history(self, branch_name: str) -> list[dict[str, Any]]:
+        """
+        Every version of a branch, newest first.
+
+        Main has the Archive, which answers a different question — what is live
+        and what was live before. This one is the plain history of a line, and
+        it is the only way to read it for a branch that is not Main.
+        """
+        branch = self._require_branch(branch_name)
+        return [
+            {
+                "version_label": push.version_label,
+                "pushed_by": push.author,
+                "comment": push.comment,
+                "time": push.timestamp,
+                "diff": {"added": push.total_added, "removed": push.total_removed},
+                "is_head": push is branch.head,
+            }
+            for push in reversed(branch.pushes)
+        ]
 
     @synchronized
     def file_tree(self, branch_name: str = "main") -> list[dict[str, Any]]:
@@ -1020,8 +1488,17 @@ class Project:
 
     @synchronized
     def set_anyone_with_link(self, actor: str, enabled: bool) -> None:
-        self._require_role(actor, Role.MAINTAINER, "change link-join settings")
+        # A step up from the Maintainer floor the other settings take. This one
+        # decides whether a stranger holding the link becomes a member without
+        # anybody agreeing to it, which is a question about who the project is
+        # rather than about how it is configured.
+        self._require_role(actor, Role.OWNER, "change link-join settings")
         self.anyone_with_link = enabled
+        self._log_event(
+            actor,
+            "settings_changed",
+            f"Link access {'opened' if enabled else 'closed'}",
+        )
 
     @synchronized
     def regenerate_invite_link(self, actor: str) -> str:
@@ -1031,6 +1508,10 @@ class Project:
         """
         self._require_role(actor, Role.MAINTAINER, "regenerate the invite link")
         self.invite_token = new_invite_token()
+        # The event says a new link exists, and deliberately not what it is:
+        # the ledger is read by the whole team and the token is the one field
+        # here that is a credential.
+        self._log_event(actor, "settings_changed", "Regenerated the project link")
         return self.invite_token
 
     @synchronized
@@ -1041,16 +1522,24 @@ class Project:
             # project, one Owner.
             raise ValueError("Owner cannot be a default invite role.")
         self.default_invite_role = role
+        self._log_event(
+            actor, "settings_changed", f"New members now join as {role.value}"
+        )
 
     @synchronized
     def set_branches_enabled(self, actor: str, enabled: bool) -> None:
         self._require_role(actor, Role.OWNER, "turn Branches on or off")
         self.branches_feature_enabled = enabled
+        self._log_event(
+            actor, "settings_changed", f"Branches turned {'on' if enabled else 'off'}"
+        )
 
     @synchronized
     def set_branch_creation_authority(self, actor: str, open_to_contributors: bool) -> None:
         self._require_role(actor, Role.OWNER, "change who can create branches")
         self.branch_creation_open_to_contributors = open_to_contributors
+        who = "everyone" if open_to_contributors else "Maintainers and above"
+        self._log_event(actor, "settings_changed", f"Branches can be created by {who}")
 
     @synchronized
     def set_production_visibility(self, actor: str, visibility: str | None) -> None:
@@ -1058,6 +1547,7 @@ class Project:
         if visibility not in ("public", "private"):
             raise ValueError("visibility must be 'public' or 'private'.")
         self.production_visibility = visibility
+        self._log_event(actor, "settings_changed", f"Production is now {visibility}")
 
     @synchronized
     def set_custom_domain(self, actor: str, domain: str | None) -> None:
@@ -1073,6 +1563,7 @@ class Project:
         self._require_role(actor, Role.MAINTAINER, "change the custom domain")
         if domain is None or not domain.strip():
             self.custom_domain = None
+            self._log_event(actor, "settings_changed", "Cleared the custom domain")
             return
         cleaned = domain.strip().lower()
         if not _HOSTNAME.match(cleaned):
@@ -1081,3 +1572,4 @@ class Project:
                 "'orchid.example.com' — no scheme, port or path."
             )
         self.custom_domain = cleaned
+        self._log_event(actor, "settings_changed", f"Custom domain set to {cleaned}")

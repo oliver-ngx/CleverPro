@@ -36,6 +36,7 @@ def add_branch(project: ProjectDep, body: AddBranchRequest) -> dict[str, Any]:
         name=body.name or "",
         members=members,
         deploy_subdomain=body.deploy_subdomain,
+        from_version=body.from_version,
     )
     return {
         "branch": branch.name,
@@ -57,6 +58,17 @@ def list_branches(project: ProjectDep) -> list[dict[str, Any]]:
         }
         for b in project.branches.values()
     ]
+
+
+@router.get("/branches/{branch_name}")
+def get_branch(project: ProjectDep, branch_name: BranchPath) -> dict[str, Any]:
+    return project.branch_view(branch_name)
+
+
+@router.get("/branches/{branch_name}/versions")
+def list_versions(project: ProjectDep, branch_name: BranchPath) -> list[dict[str, Any]]:
+    """Every version of one line, newest first."""
+    return project.version_history(branch_name)
 
 
 @router.get("/branches/{branch_name}/files")

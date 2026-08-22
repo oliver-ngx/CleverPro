@@ -139,3 +139,66 @@ class ActivityEvent:
     visible_to: list[str] = field(default_factory=list)
     commit_id: str | None = None
     push_id: str | None = None
+
+
+@dataclass
+class WorkingVersion:
+    """
+    One state of a member's own copy of a branch.
+
+    The product's model is that everybody authors in their own environment and
+    routes work through Compiler, so "my files" is a real thing the backend has
+    to hold rather than a client-side notion. A member's history on a branch is
+    an ordered list of these, appended to and never truncated — which is what
+    lets an undo restore content rather than merely forget a flag.
+
+    ``files`` is a complete snapshot for the same reason ``PushRecord.files``
+    is: restoring a previous state has to produce real bytes, and a chain of
+    deltas would have to be replayed to do it.
+    """
+
+    id: str
+    member: str
+    branch: str
+    files: dict[str, str]
+    timestamp: float
+    # What produced this state. A merge names the commit it adopted; an undo
+    # names the working version it restored; the first entry on a branch names
+    # neither, because it is simply where the member started.
+    merged_commit: str | None = None
+    restored_from: str | None = None
+
+
+@dataclass
+class JoinRequest:
+    """
+    Somebody asking to join a project whose link does not admit them outright.
+
+    Kept per name rather than per attempt: a second request from the same
+    person is refused instead of queued, so this is a pending set and not a
+    growing log. Rejection deletes the record — a silent deny, per the product
+    rules — while approval turns it into a membership and an activity row.
+    """
+
+    name: str
+    requested_at: float
+
+
+@dataclass
+class RoleNotice:
+    """
+    The message a member reads to discover their authority changed.
+
+    Deliberately not an activity row. The feed is the project's shared history,
+    and "your role changed" is addressed to one person; putting it there means
+    either leaking it to everybody or filtering every read. It is also the one
+    record here that is *overwritten* rather than appended: a member needs to
+    know what their role is now and who last changed it, and the running
+    history of every change they have ever had is what the audit trail is for.
+    """
+
+    member: str
+    old_role: str
+    new_role: str
+    changed_by: str
+    timestamp: float

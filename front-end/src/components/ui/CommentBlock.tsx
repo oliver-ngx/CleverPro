@@ -21,8 +21,10 @@ export function CommentBlock({ author, items }: CommentBlockProps) {
         <span className="text-[11px] font-normal text-cp-text-tertiary">by {author}</span>
       </div>
       <ul className="m-0 list-disc pl-[19px] text-[13px]/[130%] font-normal text-cp-text-primary">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
+        {/* Index, because a note may repeat a line and the list is a fixed,
+            ordered rendering of `items` rather than something reordered in place. */}
+        {items.map((item, index) => (
+          <li key={index}>{item}</li>
         ))}
       </ul>
     </div>

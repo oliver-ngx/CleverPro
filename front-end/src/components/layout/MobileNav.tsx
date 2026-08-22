@@ -1,6 +1,5 @@
 import type { NavItem, PageLabel } from '../../data/navigation'
 import type { TeamMember } from '../../data/team'
-import type { PersonName } from '../ui/Avatar'
 import { Avatar } from '../ui/Avatar'
 import { Icon } from '../ui/Icon'
 
@@ -11,7 +10,7 @@ interface MobileNavProps {
   onSelectNav: (label: PageLabel) => void
   team: TeamMember[]
   /** id of the teammate whose pane is open, if any. */
-  activePerson?: PersonName
+  activePerson?: string
   onSelectPerson: (person: TeamMember) => void
 }
 

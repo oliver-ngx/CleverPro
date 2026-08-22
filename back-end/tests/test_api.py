@@ -25,7 +25,9 @@ def push(client, comment="v1", files=None, name=None):
     sender's job, which is why the assertions below still read "V1".
     """
     if name is None:
-        name = f"V{len(client.get(f'{PROJECT}/archive').json()) + 1}"
+        # The archive already holds V0, the version the project was created at,
+        # so its length is the number of the next one rather than one behind it.
+        name = f"V{len(client.get(f'{PROJECT}/archive').json())}"
     response = client.post(
         f"{PROJECT}/push",
         json={
@@ -57,8 +59,9 @@ def test_overview_shape(client):
         "deploy_url",
         "branches",
     }
-    # Nothing pushed and nothing deployed yet.
-    assert body["current_version"] is None
+    # A project is created at a version -- V0, the state it starts from -- but
+    # nothing has been released, so there is no live URL yet.
+    assert body["current_version"] == "V0"
     assert body["deploy_url"] is None
 
 
@@ -171,12 +174,13 @@ def test_archive_marks_exactly_one_row_applied(client):
     push(client, comment="v2")
     client.post(f"{PROJECT}/deploy", json={"actor": OWNER, "version_label": "V1"})
 
+    # Newest first, with V0 -- the version the project was created at -- last.
     rows = client.get(f"{PROJECT}/archive").json()
-    assert [r["action"] for r in rows] == ["Undo", "Applied"]
+    assert [r["action"] for r in rows] == ["Undo", "Applied", "Undo"]
 
     client.post(f"{PROJECT}/undo", json={"actor": OWNER, "version_label": "V2"})
     rows = client.get(f"{PROJECT}/archive").json()
-    assert [r["action"] for r in rows] == ["Applied", "Undo"]
+    assert [r["action"] for r in rows] == ["Applied", "Undo", "Undo"]
 
 
 def test_create_branch_returns_the_name_the_server_settled_on(client):
@@ -258,7 +262,8 @@ def test_a_push_can_be_named(client):
 
     # And it is a real label everywhere labels are used, not a display string.
     assert [row["version_label"] for row in client.get(f"{PROJECT}/archive").json()] == [
-        "Ocean rewrite"
+        "Ocean rewrite",
+        "V0",
     ]
     files = client.get(f"{PROJECT}/branches/main/versions/Ocean rewrite/files").json()
     assert [node["name"] for node in files] == ["README.md"]

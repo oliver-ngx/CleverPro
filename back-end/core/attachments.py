@@ -43,6 +43,34 @@ class Attachment:
         return ", ".join(parts) or "empty"
 
 
+def apply_attachment(
+    base: dict[str, str], attachment: Attachment
+) -> tuple[dict[str, str], list[str]]:
+    """
+    Resolve an attachment onto a set of files, returning the new state and the
+    paths it changed.
+
+    The two kinds resolve differently and that difference is the whole model: a
+    whole-tree attachment *replaces* what was there, so the result is the
+    snapshot and every path in it is a change; loose files *overlay* it, so only
+    the named paths move and everything else carries forward. A loose path with
+    no content of its own keeps whatever the base held, which is what makes
+    attaching a file already on the branch a zero-line diff rather than a
+    truncation.
+
+    Shared by push (resolving onto a branch's head) and merge (resolving onto a
+    member's own working files), because those are the same operation performed
+    against different bases — and were the same fifteen lines written twice.
+    """
+    if attachment.folder_ref:
+        new_files = dict(attachment.tree_snapshot or {})
+        return new_files, list(new_files)
+    new_files = dict(base)
+    for path in attachment.loose_files:
+        new_files[path] = attachment.file_contents.get(path, new_files.get(path, ""))
+    return new_files, list(attachment.loose_files)
+
+
 def build_file_tree(files: dict[str, str]) -> list[dict[str, Any]]:
     """
     Turn a flat ``{path: content}`` map into the nested tree the Main surface

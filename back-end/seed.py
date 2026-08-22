@@ -70,17 +70,21 @@ def build_demo_project() -> Project:
         return rec.version_label
 
     def commit(actor: str, comment: str, path: str, added: int, to: list[str]):
+        # Name and message are the same string here, and deliberately so. The
+        # frames were drawn before a commit could be named, so the one string
+        # they give is both what the Activity row calls it and what the version
+        # pane prints under the preview. Passing it as the name is what keeps
+        # both surfaces reading exactly as the frames draw them.
         return p.commit(actor=actor, branch="main",
                         attachment=Attachment(
                             loose_files=[path],
                             file_contents=_edit(tree, path, added)),
-                        comment=comment, view_by=to)
+                        comment=comment, view_by=to, name=comment)
 
     # The ledger below is the Figma Activity table read bottom-up (oldest
-    # first). Each comment string is verbatim from data/logs.ts -- trailing
-    # spaces and inconsistent version casing included -- because the backend
-    # renders rows as "Committed {comment}" and "Pushed {comment} to
-    # {branch}". The comment IS the log line.
+    # first). Each string is verbatim from data/logs.ts -- trailing spaces and
+    # inconsistent version casing included -- because the backend renders rows
+    # as "Committed {name}" and "Pushed {comment} to {branch}".
     v1 = push(OWNER, "Orchid Lab V0.1")
     commit(JULIANA, "TableView.js V0.1 ", "src/TableView.js", 12, [OWNER])
     commit(EDEN, "ContentView.js v0.1", "src/ContentView.js", 20, [OWNER])
@@ -91,7 +95,19 @@ def build_demo_project() -> Project:
 
     commit(JULIANA, "TableView.js V1 ", "src/TableView.js", 31, [OWNER])
     commit(EDEN, "ContentView.js v1.1", "src/ContentView.js", 45, [OWNER])
-    commit(EDEN, "ContentView.js v1.1.1", "src/ContentView.js", 45, [OWNER])
+    eden_latest = commit(EDEN, "ContentView.js v1.1.1", "src/ContentView.js", 45, [OWNER])
+
+    # The notes the version pane reads under the code preview, verbatim from the
+    # frame that draws them. They are separate records rather than one multi-line
+    # string because the pane groups a thread by author and prints each note as a
+    # bullet -- three notes from Eden are the three bullets the frame shows under
+    # one "by Eden Sears".
+    for note in (
+        "Adding a function: Inserting a new block of code into a script.",
+        "Fixing a bug: Changing an incorrect variable name or math sign.",
+        "Updating configuration: Changing a port number or setting in a JSON or YAML file.",
+    ):
+        p.add_comment(actor=EDEN, commit_id=eden_latest.id, text=note)
     # Oliver authored this one, so his own row for it reads "View" while every
     # commit addressed TO him reads "Merge".
     commit(OWNER, "Orchid Lab V2 ", "README.md", 4, [EDEN, JULIANA])

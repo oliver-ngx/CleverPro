@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react'
-import { avatarFor } from '../../api/adapters'
 import type { MemberDto } from '../../api/types'
 import { Avatar } from '../ui/Avatar'
 
@@ -141,7 +140,6 @@ export function MentionField({ members, chosen, onChange }: MentionFieldProps) {
       {open && (
         <ul className="mt-[14px] flex list-none flex-col gap-[8px] p-0">
           {matches.map((member, position) => {
-            const slug = avatarFor(member.name)
             return (
               <li key={member.name}>
                 <button
@@ -160,11 +158,7 @@ export function MentionField({ members, chosen, onChange }: MentionFieldProps) {
                     position === index ? 'bg-cp-hover' : 'bg-transparent'
                   }`}
                 >
-                  {slug === undefined ? (
-                    <span className="size-[28px] shrink-0 rounded-cp-pill bg-cp-field" />
-                  ) : (
-                    <Avatar person={slug} size={28} />
-                  )}
+                  <Avatar person={member.name} size={28} />
                   @{member.name}
                 </button>
               </li>

@@ -8,9 +8,10 @@ interface ComposerRowProps {
   divider?: boolean
   /**
    * The value can grow taller than the row and the row grows with it — the mention
-   * field opens its suggestions inside the row rather than over it. 50 then sets
-   * where the row starts rather than where it ends, and the label holds its line
-   * instead of drifting down beside whatever the value has become.
+   * field opens its suggestions inside the row, and the comment field grows a line at
+   * a time as a paragraph is written. 50 then sets where the row starts rather than
+   * where it ends, and the label holds its line instead of drifting down beside
+   * whatever the value has become.
    */
   grows?: boolean
 }

@@ -15,11 +15,8 @@ interface VersionToolbarProps {
   /** True while one of these actions is in flight. */
   pending?: boolean
   onRetract: () => void
-  onMerge: () => void
   onPush: () => void
   onFlag: () => void
-  /** Puts the cursor in the note field under the preview. */
-  onComment: () => void
 }
 
 /**
@@ -37,20 +34,15 @@ interface VersionToolbarProps {
  *   offered only on your own commit and only while it is still pending — once
  *   anyone has merged it or it has been pushed, it *is* history and the control
  *   goes dead. The server refuses it too, on the same two grounds.
- * - **Merge** adopts somebody else's commit into your own working version. It
- *   changes nothing on Main and needs no authority, which is why it is the one
- *   action here with no role check. Meaningless on your own pane, so it is only
- *   offered on a teammate's.
  * - **Push** promotes this commit's attachment onto its branch. Any member may.
- * - **Comment** drops the cursor into the note field under the preview rather than
- *   opening anything: the thread is already on screen, and a second place to type
- *   into it would be a second place to look for it.
  * - **Flag** is a toggle, and the glyph carries its state — lit when set. The
  *   source draws a disclosure chevron beside it, so it is drawn here too, but the
  *   design system defines exactly one flag colour and there is nothing to pick
  *   between; it stays decorative until a second one exists.
- * - **Restore**, **Export**, **Forward**, **Mute** and the overflow are inert. The
- *   first two have no defined target — what "archive a commit" should mean is an
+ * - **Restore**, **Comment**, **Export**, **Forward**, **Mute** and the overflow are
+ *   inert. Comment has nothing to open: the notes under the preview are the author's
+ *   own and are read rather than replied to, so there is no field for it to reach.
+ *   Restore and Export have no defined target — what "archive a commit" should mean is an
  *   open question in the product spec, not something to guess at here. Forward
  *   re-proposes this version to a new set of recipients under your name, which
  *   needs a recipient picker and an endpoint that copies an attachment; neither
@@ -67,15 +59,12 @@ export function VersionToolbar({
   mine,
   pending = false,
   onRetract,
-  onMerge,
   onPush,
   onFlag,
-  onComment,
 }: VersionToolbarProps) {
   const status = commit?.status
   const live = commit !== undefined && !pending
   const retractable = live && mine && status === 'pending'
-  const mergeable = live && !mine && status !== 'retracted'
   const pushable = live && status !== 'retracted'
 
   return (
@@ -104,19 +93,10 @@ export function VersionToolbar({
           <IconButton
             icon="message"
             label="Comment"
-            disabled={commit === undefined}
-            onClick={onComment}
             iconClassName="size-[11px] text-cp-text-primary"
           />
         </span>
         <span className="flex items-center gap-[12px]">
-          <IconButton
-            icon="merge"
-            label={mine ? 'Merge (this is your own work)' : 'Merge'}
-            disabled={!mergeable}
-            onClick={onMerge}
-            iconClassName="h-[10px] w-[15px] text-cp-text-primary"
-          />
           <IconButton
             icon="commit"
             label="Forward"

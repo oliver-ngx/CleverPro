@@ -184,6 +184,30 @@ class AddBranchRequest(ActorRequest):
     name: str | None = Field(None, max_length=200)
     team: list[str] | None = Field(None, max_length=500)
     deploy_subdomain: str | None = Field(None, max_length=63)
+    # Which version of Main to start from. None means wherever Main is now.
+    from_version: str | None = Field(None, max_length=200)
+
+
+class JoinRequestBody(BaseModel):
+    """
+    Arriving through the project's link.
+
+    The only body in this file that is not an `ActorRequest`, and necessarily
+    so: whoever sends it is not a member yet, so there is no actor to name. The
+    token is what stands in for identity here, which is exactly as far as a link
+    is allowed to go — it admits you to the project, and every authority
+    question after that is answered by the role you were given.
+    """
+
+    token: str = Field(..., min_length=1, max_length=128)
+    name: str = _NAME
+
+
+class JoinDecisionRequest(ActorRequest):
+    """Owner's answer to one pending request. No role means the project default."""
+
+    name: str = _NAME
+    role: str | None = Field(None, max_length=32)
 
 
 class TargetMemberRequest(ActorRequest):

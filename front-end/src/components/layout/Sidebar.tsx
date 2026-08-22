@@ -1,11 +1,12 @@
+import type { MemberDto } from '../../api/types'
 import type { NavItem, PageLabel } from '../../data/navigation'
 import type { TeamMember } from '../../data/team'
-import type { PersonName } from '../ui/Avatar'
 import type { TeamSort } from '../../lib/sorting'
 import { TEAM_SORTS } from '../../lib/sorting'
 import { FloatingMenu } from '../ui/FloatingMenu'
 import { IconButton } from '../ui/IconButton'
 import { SortMenu } from '../ui/SortMenu'
+import { ActingMember } from './ActingMember'
 import { SidebarNavItem } from './SidebarNavItem'
 import { SidebarPerson } from './SidebarPerson'
 
@@ -17,11 +18,13 @@ interface SidebarProps {
   onSelectNav: (label: PageLabel) => void
   team: TeamMember[]
   /** id of the teammate whose pane is open, if any. */
-  activePerson?: PersonName
+  activePerson?: string
   onSelectPerson: (person: TeamMember) => void
   /** The order the list below the Team heading is shown in. */
   teamSort: TeamSort
   onSortTeam: (order: TeamSort) => void
+  /** Everyone on the project, for the acting-member switch beneath "More". */
+  members: MemberDto[]
 }
 
 /**
@@ -42,6 +45,7 @@ export function Sidebar({
   onSelectPerson,
   teamSort,
   onSortTeam,
+  members,
 }: SidebarProps) {
   return (
     <div className="hidden w-[299px] shrink-0 overflow-hidden bg-cp-sidebar md:block">
@@ -123,6 +127,14 @@ export function Sidebar({
         >
           More
         </button>
+
+        <div className="h-[10px]" />
+
+        {/* Not in the source, and deliberately so — this is a testing control,
+            drawn in the rail's own muted 12px rather than anywhere the design
+            puts product controls. It exists because the API has no sessions, so
+            being somebody else is a name in a request body; see ActingMember. */}
+        <ActingMember members={members} />
       </div>
     </div>
   )

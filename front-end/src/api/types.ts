@@ -111,6 +111,20 @@ export interface MemberActivityDto {
   diff?: DiffDto
 }
 
+/** POST /projects/{id}/access/join. Which of the two things the link did. */
+export interface JoinResultDto {
+  status: 'joined' | 'pending'
+  /** Present only on 'joined': the role the project admits people at. */
+  role?: string
+}
+
+/** GET /projects/{id}/access/requests. Owner-only, oldest first. */
+export interface JoinRequestDto {
+  name: string
+  /** Epoch seconds, like every other timestamp here except the archive's. */
+  requested_at: number
+}
+
 /** GET /projects/{id}/archive. Returned newest-first. */
 export interface ArchiveRowDto {
   version_label: string

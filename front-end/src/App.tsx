@@ -11,7 +11,7 @@ import { Sidebar } from './components/layout/Sidebar'
 import { MemberMenu } from './components/team/MemberMenu'
 import { Avatar } from './components/ui/Avatar'
 import type { IconName } from './components/ui/Icon'
-import { CURRENT_USER } from './config'
+import { useCurrentUser } from './session'
 import type { PageLabel } from './data/navigation'
 import { NAV_ITEMS } from './data/navigation'
 import type { PaneEntry, TeamMember } from './data/team'
@@ -123,6 +123,9 @@ function App() {
   const overview = useResource((signal) => api.overview(signal), [])
   const members = useResource((signal) => api.team(signal), [])
 
+  // Who the app is acting as. Read as a hook rather than as a constant because
+  // it can change while the app is running -- see `session.ts`.
+  const actor = useCurrentUser()
   const project = useMemo(
     () =>
       overview.data === undefined
@@ -132,8 +135,8 @@ function App() {
   )
   const team = useMemo(
     () =>
-      members.data === undefined ? [] : sortTeam(toTeam(members.data, CURRENT_USER), teamSort),
-    [members.data, teamSort],
+      members.data === undefined ? [] : sortTeam(toTeam(members.data, actor), teamSort),
+    [members.data, teamSort, actor],
   )
 
   // The server owns the branch list outright now: creating one POSTs, which
@@ -179,7 +182,7 @@ function App() {
 
   // Who is signed in, and whose pane is open. Both are needed before the menu
   // can say what this member is allowed to do to that one.
-  const viewerRole = (members.data ?? []).find((member) => member.name === CURRENT_USER)?.role
+  const viewerRole = (members.data ?? []).find((member) => member.name === actor)?.role
   const subject =
     view.kind === 'person'
       ? (members.data ?? []).find((member) => member.name === view.person.name.split(' (')[0])
@@ -225,6 +228,7 @@ function App() {
     },
     teamSort,
     onSortTeam: setTeamSort,
+    members: members.data ?? [],
   }
 
   return (

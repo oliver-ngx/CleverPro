@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toPaneEntries } from '../api/adapters'
 import { api } from '../api/client'
 import { ActionComposer } from '../components/team/ActionComposer'
@@ -106,7 +106,6 @@ export default function Team({
   // owned here rather than in the toolbar: the toolbar draws the row and decides
   // which glyphs are live, this decides what they do.
   const act = useAction()
-  const noteRef = useRef<HTMLInputElement>(null)
   const mine = person.self === true
   const openCommit =
     shownVersion?.commitId === undefined
@@ -167,7 +166,13 @@ export default function Team({
         {/* Shut, the panel is merely parked off the edge — it would still take tab
             stops without `inert`, the same trap the collapsed rail has. */}
         <div inert={!split} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex h-[41px] shrink-0 items-start justify-between gap-[12px] pt-[15px] pr-[14px] pl-[16px] md:pr-[17px] md:pl-[29px]">
+          {/* The header's own band, repeated over this half of the split. 15px of
+              padding above a 26px row is exactly what `PageHeader` puts above its
+              pill, so the two bars are the same height and their glyphs share a
+              centre line across the divider. Centred rather than top-aligned for
+              that reason: the pill centres its glyphs in the 26px, so bare glyphs
+              sitting at the top of it read as a shorter bar than the one beside it. */}
+          <div className="flex h-[41px] shrink-0 items-center justify-between gap-[12px] pt-[15px] pr-[14px] pl-[16px] md:pr-[17px] md:pl-[29px]">
             <VersionToolbar
               onClose={() => {
                 if (version !== undefined) onSelectVersion(version)
@@ -178,9 +183,6 @@ export default function Team({
               onRetract={() => {
                 if (openCommit !== undefined) act.run(() => api.retract(openCommit.id))
               }}
-              onMerge={() => {
-                if (openCommit !== undefined) act.run(() => api.merge(openCommit.id))
-              }}
               onPush={() => {
                 if (openCommit !== undefined) act.run(() => api.pushCommit(openCommit.id))
               }}
@@ -188,9 +190,6 @@ export default function Team({
                 if (openCommit !== undefined) {
                   act.run(() => api.flagCommit(openCommit.id, openCommit.flagged !== true))
                 }
-              }}
-              onComment={() => {
-                noteRef.current?.focus()
               }}
             />
           </div>
@@ -207,7 +206,6 @@ export default function Team({
             <VersionDetail
               entry={shownVersion}
               author={author}
-              noteRef={noteRef}
               // A commit carries paths but no version of its own, so its files are
               // read at whatever the branch currently sits on.
               fallbackVersion={versionLabel}

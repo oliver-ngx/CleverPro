@@ -12,13 +12,22 @@ Import from here rather than from the individual modules: the split into
 this is the surface meant to stay stable.
 """
 
-from .attachments import Attachment, build_file_tree
+from .attachments import Attachment, apply_attachment, build_file_tree
 from .branch import Branch
 from .diffing import compute_diff, diff_stats_for_change
 from .errors import PermissionError_, PushInvalidError
 from .ids import new_invite_token, next_id
 from .project import Project
-from .records import ActivityEvent, Comment, Commit, DeployRecord, PushRecord
+from .records import (
+    ActivityEvent,
+    Comment,
+    Commit,
+    DeployRecord,
+    JoinRequest,
+    PushRecord,
+    RoleNotice,
+    WorkingVersion,
+)
 from .roles import Member, Role, at_least
 
 __all__ = [
@@ -28,12 +37,16 @@ __all__ = [
     "Comment",
     "Commit",
     "DeployRecord",
+    "JoinRequest",
     "Member",
     "PermissionError_",
     "Project",
     "PushInvalidError",
     "PushRecord",
     "Role",
+    "RoleNotice",
+    "WorkingVersion",
+    "apply_attachment",
     "at_least",
     "build_file_tree",
     "compute_diff",

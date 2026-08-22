@@ -1,8 +1,8 @@
-import type { PersonName } from './Avatar'
 import { Avatar } from './Avatar'
 
 interface AvatarStackProps {
-  people: PersonName[]
+  /** Display names. A face is found for each, or initials drawn instead. */
+  people: string[]
   size?: number
   /** The source overlaps faces by roughly half their width. */
   overlap?: number

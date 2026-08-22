@@ -1,9 +1,7 @@
-import type { RefObject } from 'react'
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { api } from '../../api/client'
 import type { CommentDto } from '../../api/types'
 import type { PaneEntry } from '../../data/team'
-import { useAction } from '../../hooks/useAction'
 import { useResource } from '../../hooks/useResource'
 import { CodeViewer } from '../ui/CodeViewer'
 import { VersionFiles } from './VersionFiles'
@@ -13,14 +11,11 @@ import { useMemo } from 'react'
 
 interface VersionDetailProps {
   entry: PaneEntry
-  /** Whose pane this is — the note under the diff is theirs. */
-  author: string
   /**
-   * The note field, held by the pane so the toolbar's Comment glyph can put the
-   * cursor in it. A ref rather than a callback prop because focusing is the
-   * whole of the interaction — there is no state either side needs to share.
+   * Whose pane this is. Every row here is theirs -- a member's history is
+   * filtered to one actor -- so this is who the row's own message is signed by.
    */
-  noteRef?: RefObject<HTMLInputElement | null>
+  author: string
   /**
    * The branch's current version. A commit names paths but no version of its own, so
    * this is where its files are read from — see `VersionFiles`.
@@ -29,17 +24,34 @@ interface VersionDetailProps {
 }
 
 /**
- * Groups a thread into the blocks the design draws: one glyph and one "by X"
- * over that person's bullets. Consecutive notes from the same person collapse
- * into a single block, which is exactly the shape the frame shows; a reply
- * from somebody else starts a new one.
+ * Groups what was written about a version into the blocks the design draws: one
+ * glyph and one "by X" over that person's bullets. Consecutive notes from the same
+ * person collapse into a single block, which is exactly the shape the frame shows; a
+ * reply from somebody else starts a new one.
+ *
+ * The row's own message leads, because it is a note like any other -- it is what its
+ * author typed into the Action window's Comment field, so it is signed by them and
+ * read in the same place as the rest. Being first, it merges into their block rather
+ * than standing above a second heading with the same name on it.
  */
-function threadBlocks(comments: CommentDto[]) {
+function threadBlocks(author: string, message: string, comments: CommentDto[]) {
   const blocks: { author: string; items: string[] }[] = []
-  for (const comment of comments) {
+  const all = message === '' ? comments : [{ author, text: message }, ...comments]
+  for (const comment of all) {
+    // One note may be several lines, and each becomes a bullet of its own. This is
+    // the shape the design draws -- a list, not a paragraph -- and it is what
+    // somebody pressing Return in the Comment field means by it. Written as one
+    // bullet with a newline inside, the second line would hang under the marker and
+    // read as a wrap rather than as a point. Blank lines are dropped, so leaving a
+    // gap between paragraphs does not leave an empty bullet between them.
+    const items = comment.text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '')
+    if (items.length === 0) continue
     const last = blocks.at(-1)
-    if (last !== undefined && last.author === comment.author) last.items.push(comment.text)
-    else blocks.push({ author: comment.author, items: [comment.text] })
+    if (last !== undefined && last.author === comment.author) last.items.push(...items)
+    else blocks.push({ author: comment.author, items })
   }
   return blocks
 }
@@ -58,34 +70,36 @@ function threadBlocks(comments: CommentDto[]) {
  * open onto the tree, and a file's contents appear underneath once one is picked —
  * see `VersionFiles`.
  *
- * Directly beneath the viewer sits the commit's own message. It used to be the
- * history row's title, which meant the row read as a sentence and the message had
- * only a truncated capsule to live in; the row now names the file or the project
- * and the message is read here instead.
+ * Beneath the viewer is what was written about this version, and it takes one shape
+ * only: the comment glyph, "by X", and that person's lines as bullets. The row's own
+ * message is the first of them. It is what its author typed into the Action window's
+ * Comment field, so it is theirs and signed as theirs — printing it as a bare
+ * paragraph instead made the one thing every row has look unlike the notes beside it.
  *
- * The thread beneath it is real, and only commits have one: the API attaches notes
- * to a commit, so a push row shows the composer nothing to talk about and says so.
+ * There is no field to add one here: the frame draws an attribution line and its
+ * bullets and nothing to type into, and this pane is somebody else's work being read
+ * rather than a conversation being had. Writing happens in the Action window, which
+ * is where the message comes from.
  *
- * Still memoised. Its own state — the draft note, the thread — re-renders it
- * regardless, but both props remain stable objects, so the memo goes on doing
- * the job it was added for: keeping an unrelated change in App (the rail
- * collapsing, a branch being picked) from rebuilding several hundred elements
- * of code listing behind the panel.
+ * Only commits carry further notes — the API attaches them to a proposal — so a push
+ * row shows its message alone.
+ *
+ * Still memoised. Fetching the thread re-renders it regardless, but both props remain
+ * stable objects, so the memo goes on doing the job it was added for: keeping an
+ * unrelated change in App (the rail collapsing, a branch being picked) from
+ * rebuilding several hundred elements of code listing behind the panel.
  */
 export const VersionDetail = memo(function VersionDetail({
   entry,
   author,
-  noteRef,
   fallbackVersion,
 }: VersionDetailProps) {
-  const [draft, setDraft] = useState('')
-  const post = useAction()
   const commitId = entry.commitId
   const thread = useResource(
     (signal) => (commitId === undefined ? Promise.resolve([]) : api.comments(commitId, signal)),
     [commitId],
   )
-  const blocks = threadBlocks(thread.data ?? [])
+  const blocks = threadBlocks(author, entry.comment.trim(), thread.data ?? [])
 
   // One named file is a file; a push, or a commit touching several, is a structure.
   const paths = entry.files ?? []
@@ -120,53 +134,15 @@ export const VersionDetail = memo(function VersionDetail({
         </div>
       )}
 
-      {/* The message its author typed in the Action window. It is read here,
-          under the file it was written about, rather than on the history row --
-          the row names the artefact, so a comment of any length has somewhere
-          to go. Printed verbatim, stray double spaces and all, because the
-          product's log lines are copied rather than tidied. */}
-      {entry.comment.trim() !== '' && (
-        <p className="mt-[18px] mb-0 shrink-0 pl-[9px] text-[13px]/[130%] font-normal text-cp-text-primary">
-          {entry.comment}
-        </p>
+      {blocks.length > 0 && (
+        <div className="mt-[32px] flex shrink-0 flex-col gap-[20px] pl-[9px]">
+          {blocks.map((block, index) => (
+            // Index, because two people may write the same words and a block is
+            // identified by where it sits in the thread rather than by its text.
+            <CommentBlock key={index} {...block} />
+          ))}
+        </div>
       )}
-
-      <div className="mt-[32px] flex shrink-0 flex-col gap-[20px] pl-[9px]">
-        {blocks.map((block) => (
-          <CommentBlock key={`${block.author}-${block.items[0]}`} {...block} />
-        ))}
-
-        {commitId === undefined ? (
-          <span className="text-[11px] font-normal text-cp-text-tertiary">
-            Notes are left on commits, not on pushed versions.
-          </span>
-        ) : (
-          <input
-            ref={noteRef}
-            type="text"
-            value={draft}
-            disabled={post.pending}
-            placeholder={blocks.length === 0 ? `Leave a note for ${author}` : 'Reply'}
-            onChange={(event) => {
-              setDraft(event.target.value)
-            }}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter' || draft.trim() === '') return
-              const text = draft.trim()
-              post.run(() => api.addComment(commitId, text), () => {
-                setDraft('')
-              })
-            }}
-            className="w-full rounded-cp-pill border-none bg-cp-field px-[16px] py-[9px] text-[13px] font-normal text-cp-text-primary outline-none placeholder:text-cp-text-subtle"
-          />
-        )}
-
-        {post.error !== undefined && (
-          <span role="alert" className="text-[11px] font-medium text-cp-text-primary">
-            {post.error}
-          </span>
-        )}
-      </div>
     </div>
   )
 })

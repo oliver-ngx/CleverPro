@@ -10,7 +10,7 @@ import { FileBrowser } from '../components/main/FileBrowser'
 import { ProjectThumbnail } from '../components/main/ProjectThumbnail'
 import { VersionPanel } from '../components/main/VersionPanel'
 import { ResourceState } from '../components/ui/ResourceState'
-import { CURRENT_USER } from '../config'
+import { useCurrentUser } from '../session'
 import { useAction } from '../hooks/useAction'
 import { useOverlayDismiss } from '../hooks/useOverlayDismiss'
 import { usePresence } from '../hooks/usePresence'
@@ -91,7 +91,8 @@ export default function Main({
   // arrives the control stays hidden, which is the safe way round for something
   // the server would otherwise refuse.
   const settings = useResource((signal) => api.settings(signal), [])
-  const me = members.find((member) => member.name === CURRENT_USER)
+  const actor = useCurrentUser()
+  const me = members.find((member) => member.name === actor)
   const mayAddBranch = settings.data !== undefined && canCreateBranch(me?.role, settings.data)
 
   // Fetched only for the sheet's subdomain check — the overview's branch

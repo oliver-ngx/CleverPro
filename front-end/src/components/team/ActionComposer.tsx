@@ -47,6 +47,22 @@ const ATTACH_CHOICES: { kind: PickedKind; word: string }[] = [
 ]
 
 /**
+ * How tall the Comment field may grow before it scrolls instead, and how much it
+ * will accept at all.
+ *
+ * Neither is a limit on what somebody may write. Six lines is roughly a paragraph,
+ * which is more than the field is drawn to hold and past which the window would
+ * start pushing its own rows off the bottom; beyond it the text scrolls and nothing
+ * is refused. The character ceiling is the server's own, mirrored here so an
+ * over-long comment is felt as the field stopping rather than as a 422 after the
+ * fact -- `comment` is capped at 2000 in `back-end/app/schemas.py`, and the two have
+ * to move together.
+ */
+const COMMENT_LINES = 6
+const COMMENT_LINE_HEIGHT = 21
+const COMMENT_MAX_CHARS = 2000
+
+/**
  * The Action window over your own pane: `Sheet`, `ComposerRow` and `VersionRow`
  * composed into one screen.
  *
@@ -306,20 +322,36 @@ export function ActionComposer({
         />
       </ComposerRow>
 
-      {/* The comment is the log line: the backend renders the Activity row as
-          "Committed {comment}" or "Pushed {comment} to {branch}", so this field
-          is what everyone else will read. Both buttons stay disabled until it
-          has something in it. */}
-      <ComposerRow label="Comment:">
-        <input
-          type="text"
-          value={comment}
-          onChange={(event) => {
-            setComment(event.target.value)
-          }}
-          placeholder="e.g.  Orchid Lab V4"
-          className="min-w-0 flex-1 border-none bg-transparent text-right text-[14px] font-medium text-cp-text-file outline-none placeholder:text-cp-text-composer"
-        />
+      {/* What everyone else will read. It is the log line -- the backend renders the
+          Activity row as "Committed {comment}" or "Pushed {comment} to {branch}" --
+          and it is also the note the version pane prints under the code preview,
+          signed by whoever wrote it. So it is a place to write a paragraph, not a
+          value to fill in, and the field grows as one is written instead of scrolling
+          a single line past itself. Both buttons stay disabled until it has
+          something in it.
+
+          Growing is done in CSS rather than by measuring the element: the wrapper
+          carries a copy of the text in an invisible pseudo-element sharing the
+          textarea's grid cell, so the cell is always exactly as tall as the text and
+          the textarea fills it. The trailing space in `data-value` is what gives a
+          final empty line its height, since a lone newline collapses. */}
+      <ComposerRow label="Comment:" grows>
+        <div
+          data-value={`${comment} `}
+          style={{ maxHeight: COMMENT_LINES * COMMENT_LINE_HEIGHT }}
+          className="grid min-w-0 flex-1 overflow-auto break-words text-right text-[14px]/[21px] font-medium text-cp-text-file after:invisible after:[grid-area:1/1] after:whitespace-pre-wrap after:content-[attr(data-value)]"
+        >
+          <textarea
+            value={comment}
+            rows={1}
+            maxLength={COMMENT_MAX_CHARS}
+            onChange={(event) => {
+              setComment(event.target.value)
+            }}
+            placeholder="e.g.  Adding a function to the parser"
+            className="m-0 resize-none overflow-hidden border-none bg-transparent p-0 text-right font-[inherit] text-[14px]/[21px] font-medium text-cp-text-file outline-none [grid-area:1/1] placeholder:text-cp-text-composer"
+          />
+        </div>
       </ComposerRow>
 
       <ComposerRow label="Branches:">

@@ -36,17 +36,18 @@ seed. There is no database.
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest                # 64 tests, ~1s
+python -m pytest                # 101 tests, ~2s
 python -m ruff check .
 ```
 
-Four files, worth reading in this order:
+Five files, worth reading in this order:
 
 | File | What it pins down |
 | --- | --- |
 | `tests/test_invariants.py` | The promises the product makes — pushing does not release, history is not rewritten, a merge is private. **Start here**: it is the shortest description of what this service is for. |
 | `tests/test_api.py` | Every endpoint the client calls, over HTTP: status codes, JSON keys, the asymmetric action word. |
 | `tests/test_security.py` | One case per defect that has been fixed, so none can come back quietly. Reads as a changelog of what was once wrong. |
+| `tests/test_collaboration.py` | The half about people rather than versions: a member's own copy of a branch, joining through the link, and role-change notices. |
 | `tests/test_concurrency.py` | Lost updates under concurrent pushes, and two performance cliffs with numbers attached. |
 
 Tests build their own project and their own store (`create_app(seed=False)`),
@@ -56,21 +57,24 @@ so they never read the demo fixture and changing `seed.py` cannot break them.
 
 ## The domain model
 
-Five objects, in `core/`. Everything else is a view over them.
+Everything in `core/`. Everything else is a view over it.
 
 ```
 Project ────┬── members:   name -> Member(role)
             ├── branches:  name -> Branch          "main" always exists
             ├── events:    [ActivityEvent]         the shared ledger, append-only
             ├── deploy_history: [DeployRecord]     every release, append-only
-            └── deployed_version / deployed_files  what production serves right now
+            ├── deployed_version / deployed_files  what production serves right now
+            ├── _working:  (member, branch) -> [WorkingVersion]   each person's own copy
+            ├── _join_requests: name -> JoinRequest    who is waiting at the door
+            └── _role_notices:  name -> RoleNotice     the one message per member
 
 Branch  ────┬── commits: [Commit]      proposals aimed at this line
             └── pushes:  [PushRecord]  versions of this line, in order
                            └── files: {path: content}   a FULL snapshot, not a delta
 ```
 
-Three consequences fall out of that shape, and they explain most of the code:
+Four consequences fall out of that shape, and they explain most of the code:
 
 - **Every version keeps a complete copy of the tree.** That is why any historical
   version can be opened byte for byte, and why rolling back restores real content
@@ -81,6 +85,11 @@ Three consequences fall out of that shape, and they explain most of the code:
   which is Invariant 1 expressed as a data structure rather than as a check.
 - **Folders do not exist.** A directory is implied by some file path mentioning
   it, so an empty folder cannot be represented — and does not need to be.
+- **A member's files are a history, not a flag.** Merging resolves a commit onto
+  that person's own copy and appends the result; undoing appends the state from
+  before it. Nothing else can move somebody's files — authoring a commit is a
+  proposal to other people, never an edit of your own work — and nobody else can
+  read them.
 
 ### The ledger is the one source
 
@@ -195,9 +204,21 @@ real reasons and explains them better than the client could invent.
 | | |
 | --- | --- |
 | `GET {p}/team` | Roster with roles |
+| `GET {p}/team/{member}` | One profile: role, and the branches they are on |
 | `GET {p}/team/{member}/activity` | One person's profile list, with diff stats |
+| `GET {p}/team/{member}/role-notice?actor=` | How a member learns their authority changed. Them and the Owner only |
+| `GET {p}/team/{member}/working/{b}?actor=` | Their own copy of a branch, as a tree. Readable by them alone |
+| `GET {p}/team/{member}/working/{b}/history?actor=` | Every state they have been in on it |
 | `POST {p}/team/invite` | Add a member |
 | `POST {p}/team/{member}/remove` · `/grant-maintainer` · `/revoke-maintainer` | Role administration |
+
+**Getting in** — the link is an access mechanism and never an authority.
+| | |
+| --- | --- |
+| `POST {p}/access/join` | Ask to join, holding the token. The one endpoint with no `actor` |
+| `GET {p}/access/requests?actor=` | Who is waiting. Owner only |
+| `POST {p}/access/requests/approve` · `/reject` | Owner's answer. Rejection is silent |
+| `POST {p}/access/leave` | Show yourself out. The Owner cannot |
 
 **Commits and versions**
 | | |
@@ -207,6 +228,7 @@ real reasons and explains them better than the client could invent.
 | `POST {p}/push_commit/{id}` | Promote one commit's attachment directly |
 | `POST {p}/merge/{id}` · `/unmerge/{id}` | Adopt a proposal, or reverse your own adoption |
 | `POST {p}/retract/{id}` | Withdraw your own pending proposal |
+| `GET {p}/commits/{id}` | One proposal in full |
 | `GET`/`POST {p}/commits/{id}/comments` · `POST .../flag` | The File Detail toolbar |
 | `GET {p}/activity/{viewer}` | The viewer-specific feed |
 
@@ -221,7 +243,9 @@ real reasons and explains them better than the client could invent.
 **Branches and files**
 | | |
 | --- | --- |
-| `GET`/`POST {p}/branches` | List, and create (seeded from Main) |
+| `GET`/`POST {p}/branches` | List, and create (from Main's head, or `from_version`) |
+| `GET {p}/branches/{b}` | One line, and where it stands |
+| `GET {p}/branches/{b}/versions` | Every version of a line, newest first |
 | `GET {p}/branches/{b}/files` | Nested file tree of the branch's current version |
 | `GET {p}/branches/{b}/versions/{v}/files` | …of any historical version |
 | `GET {p}/branches/{b}/versions/{v}/files/content?path=` | One file's raw content |

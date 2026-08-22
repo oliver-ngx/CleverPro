@@ -9,7 +9,6 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  avatarFor,
   flattenFilePaths,
   flattenFiles,
   iconForFile,
@@ -17,6 +16,7 @@ import {
   toArchiveRows,
   toFiles,
   toPaneEntries,
+  toTeam,
   toProject,
 } from './adapters'
 import type { FileNodeDto, MemberActivityDto } from './types'
@@ -163,10 +163,21 @@ describe('iconForFile', () => {
   })
 })
 
-describe('avatarFor', () => {
-  it('returns undefined for a name the design never drew a face for', () => {
-    expect(avatarFor('Oliver')).toBe('oliver')
-    expect(avatarFor('Somebody Else')).toBeUndefined()
+describe('toTeam', () => {
+  it('keeps every member, including one the design never drew a face for', () => {
+    const team = toTeam(
+      [
+        { name: 'Oliver', role: 'owner' },
+        { name: 'Dana Whitfield', role: 'contributor' },
+      ],
+      'Oliver',
+    )
+    // Somebody who joined through the link has a name and no photograph, and
+    // the rail has to show them anyway -- Avatar draws their initials.
+    expect(team.map((member) => member.id)).toEqual(['Oliver', 'Dana Whitfield'])
+    expect(team[0].name).toBe('Oliver (You)')
+    expect(team[0].self).toBe(true)
+    expect(team[1].self).toBeUndefined()
   })
 })
 
@@ -247,6 +258,6 @@ describe('toPaneEntries', () => {
 
   it('leaves the author out of the face stack beside their own row', () => {
     const [entry] = toPaneEntries([commitRow], 'Oliver', team, 'Orchid Lab')
-    expect(entry.avatars).toEqual(['juliana'])
+    expect(entry.avatars).toEqual(['Juliana'])
   })
 })

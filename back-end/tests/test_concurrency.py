@@ -44,7 +44,8 @@ def test_concurrent_pushes_do_not_lose_an_update(project):
     assert {path: head[path] for path in head} == {
         f"f{i}.txt": f"{i}\n" for i in range(20)
     }
-    assert len(project.branches["main"].pushes) == 21
+    # 20 concurrent writes, the base push, and V0 beneath both.
+    assert len(project.branches["main"].pushes) == 22
 
 
 def test_version_labels_are_unique_under_concurrency(project):

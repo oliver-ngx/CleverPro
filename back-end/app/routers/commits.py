@@ -67,6 +67,12 @@ def push_commit(
     }
 
 
+@router.get("/commits/{commit_id}")
+def get_commit(project: ProjectDep, commit_id: CommitPath) -> dict[str, Any]:
+    """One proposal in full, for a screen opened on it directly."""
+    return project.commit_view(commit_id)
+
+
 @router.post("/merge/{commit_id}")
 def merge(project: ProjectDep, commit_id: CommitPath, body: ActorRequest) -> dict[str, str]:
     """Adopt a commit addressed to you. Flips its Activity row to "Undo"."""

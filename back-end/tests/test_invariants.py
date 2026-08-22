@@ -85,9 +85,10 @@ def test_undo_appends_rather_than_rewrites(project, tree):
     assert project.deployed_version == "V1"
     # The rollback restored real content, not just a label.
     assert "b.py" not in project.deployed_files
-    # Both versions are still on the shelf, newest first.
-    assert [row["version_label"] for row in project.archive_surface()] == ["V2", "V1"]
-    assert [row["action"] for row in project.archive_surface()] == ["Undo", "Applied"]
+    # Both versions are still on the shelf, newest first, above the version the
+    # project was created at.
+    assert [row["version_label"] for row in project.archive_surface()] == ["V2", "V1", "V0"]
+    assert [row["action"] for row in project.archive_surface()] == ["Undo", "Applied", "Undo"]
 
 
 def test_undo_can_apply_a_version_that_was_never_live(project, tree):
@@ -203,16 +204,36 @@ def test_loose_files_carry_forward_the_rest_of_the_tree(project, tree):
     assert files["src/app.py"] == "print(1)\n"
 
 
-def test_role_change_reaches_only_the_person_it_happened_to(project):
+def test_a_role_change_is_a_notice_rather_than_a_feed_row(project):
+    """
+    The person it happened to is told; the team's history is not the place to
+    tell them, and everybody else is not told at all.
+    """
     project.grant_maintainer(OWNER, CONTRIBUTOR)
-    theirs = [
-        r for r in project.activity_feed_for_viewer(CONTRIBUTOR) if r["type"] == "role_changed"
-    ]
-    others = [
-        r for r in project.activity_feed_for_viewer(MAINTAINER) if r["type"] == "role_changed"
-    ]
-    assert len(theirs) == 1
-    assert others == []
+
+    for viewer in (OWNER, MAINTAINER, CONTRIBUTOR):
+        feed = project.activity_feed_for_viewer(viewer)
+        assert [r for r in feed if r["type"] == "role_changed"] == []
+
+    notice = project.role_notice(CONTRIBUTOR, CONTRIBUTOR)
+    assert notice is not None
+    assert (notice["old_role"], notice["new_role"]) == ("contributor", "maintainer")
+    assert notice["changed_by"] == OWNER
+
+    # The Owner may read it too; a bystander may not.
+    assert project.role_notice(OWNER, CONTRIBUTOR) == notice
+    with pytest.raises(PermissionError_):
+        project.role_notice(MAINTAINER, CONTRIBUTOR)
+
+    # It is overwritten rather than accumulated: what a member needs is the
+    # role they hold now.
+    project.revoke_maintainer(OWNER, CONTRIBUTOR)
+    latest = project.role_notice(CONTRIBUTOR, CONTRIBUTOR)
+    assert latest is not None
+    assert (latest["old_role"], latest["new_role"]) == ("maintainer", "contributor")
+
+    # The audit trail still holds both changes.
+    assert len([e for e in project.events if e.type == "role_changed"]) == 2
 
 
 def test_diff_stats_count_real_lines(project, tree):
@@ -263,7 +284,8 @@ def test_a_hand_picked_label_never_collides_with_the_automatic_one(project, tree
 
     # The counter steps over what is taken rather than minting a second "V2".
     assert project.push(OWNER, "main", Attachment(), "v3").version_label == "V3"
-    assert len(project.branches["main"]._by_label) == 3
+    # V0, V1, the hand-picked V2, and V3 -- four labels, none of them shared.
+    assert len(project.branches["main"]._by_label) == 4
 
 
 def test_a_duplicate_version_label_is_refused(project, tree):

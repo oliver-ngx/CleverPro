@@ -5,7 +5,7 @@ import { PageBody } from '../components/layout/PageBody'
 import type { DataTableColumn } from '../components/ui/DataTable'
 import { DataTable } from '../components/ui/DataTable'
 import { ResourceState } from '../components/ui/ResourceState'
-import { CURRENT_USER } from '../config'
+import { useCurrentUser } from '../session'
 import { useAction } from '../hooks/useAction'
 import { useResource } from '../hooks/useResource'
 
@@ -30,7 +30,8 @@ const COLUMNS: DataTableColumn[] = [
  *
  * The feed is viewer-specific, not a global log: the same commit reads "Merge" to
  * a recipient who has not taken it yet, "Undo" to one who has, and "View" to its
- * author. That is why CURRENT_USER is in the request path and not just decoration.
+ * author. That is why the acting member is in the request path and not just
+ * decoration -- switching who the app is acting as changes what this table says.
  *
  * The Action word is also the control. Pressing "Merge" adopts the commit into
  * your working version and the row immediately reads "Undo"; pressing that
@@ -46,7 +47,8 @@ const COLUMNS: DataTableColumn[] = [
  * first, and what deletion should mean to the server is a separate decision.
  */
 export default function Activity() {
-  const events = useResource((signal) => api.activity(CURRENT_USER, signal), [])
+  const actor = useCurrentUser()
+  const events = useResource((signal) => api.activity(actor, signal), [actor])
   // Ids, not positions: merging a commit refetches the feed, and an index into the
   // old list would then point at somebody else's row.
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set())

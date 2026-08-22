@@ -6,7 +6,8 @@
  * screens want is `adapters.ts`. What is here is the API's surface, so that
  * adding a call means adding a line and finding one means reading a list.
  */
-import { CURRENT_USER, PROJECT_ID } from '../config'
+import { PROJECT_ID } from '../config'
+import { currentUser } from '../session'
 import { get, post as rawPost, seg } from './http'
 import { bumpRevision } from './revision'
 import type {
@@ -17,6 +18,8 @@ import type {
   CreatedBranchDto,
   FileContentDto,
   FileNodeDto,
+  JoinRequestDto,
+  JoinResultDto,
   MemberActivityDto,
   MemberDto,
   OverviewDto,
@@ -96,7 +99,10 @@ function attachmentBody(attachment: AttachmentInput) {
  * nothing is stale.
  */
 async function post<T>(path: string, body: Record<string, unknown> = {}): Promise<T> {
-  const result = await rawPost<T>(path, CURRENT_USER, body)
+  // Read per request rather than captured at import: the acting member can
+  // change while the app is running, and a request must go out as whoever is
+  // acting when it is sent.
+  const result = await rawPost<T>(path, currentUser(), body)
   bumpRevision()
   return result
 }
@@ -137,6 +143,10 @@ export const api = {
       signal,
     ),
 
+  /** Who is waiting at the door. The Owner's list, so the reader names themselves. */
+  joinRequests: (actor: string, signal?: AbortSignal) =>
+    get<JoinRequestDto[]>(`${project}/access/requests?actor=${encodeURIComponent(actor)}`, signal),
+
   activity: (viewer: string, signal?: AbortSignal) =>
     get<ActivityEventDto[]>(`${project}/activity/${seg(viewer)}`, signal),
 
@@ -151,6 +161,28 @@ export const api = {
     get<CommentDto[]>(`${project}/commits/${seg(commitId)}/comments`, signal),
 
   // ---- writes -------------------------------------------------------
+
+  /**
+   * Ask to join, holding the project's link.
+   *
+   * The one call in this file that does not go through `post` -- it carries a
+   * token and a name instead of an actor, because whoever is making it is not a
+   * member yet and so has no actor to name. It bumps the revision by hand for
+   * the same reason every other write does: the roster it just changed is on
+   * screen behind the join card.
+   */
+  join: async (token: string, name: string) => {
+    const result = await rawPost<JoinResultDto>(`${project}/access/join`, name, { token, name })
+    bumpRevision()
+    return result
+  },
+
+  /** The Owner's answer to one pending request. No role means the project default. */
+  approveJoin: (name: string, role?: string) =>
+    post(`${project}/access/requests/approve`, { name, role: role ?? null }),
+
+  /** Turn one down. Deliberately silent -- the server records nothing. */
+  rejectJoin: (name: string) => post(`${project}/access/requests/reject`, { name }),
 
   /** Adopt a commit addressed to you. Flips its Activity row to "Undo". */
   merge: (commitId: string) => post(`${project}/merge/${seg(commitId)}`),
@@ -239,9 +271,6 @@ export const api = {
       `${project}/push_commit/${seg(commitId)}`,
       { comment: comment ?? null },
     ),
-
-  addComment: (commitId: string, text: string) =>
-    post(`${project}/commits/${seg(commitId)}/comments`, { text }),
 
   flagCommit: (commitId: string, flagged: boolean) =>
     post(`${project}/commits/${seg(commitId)}/flag`, { flagged }),

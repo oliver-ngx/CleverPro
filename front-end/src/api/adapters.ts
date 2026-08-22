@@ -8,7 +8,6 @@
  * apart, a full URL, epoch floats. Neither is wrong. This module is the seam
  * between them, and it exists so that seam lives in exactly one file.
  */
-import type { PersonName } from '../components/ui/Avatar'
 import type { IconName } from '../components/ui/Icon'
 import type { ActivityEntry, ArchiveEntry } from '../data/logs'
 import type { ProjectFile } from '../data/project'
@@ -21,25 +20,6 @@ import type {
   MemberDto,
   OverviewDto,
 } from './types'
-
-/**
- * Avatars are PNGs keyed by slug, and PersonName is a closed union of the
- * three that exist. The API returns arbitrary display names, so a member the
- * design never drew has no face to show. Rather than 404 an image, unknown
- * names fall through to `undefined` and callers omit the avatar entirely.
- *
- * The real fix is an avatar URL (or initials) on the member payload; until
- * then, adding a fourth teammate means adding a fourth PNG.
- */
-const AVATAR_SLUGS: Record<string, PersonName> = {
-  Oliver: 'oliver',
-  'Eden Sears': 'eden-sears',
-  Juliana: 'juliana',
-}
-
-export function avatarFor(name: string): PersonName | undefined {
-  return AVATAR_SLUGS[name]
-}
 
 export function toProject(dto: OverviewDto) {
   return {
@@ -88,12 +68,14 @@ export function flattenFiles(files: ProjectFile[]): ProjectFile[] {
 }
 
 export function toTeam(members: MemberDto[], currentUser: string): TeamMember[] {
-  return members.flatMap((member) => {
-    const id = avatarFor(member.name)
-    if (id === undefined) return []
+  return members.map((member) => {
     const self = member.name === currentUser
-    return [{
-      id,
+    return {
+      // The display name, which is what the API addresses a member by and is
+      // therefore already unique per project. This used to be the avatar slug,
+      // which silently dropped anybody the design had no photograph of --
+      // including everybody who joins through the project's link.
+      id: member.name,
       // The rail spells the signed-in user "Oliver (You)"; the API just
       // returns the name, so the suffix is presentation and belongs here.
       name: self ? `${member.name} (You)` : member.name,
@@ -101,7 +83,7 @@ export function toTeam(members: MemberDto[], currentUser: string): TeamMember[] 
       // no last-seen. Everyone reads as offline until one exists.
       online: false,
       ...(self ? { self: true } : {}),
-    }]
+    }
   })
 }
 
@@ -198,12 +180,9 @@ export function toPaneEntries(
   team: MemberDto[],
   projectName: string,
 ): PaneEntry[] {
-  const others = team
-    .filter((other) => other.name !== member)
-    .flatMap((other) => {
-      const slug = avatarFor(other.name)
-      return slug === undefined ? [] : [slug]
-    })
+  // Everybody else on the project. Whether the design has a photograph of
+  // them is Avatar's problem, not this one's.
+  const others = team.filter((other) => other.name !== member).map((other) => other.name)
 
   return rows
     .map((row) => {

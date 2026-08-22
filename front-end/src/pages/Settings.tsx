@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { avatarFor } from '../api/adapters'
 import { api } from '../api/client'
 import { PageBody } from '../components/layout/PageBody'
 import { AvatarStack } from '../components/ui/AvatarStack'
@@ -11,7 +10,8 @@ import { ConfirmAction } from '../components/ui/ConfirmAction'
 import { POPOVER_SURFACE } from '../components/ui/Popover'
 import { SettingsRow } from '../components/ui/SettingsRow'
 import { Swap } from '../components/ui/Swap'
-import { CURRENT_USER } from '../config'
+import { JoinRequests } from '../components/settings/JoinRequests'
+import { useCurrentUser } from '../session'
 import { useAction } from '../hooks/useAction'
 import { useResource } from '../hooks/useResource'
 import { canGovern, canRelease } from '../lib/authority'
@@ -80,19 +80,18 @@ export default function Settings({ projectName }: SettingsProps) {
 
   const data = settings.data
   const members = team.data ?? []
-  const me = members.find((member) => member.name === CURRENT_USER)
+  const actor = useCurrentUser()
+  const me = members.find((member) => member.name === actor)
   // Maintainer and above administer the project; the Owner alone governs it.
   const mayAdminister = canRelease(me?.role)
   const mayGovern = canGovern(me?.role)
   // Ownership can only move to somebody already on the project, and which one is
   // now a real choice rather than whoever happened to come first.
   const candidates = members
-    .filter((member) => member.name !== CURRENT_USER)
+    .filter((member) => member.name !== actor)
     .map((member) => member.name)
-  const faces = members.flatMap((member) => {
-    const slug = avatarFor(member.name)
-    return slug === undefined ? [] : [slug]
-  })
+  // Everyone, photographed or not -- the stack draws initials for the rest.
+  const faces = members.map((member) => member.name)
 
   return (
     <PageBody className="gap-[35px] px-[16px] pt-[20px] pb-[35px] md:pt-[27px] md:pr-[29px] md:pl-[22px]">
@@ -104,7 +103,7 @@ export default function Settings({ projectName }: SettingsProps) {
       {data !== undefined && (
         <>
           <SettingsGroup label="Badge">
-            <SettingsRow label="Name" value={CURRENT_USER} />
+            <SettingsRow label="Name" value={actor} />
             <SettingsRow
               label="Role"
               value={me === undefined ? '' : titleCase(me.role)}
@@ -218,6 +217,13 @@ export default function Settings({ projectName }: SettingsProps) {
                   </button>
                 }
               />
+              {/* Only when the link does not admit people outright -- with it on
+                  there is no queue to answer, and a row reading "Nobody waiting"
+                  would suggest the project is turning people away when it is
+                  letting every one of them straight in. */}
+              {!data.anyone_with_link && (
+                <SettingsRow label="Requests" action={<JoinRequests />} />
+              )}
               <SettingsRow label="Teams" action={<AvatarStack people={faces} />} />
               <SettingsRow
                 label="Default new invites"

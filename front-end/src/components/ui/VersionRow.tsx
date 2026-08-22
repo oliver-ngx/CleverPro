@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import type { PersonName } from './Avatar'
 import { AvatarStack } from './AvatarStack'
 import type { IconName } from './Icon'
 import { Icon } from './Icon'
@@ -13,7 +12,7 @@ interface VersionRowProps {
   subtitle?: string
   /** Sits between the title and the faces — a diff stat, in practice. */
   meta?: ReactNode
-  avatars?: PersonName[]
+  avatars?: string[]
   /** The open version, filled rather than merely hovered. */
   selected?: boolean
   onClick?: () => void
