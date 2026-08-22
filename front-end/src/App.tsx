@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { toProject, toTeam } from './api/adapters'
 import { api } from './api/client'
 import { AppWindow } from './components/layout/AppWindow'
+import { ErrorBoundary } from './components/layout/ErrorBoundary'
 import { MobileNav } from './components/layout/MobileNav'
 import { PageHeader } from './components/layout/PageHeader'
 import { Popover } from './components/ui/Popover'
@@ -316,29 +317,37 @@ function App() {
             {administer.error}
           </div>
         )}
-        {view.kind === 'person' ? (
-          <Team
-            person={view.person}
-            members={members.data ?? []}
-            projectName={project.name}
-            version={version}
-            onSelectVersion={(entry) => {
-              // The row is a switch: picking the open one shuts the detail again.
-              setVersion((current) => (current === entry ? undefined : entry))
-            }}
-            actionOpen={actionOpen && view.person.self === true}
-            onCloseAction={() => {
-              setActionOpen(false)
-            }}
-            branch={branch}
-            branches={branches}
-            versionLabel={versionLabel}
-            onSelectBranch={setSelectedBranch}
-            historySort={historySort}
-          />
-        ) : (
-          pages[view.label]
-        )}
+        {/*
+          Keyed on the open view, which is what lets a broken screen be walked
+          away from: React never resets a boundary by itself, so switching views
+          has to remount this one. The rail and the header sit outside it and
+          stay usable while a page is broken.
+        */}
+        <ErrorBoundary key={view.kind === 'page' ? view.label : view.person.id}>
+          {view.kind === 'person' ? (
+            <Team
+              person={view.person}
+              members={members.data ?? []}
+              projectName={project.name}
+              version={version}
+              onSelectVersion={(entry) => {
+                // The row is a switch: picking the open one shuts the detail again.
+                setVersion((current) => (current === entry ? undefined : entry))
+              }}
+              actionOpen={actionOpen && view.person.self === true}
+              onCloseAction={() => {
+                setActionOpen(false)
+              }}
+              branch={branch}
+              branches={branches}
+              versionLabel={versionLabel}
+              onSelectBranch={setSelectedBranch}
+              historySort={historySort}
+            />
+          ) : (
+            pages[view.label]
+          )}
+        </ErrorBoundary>
       </div>
 
       <MobileNav {...navigation} />

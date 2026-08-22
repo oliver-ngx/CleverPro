@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { ErrorBoundary } from './components/layout/ErrorBoundary.tsx'
 import { Entry } from './Entry.tsx'
 
 // index.html always carries this, so its absence means the document was swapped for
@@ -11,6 +12,11 @@ if (!rootElement) {
 }
 createRoot(rootElement).render(
   <StrictMode>
-    <Entry />
+    {/* The outermost boundary, which catches what the one inside the window
+        cannot: the rail, the join screen, and anything that throws before a
+        view exists at all. */}
+    <ErrorBoundary standalone>
+      <Entry />
+    </ErrorBoundary>
   </StrictMode>,
 )

@@ -1178,13 +1178,13 @@ class Project:
         The Activity surface, which is viewer-specific rather than global.
 
         One row per commit — its action word changes rather than a second
-        "Merged" row appearing — plus one per push and one per undo. Deploy
-        events are logged for audit but deliberately absent here; answering
-        "what is live" is the Archive surface's job.
+        "Merged" row appearing — plus one per push, and one for each membership
+        or settings change the project records. What this surface does *not*
+        carry, and why, is stated on ``_FEED_TYPES``.
 
         Per row:
 
-        - push / undo                              -> always "View"
+        - anything that is not a commit            -> always "View"
         - commit, viewer is the author             -> "View"
         - commit, viewer addressed, not yet merged -> "Merge"
         - commit, viewer has merged it             -> "Undo"

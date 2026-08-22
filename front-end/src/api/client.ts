@@ -198,7 +198,15 @@ export const api = {
   rollback: (versionLabel: string) =>
     post(`${project}/undo`, { version_label: versionLabel }),
 
-  /** Release a Main version. Defaults to Main's head. */
+  /**
+   * Release a Main version. Defaults to Main's head.
+   *
+   * Nothing calls this yet, and that is a pending decision rather than an
+   * oversight: releasing happens through the Archive's "Undo", which applies
+   * any version on the shelf, and where a control actually labelled Deploy
+   * belongs is an open question (see NEXT-STEPS.md). Kept because the endpoint
+   * is real and the question has an answer coming.
+   */
   deploy: (versionLabel?: string) =>
     post(`${project}/deploy`, { version_label: versionLabel ?? null }),
 
@@ -289,6 +297,13 @@ export const api = {
   setCustomDomain: (value: string | null) =>
     post<SettingsDto>(`${project}/settings/custom-domain`, { value }),
 
+  /**
+   * Mint a new invite token, which makes every link already handed out dead.
+   *
+   * Also uncalled: Settings copies the current link but has no row to reset it,
+   * so a link sent to the wrong person cannot be taken back. That row is the
+   * next thing this file is waiting on (see NEXT-STEPS.md).
+   */
   regenerateInvite: () =>
     post<{ invite_token: string }>(`${project}/settings/regenerate-invite`),
 
