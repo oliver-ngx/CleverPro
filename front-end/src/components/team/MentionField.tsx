@@ -92,7 +92,7 @@ export function MentionField({ members, chosen, onChange }: MentionFieldProps) {
         onClick={() => {
           input.current?.focus()
         }}
-        className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-[4px] gap-y-[3px] text-[14px] font-normal text-cp-presence"
+        className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-[4px] gap-y-[3px] text-[14px] font-normal text-cs-presence"
       >
         {chosen.map((name, position) => (
           <button
@@ -102,7 +102,7 @@ export function MentionField({ members, chosen, onChange }: MentionFieldProps) {
             onClick={() => {
               remove(name)
             }}
-            className="cursor-pointer border-none bg-transparent p-0 text-[14px] font-normal text-cp-presence outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none hover:opacity-[0.65] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent"
+            className="cursor-pointer border-none bg-transparent p-0 text-[14px] font-normal text-cs-presence outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none hover:opacity-[0.65] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent"
           >
             @{name}
             {position < chosen.length - 1 ? ',' : ''}
@@ -131,7 +131,7 @@ export function MentionField({ members, chosen, onChange }: MentionFieldProps) {
           }}
           onKeyDown={onKeyDown}
           placeholder={chosen.length === 0 ? 'Commit only' : ''}
-          className="min-w-[70px] flex-1 border-none bg-transparent text-right text-[14px] font-normal text-cp-presence caret-cp-presence outline-none placeholder:text-cp-text-composer"
+          className="min-w-[70px] flex-1 border-none bg-transparent text-right text-[14px] font-normal text-cs-presence caret-cs-presence outline-none placeholder:text-cs-text-composer"
         />
       </div>
 
@@ -154,8 +154,8 @@ export function MentionField({ members, chosen, onChange }: MentionFieldProps) {
                   onMouseEnter={() => {
                     setActive(position)
                   }}
-                  className={`flex h-[34px] w-full cursor-pointer items-center gap-[11px] rounded-cp-pill border-none px-[6px] text-left text-[14px] font-medium text-cp-text-primary outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cp-accent ${
-                    position === index ? 'bg-cp-hover' : 'bg-transparent'
+                  className={`flex h-[34px] w-full cursor-pointer items-center gap-[11px] rounded-cs-pill border-none px-[6px] text-left text-[14px] font-medium text-cs-text-primary outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cs-accent ${
+                    position === index ? 'bg-cs-hover' : 'bg-transparent'
                   }`}
                 >
                   <Avatar person={member.name} size={28} />

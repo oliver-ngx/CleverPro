@@ -42,11 +42,11 @@ describe('toProject', () => {
       preview_image: '/p.png',
       project_name: 'Orchid Lab',
       current_version: 'V3',
-      deploy_url: 'orchid-lab.cleverpro.com',
+      deploy_url: 'orchid-lab.cseudocode.com',
       branches: [],
     })
     expect(project.version).toBe('Orchid Lab V3')
-    expect(project.deployHost).toBe('orchid-lab.cleverpro.com')
+    expect(project.deployHost).toBe('orchid-lab.cseudocode.com')
   })
 
   it('leaves off a version a project does not have yet', () => {

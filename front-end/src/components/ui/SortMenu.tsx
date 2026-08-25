@@ -24,11 +24,11 @@ export function SortMenu<T extends string>({ value, options, onSelect }: SortMen
 
   return (
     <div className="flex min-w-0 flex-col">
-      <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cp-text-tertiary">
+      <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cs-text-tertiary">
         {current?.label ?? 'Sort'}
       </span>
 
-      <div className="h-px bg-cp-hairline" />
+      <div className="h-px bg-cs-hairline" />
 
       <div className="flex flex-col items-start gap-[9px] pt-[9px]">
         {options
@@ -41,7 +41,7 @@ export function SortMenu<T extends string>({ value, options, onSelect }: SortMen
               onClick={() => {
                 onSelect(option.value)
               }}
-              className={`${MENU_ITEM} text-cp-text-branch hover:text-cp-text-primary`}
+              className={`${MENU_ITEM} text-cs-text-branch hover:text-cs-text-primary`}
             >
               {option.label}
             </button>

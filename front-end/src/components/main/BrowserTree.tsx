@@ -15,7 +15,7 @@ interface BrowserTreeProps {
 
 /** One row's geometry, shared by folders and files so the column keeps its rhythm. */
 const ROW =
-  'flex h-[18px] w-full shrink-0 cursor-pointer items-center gap-[6px] rounded-[3px] border-none pr-[8px] text-left text-[10px] font-normal text-cp-text-primary outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cp-accent'
+  'flex h-[18px] w-full shrink-0 cursor-pointer items-center gap-[6px] rounded-[3px] border-none pr-[8px] text-left text-[10px] font-normal text-cs-text-primary outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cs-accent'
 
 /**
  * The left column of the expanded file browser: the project's tree, drawn to be read
@@ -62,7 +62,7 @@ export function BrowserTree({
               if (file.isFolder) onToggleFolder(file.path)
               else onSelectFile(file.path)
             }}
-            className={`${ROW} ${isSelected ? 'bg-cp-popover' : 'bg-transparent hover:bg-cp-hover'}`}
+            className={`${ROW} ${isSelected ? 'bg-cs-popover' : 'bg-transparent hover:bg-cs-hover'}`}
           >
             {file.isFolder ? (
               <Icon name="folder" className="h-[8px] w-[10px] shrink-0" />

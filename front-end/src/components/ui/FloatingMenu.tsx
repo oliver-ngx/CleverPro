@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { useOverlayDismiss } from '../../hooks/useOverlayDismiss'
 import { usePresence } from '../../hooks/usePresence'
 import { POPOVER_EXIT_MS } from '../../lib/motion'
+import { uiScale } from '../../lib/scale'
 import { Popover } from './Popover'
 
 interface FloatingMenuProps {
@@ -50,15 +51,22 @@ interface Anchor {
  * cramped *and* upward is roomier — a control near the foot of the window would
  * otherwise get a menu squeezed into a few pixels and made to scroll, with all
  * the space it needed directly above it.
+ *
+ * Everything the trigger and the viewport report is in screen pixels, and every
+ * number this returns is written back out as a CSS length inside the zoomed app —
+ * so the whole calculation is converted to design pixels once, up front. That also
+ * keeps `COMFORTABLE` and the 4px gap below meaning what they say: they are design
+ * measurements, and they are compared against design measurements.
  */
 function anchorFor(rect: DOMRect): Anchor {
-  const right = window.innerWidth - rect.right
-  const below = window.innerHeight - rect.bottom
-  const above = rect.top
+  const scale = uiScale()
+  const right = (window.innerWidth - rect.right) / scale
+  const below = (window.innerHeight - rect.bottom) / scale
+  const above = rect.top / scale
 
   return below < COMFORTABLE && above > below
-    ? { right, y: window.innerHeight - rect.top + 4, above: true }
-    : { right, y: rect.bottom + 4, above: false }
+    ? { right, y: (window.innerHeight - rect.top) / scale + 4, above: true }
+    : { right, y: rect.bottom / scale + 4, above: false }
 }
 
 /**
@@ -160,12 +168,14 @@ export function FloatingMenu({
               style={{
                 right: anchor.right,
                 ...(anchor.above ? { bottom: anchor.y } : { top: anchor.y }),
-                maxWidth: `calc(100vw - ${String(anchor.right + MARGIN)}px)`,
-                maxHeight: `calc(100vh - ${String(anchor.y + MARGIN)}px)`,
+                // The viewport in the app's own units, for the same reason the
+                // anchor is: a bare 100vw inside the zoom is a fifth short.
+                maxWidth: `calc(var(--cs-viewport-w) - ${String(anchor.right + MARGIN)}px)`,
+                maxHeight: `calc(var(--cs-viewport-h) - ${String(anchor.y + MARGIN)}px)`,
               }}
-              className={`fixed z-70 overflow-y-auto rounded-cp-popover shadow-cp-popover motion-reduce:animate-none ${
+              className={`fixed z-70 overflow-y-auto rounded-cs-popover shadow-cs-popover motion-reduce:animate-none ${
                 anchor.above ? 'origin-bottom-right' : 'origin-top-right'
-              } ${open ? 'animate-cp-popover-in' : 'animate-cp-popover-out'}`}
+              } ${open ? 'animate-cs-popover-in' : 'animate-cs-popover-out'}`}
             >
               <Popover width="fit" minWidth={minWidth} maxWidth={maxWidth}>
                 {children(close)}

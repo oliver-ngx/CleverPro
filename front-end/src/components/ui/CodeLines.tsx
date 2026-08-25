@@ -3,13 +3,13 @@ import type { CodeToken } from '../../data/versionSource'
 
 /** Base grey carries the untagged runs, so it lives on the block, not on a token. */
 const TOKEN_COLOUR: Record<NonNullable<CodeToken['k']>, string> = {
-  comment: 'text-cp-code-comment',
-  decl: 'text-cp-code-decl',
-  ident: 'text-cp-code-ident',
-  keyword: 'text-cp-code-keyword',
-  prop: 'text-cp-code-prop',
-  string: 'text-cp-code-string',
-  value: 'text-cp-code-value',
+  comment: 'text-cs-code-comment',
+  decl: 'text-cs-code-decl',
+  ident: 'text-cs-code-ident',
+  keyword: 'text-cs-code-keyword',
+  prop: 'text-cs-code-prop',
+  string: 'text-cs-code-string',
+  value: 'text-cs-code-value',
 }
 
 interface CodeLinesProps {
@@ -46,7 +46,7 @@ export function CodeLines({ lines, startLine = 1, gutterWidth = 18 }: CodeLinesP
   )
 
   return (
-    <div className="flex min-h-0 gap-[7px] font-mono text-[10px]/[122%] font-medium text-cp-code">
+    <div className="flex min-h-0 gap-[7px] font-mono text-[10px]/[122%] font-medium text-cs-code">
       {/* Decorative: a screen reader reading "1 2 3" before the code helps nobody. */}
       <pre
         aria-hidden="true"

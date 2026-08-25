@@ -79,11 +79,11 @@ export function VersionFiles({ entry, fallbackVersion }: VersionFilesProps) {
 
   return (
     <div className="flex shrink-0 flex-col gap-[13px]">
-      <div className="rounded-cp-code bg-cp-field px-[10px] pt-[10px] pb-[12px]">
+      <div className="rounded-cs-code bg-cs-field px-[10px] pt-[10px] pb-[12px]">
         {tree.loading ? (
-          <span className="text-[11px] font-normal text-cp-text-tertiary">Reading…</span>
+          <span className="text-[11px] font-normal text-cs-text-tertiary">Reading…</span>
         ) : files.length === 0 ? (
-          <span className="text-[11px] font-normal text-cp-text-tertiary">
+          <span className="text-[11px] font-normal text-cs-text-tertiary">
             This version names no files.
           </span>
         ) : (
@@ -107,7 +107,7 @@ export function VersionFiles({ entry, fallbackVersion }: VersionFilesProps) {
       {selected !== undefined && (
         <div className="flex h-[380px] shrink-0">
           {file.error !== undefined ? (
-            <p role="alert" className="text-[11px] font-medium text-cp-text-primary">
+            <p role="alert" className="text-[11px] font-medium text-cs-text-primary">
               {file.error}
             </p>
           ) : (

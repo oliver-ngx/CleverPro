@@ -149,7 +149,7 @@ export default function Main({
           {/* The four rows are one card, the same surface the file structure below
               them wears. The rows keep their own insets, so the card is a fill under
               them rather than a box they had to be re-laid out inside. */}
-          <div className="rounded-cp-panel bg-cp-card pt-[5px] pb-[9px]">
+          <div className="rounded-cs-panel bg-cs-card pt-[5px] pb-[9px]">
             <DetailRow label="Preview" height={102}>
               {project.previewSrc !== null && (
                 <ProjectThumbnail name={project.name} src={project.previewSrc} />
@@ -157,7 +157,7 @@ export default function Main({
             </DetailRow>
 
             <DetailRow label="Project" height={47}>
-              <span className="min-w-0 truncate text-[13px] font-semibold text-cp-text-tertiary">
+              <span className="min-w-0 truncate text-[13px] font-semibold text-cs-text-tertiary">
                 {project.version}
               </span>
             </DetailRow>
@@ -167,7 +167,7 @@ export default function Main({
                 is legitimately blank on a project that has never been released. */}
             <DetailRow label="Deploy" height={53}>
               {project.deployHost === null ? (
-                <span className="min-w-0 truncate text-[13px] font-normal text-cp-text-tertiary">
+                <span className="min-w-0 truncate text-[13px] font-normal text-cs-text-tertiary">
                   Not deployed
                 </span>
               ) : (

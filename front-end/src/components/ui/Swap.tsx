@@ -12,7 +12,7 @@ interface SwapProps {
 
 /** Both faces resize the same way, so the box's height only ever changes once. */
 const TRACK =
-  'grid transition-[grid-template-rows] duration-300 ease-cp motion-reduce:transition-none'
+  'grid transition-[grid-template-rows] duration-300 ease-cs motion-reduce:transition-none'
 const FADE = 'transition-opacity duration-200 ease-out motion-reduce:transition-none'
 
 /**

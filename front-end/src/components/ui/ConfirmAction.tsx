@@ -43,22 +43,22 @@ export function ConfirmAction({
 }: ConfirmActionProps) {
   return (
     <div className="flex min-w-0 flex-col">
-      <span className="pb-[8px] text-[13px]/[130%] font-semibold text-cp-text-tertiary">
+      <span className="pb-[8px] text-[13px]/[130%] font-semibold text-cs-text-tertiary">
         {question}
       </span>
 
       {note !== undefined && (
-        <span className="pb-[8px] text-[11px]/[130%] font-normal text-cp-text-branch">{note}</span>
+        <span className="pb-[8px] text-[11px]/[130%] font-normal text-cs-text-branch">{note}</span>
       )}
 
-      <div className="h-px bg-cp-hairline" />
+      <div className="h-px bg-cs-hairline" />
 
       <div className="flex flex-col items-start gap-[9px] pt-[9px]">
         <button
           type="button"
           disabled={disabled}
           onClick={onConfirm}
-          className={`${WORD} font-medium text-cp-destructive hover:opacity-[0.75]`}
+          className={`${WORD} font-medium text-cs-destructive hover:opacity-[0.75]`}
         >
           {confirmLabel}
         </button>
@@ -66,7 +66,7 @@ export function ConfirmAction({
           type="button"
           disabled={disabled}
           onClick={onCancel}
-          className={`${WORD} text-cp-text-branch hover:text-cp-text-primary`}
+          className={`${WORD} text-cs-text-branch hover:text-cs-text-primary`}
         >
           Cancel
         </button>

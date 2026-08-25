@@ -238,11 +238,11 @@ export function ActionComposer({
           >
             {(close) => (
               <div className="flex min-w-0 flex-col">
-                <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cp-text-tertiary">
+                <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cs-text-tertiary">
                   Attach
                 </span>
 
-                <div className="h-px bg-cp-hairline" />
+                <div className="h-px bg-cs-hairline" />
 
                 <div className="flex flex-col items-start gap-[9px] pt-[9px]">
                   {ATTACH_CHOICES.map(({ kind, word }) => (
@@ -254,7 +254,7 @@ export function ActionComposer({
                         take(kind)
                         close()
                       }}
-                      className={`${MENU_ITEM} text-cp-text-branch hover:text-cp-text-primary`}
+                      className={`${MENU_ITEM} text-cs-text-branch hover:text-cs-text-primary`}
                     >
                       {word}
                     </button>
@@ -267,7 +267,7 @@ export function ActionComposer({
             icon="commit"
             label="Commit"
             disabled={!ready}
-            iconClassName="h-[15px] w-[22px] text-cp-text-primary"
+            iconClassName="h-[15px] w-[22px] text-cs-text-primary"
             onClick={() => {
               action.run(
                 () => api.commit(branch, label, attachment, [...viewBy], chosenName),
@@ -279,7 +279,7 @@ export function ActionComposer({
             icon="push"
             label={mixed ? 'Push (unavailable: the attachment mixes a version with files)' : 'Push'}
             disabled={!ready || mixed}
-            iconClassName="h-[16px] w-[23px] text-cp-text-primary"
+            iconClassName="h-[16px] w-[23px] text-cs-text-primary"
             onClick={() => {
               action.run(() => api.push(branch, label, attachment, chosenName), onDismiss)
             }}
@@ -318,7 +318,7 @@ export function ActionComposer({
             setName(event.target.value)
           }}
           placeholder="e.g.  V4"
-          className="min-w-0 flex-1 border-none bg-transparent text-right text-[14px] font-medium text-cp-text-file outline-none placeholder:text-cp-text-composer"
+          className="min-w-0 flex-1 border-none bg-transparent text-right text-[14px] font-medium text-cs-text-file outline-none placeholder:text-cs-text-composer"
         />
       </ComposerRow>
 
@@ -339,7 +339,7 @@ export function ActionComposer({
         <div
           data-value={`${comment} `}
           style={{ maxHeight: COMMENT_LINES * COMMENT_LINE_HEIGHT }}
-          className="grid min-w-0 flex-1 overflow-auto break-words text-right text-[14px]/[21px] font-medium text-cp-text-file after:invisible after:[grid-area:1/1] after:whitespace-pre-wrap after:content-[attr(data-value)]"
+          className="grid min-w-0 flex-1 overflow-auto break-words text-right text-[14px]/[21px] font-medium text-cs-text-file after:invisible after:[grid-area:1/1] after:whitespace-pre-wrap after:content-[attr(data-value)]"
         >
           <textarea
             value={comment}
@@ -349,7 +349,7 @@ export function ActionComposer({
               setComment(event.target.value)
             }}
             placeholder="e.g.  Adding a function to the parser"
-            className="m-0 resize-none overflow-hidden border-none bg-transparent p-0 text-right font-[inherit] text-[14px]/[21px] font-medium text-cp-text-file outline-none [grid-area:1/1] placeholder:text-cp-text-composer"
+            className="m-0 resize-none overflow-hidden border-none bg-transparent p-0 text-right font-[inherit] text-[14px]/[21px] font-medium text-cs-text-file outline-none [grid-area:1/1] placeholder:text-cs-text-composer"
           />
         </div>
       </ComposerRow>
@@ -367,7 +367,7 @@ export function ActionComposer({
 
       <ComposerRow label="Attachment:" divider={false}>
         {mixed && (
-          <span className="text-right text-[11px] font-normal text-cp-text-composer">
+          <span className="text-right text-[11px] font-normal text-cs-text-composer">
             A whole tree and files together — Push needs one or the other
           </span>
         )}
@@ -402,7 +402,7 @@ export function ActionComposer({
         {/* What was left out, and why. Silently dropping a file the user believes
             they attached is the one thing this must not do. */}
         {source !== undefined && source.skipped.length > 0 && (
-          <p className="mt-[-8px] mb-[15px] text-[11px] font-normal text-cp-text-composer">
+          <p className="mt-[-8px] mb-[15px] text-[11px] font-normal text-cs-text-composer">
             Skipped{' '}
             {source.skipped
               .map((entry) => `${String(entry.count)} ${entry.reason}`)
@@ -420,25 +420,25 @@ export function ActionComposer({
           onClick={() => {
             setVersionOff((current) => !current)
           }}
-          className={`flex h-[82px] w-full shrink-0 cursor-pointer items-center gap-[25px] rounded-[20px] border-none px-[23px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent disabled:cursor-default disabled:opacity-[0.45] ${
-            versionAttached ? 'bg-cp-row-active' : 'bg-cp-field'
+          className={`flex h-[82px] w-full shrink-0 cursor-pointer items-center gap-[25px] rounded-[20px] border-none px-[23px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent disabled:cursor-default disabled:opacity-[0.45] ${
+            versionAttached ? 'bg-cs-row-active' : 'bg-cs-field'
           }`}
         >
           <Icon name="file-blank" className="h-[53px] w-[40px] shrink-0" />
           <span className="flex min-w-0 flex-col gap-[5px]">
-            <span className="truncate text-[14px] font-medium text-cp-text-file">
+            <span className="truncate text-[14px] font-medium text-cs-text-file">
               {versionLabel === undefined ? projectName : `${projectName} ${versionLabel}`}
             </span>
             {/* Drawn as "Main" in the frame; it is the branch, the same value the Add
                 Branch sheet puts under this tile. */}
-            <span className="truncate text-[11px] font-normal text-cp-text-file">
+            <span className="truncate text-[11px] font-normal text-cs-text-file">
               {versionLabel === undefined ? `${branch} — nothing pushed yet` : branch}
             </span>
           </span>
         </button>
 
         {action.error !== undefined && (
-          <div role="alert" className="mt-[12px] text-[11px] font-medium text-cp-text-primary">
+          <div role="alert" className="mt-[12px] text-[11px] font-medium text-cs-text-primary">
             {action.error}
           </div>
         )}

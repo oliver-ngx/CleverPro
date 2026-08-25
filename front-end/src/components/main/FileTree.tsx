@@ -41,7 +41,7 @@ export function FileTree({ files, checked, onToggle, accentColor }: FileTreeProp
       <div key={file.path} className="flex flex-col items-start gap-[6px]">
         <div
           style={{ marginLeft: depth * 14 }}
-          className="flex items-center gap-[8px] rounded-[6px] py-[2px] pr-[6px] transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-cp-hover"
+          className="flex items-center gap-[8px] rounded-[6px] py-[2px] pr-[6px] transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-cs-hover"
         >
           <Checkbox
             checked={checked.has(file.path)}
@@ -60,9 +60,9 @@ export function FileTree({ files, checked, onToggle, accentColor }: FileTreeProp
               onClick={() => {
                 toggleFolder(file.path)
               }}
-              className="flex cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent"
+              className="flex cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent"
             >
-              <span className="text-[10px] font-medium text-cp-text-primary">{file.name}</span>
+              <span className="text-[10px] font-medium text-cs-text-primary">{file.name}</span>
               <Icon
                 name="chevron-small"
                 className={`h-[6px] w-[4px] opacity-50 transition-transform duration-150 ease-out motion-reduce:transition-none ${
@@ -71,7 +71,7 @@ export function FileTree({ files, checked, onToggle, accentColor }: FileTreeProp
               />
             </button>
           ) : (
-            <span className="text-[10px] font-medium text-cp-text-primary">{file.name}</span>
+            <span className="text-[10px] font-medium text-cs-text-primary">{file.name}</span>
           )}
         </div>
 

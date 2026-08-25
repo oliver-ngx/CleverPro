@@ -96,24 +96,24 @@ export function FileBrowser({
     <div
       inert={closing}
       className={`absolute inset-0 z-10 flex flex-col p-[16px] motion-reduce:animate-none md:px-[30px] md:pt-[10px] md:pb-[35px] ${
-        closing ? 'animate-cp-browser-out' : 'animate-cp-browser-in'
+        closing ? 'animate-cs-browser-out' : 'animate-cs-browser-in'
       }`}
     >
       {/* The same #EFEFEF and the same 30 radius as the detail card and the version
           panel underneath it, so opening the file structure reads as that card
           growing rather than as a different surface arriving over it. The frame
           draws this white; the user asked for it to match the page's own cards. */}
-      <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-cp-panel bg-cp-card">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-cs-panel bg-cs-card">
         {/* The tree column. It scrolls on its own, because a deep project outruns the
             card long before the file beside it does. */}
-        <div className="flex w-[159px] shrink-0 flex-col overflow-auto border-r border-cp-hairline px-[14px] pt-[21px] pb-[20px]">
+        <div className="flex w-[159px] shrink-0 flex-col overflow-auto border-r border-cs-hairline px-[14px] pt-[21px] pb-[20px]">
           {/* The frame sets the name's top 33 below the card and the branch's 24
               under that, with the first tree row 98 down — 21, 15 and 62 at this
               scale, which is what these three boxes add up to. */}
-          <div className="h-[16px] shrink-0 px-[8px] text-[13px]/[16px] font-medium text-cp-text-primary">
+          <div className="h-[16px] shrink-0 px-[8px] text-[13px]/[16px] font-medium text-cs-text-primary">
             {projectName}
           </div>
-          <div className="mt-[4px] mb-[8px] h-[13px] shrink-0 px-[8px] text-[11px]/[13px] font-medium text-cp-text-tertiary">
+          <div className="mt-[4px] mb-[8px] h-[13px] shrink-0 px-[8px] text-[11px]/[13px] font-medium text-cs-text-tertiary">
             {branch}
           </div>
 
@@ -131,8 +131,8 @@ export function FileBrowser({
         <div className="flex min-w-0 flex-1 flex-col">
           {/* 46px deep and ruled underneath, with the filename 15 in from the
               divider — the frame's 72 and 24 on the 2204 source. */}
-          <div className="flex h-[46px] shrink-0 items-center gap-[12px] border-b border-cp-hairline pr-[18px] pl-[15px]">
-            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-cp-text-primary">
+          <div className="flex h-[46px] shrink-0 items-center gap-[12px] border-b border-cs-hairline pr-[18px] pl-[15px]">
+            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-cs-text-primary">
               {selected ?? 'Select a file'}
             </span>
 
@@ -172,17 +172,17 @@ export function FileBrowser({
 
           <div className="min-h-0 flex-1 overflow-auto pt-[23px] pr-[18px] pb-[20px] pl-[15px]">
             {versionLabel === undefined ? (
-              <p className="text-[11px] font-normal text-cp-text-tertiary">
+              <p className="text-[11px] font-normal text-cs-text-tertiary">
                 Nothing has been pushed to {branch} yet, so there is no version to read.
               </p>
             ) : selected === undefined ? (
-              <p className="text-[11px] font-normal text-cp-text-tertiary">
+              <p className="text-[11px] font-normal text-cs-text-tertiary">
                 Pick a file from the tree to preview it.
               </p>
             ) : file.loading ? (
-              <p className="text-[11px] font-normal text-cp-text-tertiary">Reading…</p>
+              <p className="text-[11px] font-normal text-cs-text-tertiary">Reading…</p>
             ) : file.error !== undefined ? (
-              <p role="alert" className="text-[11px] font-medium text-cp-text-primary">
+              <p role="alert" className="text-[11px] font-medium text-cs-text-primary">
                 {file.error}
               </p>
             ) : (

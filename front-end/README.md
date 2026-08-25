@@ -1,4 +1,4 @@
-# CleverPro — client
+# Cseudocode — client
 
 React 19 + Vite + Tailwind v4 + TypeScript. Transcribed from a Figma prototype
 and built against the design system in `design-system/`.
@@ -202,12 +202,12 @@ frames are a sample of the product, not an enumeration of it.
 ### Design tokens
 
 All in [`src/index.css`](src/index.css) under Tailwind v4's `@theme`, prefixed
-`cp-`: `--color-cp-*`, `--radius-cp-*`, `--shadow-cp-*`, `--animate-cp-*`. Use
+`cs-`: `--color-cs-*`, `--radius-cs-*`, `--shadow-cs-*`, `--animate-cs-*`. Use
 them rather than hex values — hardcoding a colour looks right in one screen and
 drifts the moment the design system changes.
 
 **Motion is a house default, not transcribed** — the source specifies no
-transitions at all. `--ease-cp` is front-loaded, which suits movement and suits a
+transitions at all. `--ease-cs` is front-loaded, which suits movement and suits a
 fade badly, so anything that only changes opacity uses plain `ease-out`, and the
 compound animations run fade and movement as two animations on two curves.
 

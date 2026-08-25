@@ -1,6 +1,6 @@
 # What works, and what doesn't
 
-A feature-by-feature status of CleverPro Compiler, current as of commit
+A feature-by-feature status of Cseudocode Compiler, current as of commit
 `ac0d58b` plus the member settings page and the hardening pass on top of it.
 
 The interesting thing about this project is that the two halves are not at the

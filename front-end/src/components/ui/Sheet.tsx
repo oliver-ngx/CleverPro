@@ -58,8 +58,8 @@ export function Sheet({
   const titleId = useId()
 
   const shell = `pointer-events-auto relative flex ${
-    closing ? 'animate-cp-sheet-out' : 'animate-cp-sheet-in'
-  } motion-reduce:animate-none max-h-full w-full flex-col overflow-hidden rounded-cp-overlay bg-cp-window pb-[19px] shadow-cp-window ${size}`
+    closing ? 'animate-cs-sheet-out' : 'animate-cs-sheet-in'
+  } motion-reduce:animate-none max-h-full w-full flex-col overflow-hidden rounded-cs-overlay bg-cs-window pb-[19px] shadow-cs-window ${size}`
 
   const inner = (
     <>
@@ -68,7 +68,7 @@ export function Sheet({
             title sits in the same place however many glyphs the bar carries. */}
         <h2
           id={titleId}
-          className="pointer-events-none absolute inset-x-0 text-center text-[14px]/[100%] font-semibold text-cp-text-primary"
+          className="pointer-events-none absolute inset-x-0 text-center text-[14px]/[100%] font-semibold text-cs-text-primary"
         >
           {title}
         </h2>
@@ -104,8 +104,8 @@ export function Sheet({
     // can be typed into or submitted from a form that is already leaving.
     <div
       inert={closing}
-      className={`absolute inset-0 z-30 overflow-auto bg-cp-scrim backdrop-blur-[14px] motion-reduce:animate-none ${
-        closing ? 'animate-cp-fade-out' : 'animate-cp-fade-in'
+      className={`absolute inset-0 z-30 overflow-auto bg-cs-scrim backdrop-blur-[14px] motion-reduce:animate-none ${
+        closing ? 'animate-cs-fade-out' : 'animate-cs-fade-in'
       }`}
     >
       {/* A click target and nothing more: hidden from assistive tech and not

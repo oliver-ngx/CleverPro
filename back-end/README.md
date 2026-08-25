@@ -1,6 +1,6 @@
-# CleverPro — API
+# Cseudocode — API
 
-FastAPI service backing the CleverPro client. Commits, versions, releases, and
+FastAPI service backing the Cseudocode client. Commits, versions, releases, and
 the rules between them.
 
 New to the project? Read the root [`README.md`](../README.md) first — in
@@ -26,7 +26,7 @@ frames were drawn against — at the id `proj_1`, with three members (`Oliver`,
 `Eden Sears`, `Juliana`). The client has no create-project flow, so without that
 seed every screen renders a 404 on a cold start. The id is mirrored in
 `front-end/src/config.ts`; change one and you must change the other. Set
-`CLEVERPRO_SEED=0` to start empty instead. Everything the environment can
+`CSEUDOCODE_SEED=0` to start empty instead. Everything the environment can
 override is listed in [`.env.example`](.env.example).
 
 **Everything is in memory.** Restarting the process resets the project to the

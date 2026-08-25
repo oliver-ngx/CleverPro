@@ -10,9 +10,9 @@ interface ButtonProps extends Omit<ComponentPropsWithRef<'button'>, 'className'>
  * `destructive` is an in-window row on Settings and keeps that screen's sizing.
  */
 const VARIANT_STYLE = {
-  primary: 'h-[27px] w-[79px] rounded-[8px] bg-cp-presence text-[11px] text-cp-white',
-  secondary: 'h-[27px] w-[79px] rounded-[8px] bg-cp-button text-[11px] text-cp-text-primary',
-  destructive: 'h-[37px] w-full rounded-cp-panel bg-cp-card text-[13px] text-cp-destructive',
+  primary: 'h-[27px] w-[79px] rounded-[8px] bg-cs-presence text-[11px] text-cs-white',
+  secondary: 'h-[27px] w-[79px] rounded-[8px] bg-cs-button text-[11px] text-cs-text-primary',
+  destructive: 'h-[37px] w-full rounded-cs-panel bg-cs-card text-[13px] text-cs-destructive',
 } as const
 
 /**
@@ -32,7 +32,7 @@ export function Button({ variant = 'primary', type = 'button', ...rest }: Button
       type={type}
       // `outline-none` suppresses the browser's own two-tone focus ring, and nulls
       // the style ours is drawn in as a side effect — hence `outline-solid` below.
-      className={`cursor-pointer border-none font-medium outline-none transition-[filter,opacity] duration-150 ease-out motion-reduce:transition-none enabled:hover:brightness-[0.96] enabled:active:opacity-60 disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${VARIANT_STYLE[variant]}`}
+      className={`cursor-pointer border-none font-medium outline-none transition-[filter,opacity] duration-150 ease-out motion-reduce:transition-none enabled:hover:brightness-[0.96] enabled:active:opacity-60 disabled:cursor-default disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent ${VARIANT_STYLE[variant]}`}
       {...rest}
     />
   )

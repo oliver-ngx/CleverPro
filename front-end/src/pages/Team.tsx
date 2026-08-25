@@ -123,7 +123,7 @@ export default function Team({
             thing that may change here is the column's width. */}
         <div
           key={person.id}
-          className={`flex shrink-0 flex-col gap-[9px] overflow-x-hidden overflow-y-auto px-[16px] pt-[20px] pb-[35px] animate-cp-page-in transition-[width] duration-300 ease-cp motion-reduce:animate-none motion-reduce:transition-none md:pt-[27px] md:pr-[25px] md:pl-[22px] ${
+          className={`flex shrink-0 flex-col gap-[9px] overflow-x-hidden overflow-y-auto px-[16px] pt-[20px] pb-[35px] animate-cs-page-in transition-[width] duration-300 ease-cs motion-reduce:animate-none motion-reduce:transition-none md:pt-[27px] md:pr-[25px] md:pl-[22px] ${
             split ? 'w-[420px] @max-[860px]:hidden' : 'w-full'
           }`}
         >
@@ -159,7 +159,7 @@ export default function Team({
           instead of being chased into place separately. The window clips whatever
           hangs off the right, which is where this sits when it is shut. */}
       <div
-        className={`absolute inset-y-0 right-0 left-[420px] z-10 flex flex-col border-l border-cp-hairline bg-cp-window transition-transform duration-300 ease-cp motion-reduce:transition-none @max-[860px]:top-[41px] @max-[860px]:left-0 @max-[860px]:border-l-0 ${
+        className={`absolute inset-y-0 right-0 left-[420px] z-10 flex flex-col border-l border-cs-hairline bg-cs-window transition-transform duration-300 ease-cs motion-reduce:transition-none @max-[860px]:top-[41px] @max-[860px]:left-0 @max-[860px]:border-l-0 ${
           split ? '[transform:translateX(0)]' : '[transform:translateX(100%)]'
         }`}
       >
@@ -197,7 +197,7 @@ export default function Team({
           {act.error !== undefined && (
             <div
               role="alert"
-              className="shrink-0 px-[16px] pb-[8px] text-[11px] font-medium text-cp-text-primary md:px-[29px]"
+              className="shrink-0 px-[16px] pb-[8px] text-[11px] font-medium text-cs-text-primary md:px-[29px]"
             >
               {act.error}
             </div>

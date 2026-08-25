@@ -20,7 +20,7 @@ interface BranchPanelProps {
 }
 
 /** Both halves grow and shrink the same way, so the row's height only ever changes once. */
-const TRACK = 'grid transition-[grid-template-rows] duration-300 ease-cp motion-reduce:transition-none'
+const TRACK = 'grid transition-[grid-template-rows] duration-300 ease-cs motion-reduce:transition-none'
 const FADE = 'transition-opacity duration-200 ease-out motion-reduce:transition-none'
 
 /**
@@ -88,7 +88,7 @@ export function BranchPanel({
                 <BranchTrigger current={current} expanded controls={id} heading onClick={onToggle} />
               </div>
 
-              <div className="h-px bg-cp-hairline" />
+              <div className="h-px bg-cs-hairline" />
 
               <BranchList
                 current={current}

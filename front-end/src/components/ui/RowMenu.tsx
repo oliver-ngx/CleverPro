@@ -44,11 +44,11 @@ export function RowMenu({ label, onDelete }: RowMenuProps) {
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={onClick}
-          className={`absolute top-1/2 right-[2px] flex h-[21px] w-[20px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-[5px] border-none bg-transparent p-0 transition-opacity duration-150 ease-out group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-cp-accent motion-reduce:transition-none ${
+          className={`absolute top-1/2 right-[2px] flex h-[21px] w-[20px] -translate-y-1/2 cursor-pointer items-center justify-center rounded-[5px] border-none bg-transparent p-0 transition-opacity duration-150 ease-out group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-cs-accent motion-reduce:transition-none ${
             open ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <Icon name="ellipsis" className="h-[4px] w-[13px] text-cp-text-primary" />
+          <Icon name="ellipsis" className="h-[4px] w-[13px] text-cs-text-primary" />
         </button>
       )}
     >
@@ -63,11 +63,11 @@ export function RowMenu({ label, onDelete }: RowMenuProps) {
               {/* The heading names the row, truncated on purpose: a log line is
                   arbitrarily long and its first few words are the whole of what it
                   contributes to a menu floating away from it. */}
-              <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cp-text-tertiary">
+              <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cs-text-tertiary">
                 {label}
               </span>
 
-              <div className="h-px bg-cp-hairline" />
+              <div className="h-px bg-cs-hairline" />
 
               <div className="flex flex-col items-start gap-[9px] pt-[9px]">
                 <button
@@ -76,7 +76,7 @@ export function RowMenu({ label, onDelete }: RowMenuProps) {
                   onClick={() => {
                     setConfirming(true)
                   }}
-                  className={`${MENU_ITEM} text-cp-text-branch hover:text-cp-text-primary`}
+                  className={`${MENU_ITEM} text-cs-text-branch hover:text-cs-text-primary`}
                 >
                   Delete
                 </button>

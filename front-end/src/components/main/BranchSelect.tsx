@@ -74,8 +74,8 @@ export function BranchSelect({
           header directly over the trigger it replaces. */}
       <div
         inert={!open}
-        className={`absolute ${menuPosition} z-10 origin-top-right overflow-hidden rounded-cp-popover shadow-cp-popover motion-reduce:animate-none ${
-          open ? 'animate-cp-popover-in' : 'animate-cp-popover-out'
+        className={`absolute ${menuPosition} z-10 origin-top-right overflow-hidden rounded-cs-popover shadow-cs-popover motion-reduce:animate-none ${
+          open ? 'animate-cs-popover-in' : 'animate-cs-popover-out'
         }`}
       >
         <Popover>

@@ -76,7 +76,7 @@ export function DataTable({
         <div
           role="row"
           style={{ gridTemplateColumns: grid }}
-          className="grid h-[25px] items-center rounded-t-cp-nav bg-cp-stripe px-[22px] text-[11px] font-medium text-cp-text-primary"
+          className="grid h-[25px] items-center rounded-t-cs-nav bg-cs-stripe px-[22px] text-[11px] font-medium text-cs-text-primary"
         >
           {columns.map((column) => (
             <span key={column.key} className={ALIGN[column.align ?? 'left']}>
@@ -96,9 +96,9 @@ export function DataTable({
             // bottom corners at the nav radius, which is what a 25px row can carry.
             // `group` is what the row's menu hangs its hover off, and `relative` is
             // what it positions against. Both are inert until a row actually has one.
-            className={`group relative grid h-[25px] items-center px-[22px] text-[11px] font-medium whitespace-pre text-cp-text-primary ${
-              index % 2 === 0 ? 'bg-cp-stripe-alt' : 'bg-cp-stripe'
-            } ${index === rows.length - 1 ? 'rounded-b-cp-nav' : ''}`}
+            className={`group relative grid h-[25px] items-center px-[22px] text-[11px] font-medium whitespace-pre text-cs-text-primary ${
+              index % 2 === 0 ? 'bg-cs-stripe-alt' : 'bg-cs-stripe'
+            } ${index === rows.length - 1 ? 'rounded-b-cs-nav' : ''}`}
           >
             {columns.map((column) => (
               <span key={column.key} className={ALIGN[column.align ?? 'left']}>
@@ -108,7 +108,7 @@ export function DataTable({
                     onClick={() => {
                       onAction?.(row, column)
                     }}
-                    className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-medium text-cp-text-primary transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55]"
+                    className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-medium text-cs-text-primary transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55]"
                   >
                     {row[column.key]}
                   </button>

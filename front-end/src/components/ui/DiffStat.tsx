@@ -7,7 +7,7 @@ interface DiffStatProps {
 export function DiffStat({ added, removed }: DiffStatProps) {
   return (
     <span className="shrink-0 text-[11px] font-normal whitespace-nowrap">
-      <span className="text-cp-diff-add">+{added}</span> <span className="text-cp-diff-remove">-{removed}</span>
+      <span className="text-cs-diff-add">+{added}</span> <span className="text-cs-diff-remove">-{removed}</span>
     </span>
   )
 }

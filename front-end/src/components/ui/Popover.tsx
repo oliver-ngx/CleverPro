@@ -31,7 +31,7 @@ interface PopoverProps {
  * is the same #E5E5E5 card sitting inside a page rather than over one, and it reads as
  * the same object only for as long as both are described here once.
  */
-export const POPOVER_SURFACE = 'rounded-cp-popover bg-cp-popover px-[11px] pt-[8px] pb-[10px]'
+export const POPOVER_SURFACE = 'rounded-cs-popover bg-cs-popover px-[11px] pt-[8px] pb-[10px]'
 
 /** The floating one: the surface above, at a fixed width or at its contents'. */
 export function Popover({ children, width = 126, minWidth, maxWidth }: PopoverProps) {

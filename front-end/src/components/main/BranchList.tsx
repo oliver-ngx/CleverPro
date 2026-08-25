@@ -11,7 +11,7 @@ interface BranchListProps {
 
 /** One shared style, so a branch reads the same wherever the list is drawn. */
 const ITEM =
-  'cursor-pointer border-none bg-transparent p-0 text-left text-[11px]/[130%] font-normal text-cp-text-branch transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-cp-text-primary'
+  'cursor-pointer border-none bg-transparent p-0 text-left text-[11px]/[130%] font-normal text-cs-text-branch transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-cs-text-primary'
 
 /**
  * The branches you can switch to, and the way to make another. Drawn twice: inside

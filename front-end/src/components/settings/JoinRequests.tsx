@@ -28,7 +28,7 @@ export function JoinRequests() {
 
   if (waiting.length === 0) {
     return (
-      <span className="text-[13px] font-normal text-cp-text-tertiary">
+      <span className="text-[13px] font-normal text-cs-text-tertiary">
         {requests.error === undefined ? 'Nobody waiting' : requests.error}
       </span>
     )
@@ -42,7 +42,7 @@ export function JoinRequests() {
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={onClick}
-          className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cp-link-alt outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cp-accent"
+          className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cs-link-alt outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cs-accent"
         >
           {waiting.length} waiting
         </button>
@@ -50,16 +50,16 @@ export function JoinRequests() {
     >
       {() => (
         <div className="flex min-w-0 flex-col">
-          <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cp-text-tertiary">
+          <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cs-text-tertiary">
             Asked to join
           </span>
 
-          <div className="h-px bg-cp-hairline" />
+          <div className="h-px bg-cs-hairline" />
 
           <div className="flex flex-col gap-[9px] pt-[9px]">
             {waiting.map((request) => (
               <div key={request.name} className="flex items-center justify-between gap-[20px]">
-                <span className="truncate text-[13px] font-medium text-cp-text-primary">
+                <span className="truncate text-[13px] font-medium text-cs-text-primary">
                   {request.name}
                 </span>
                 <span className="flex shrink-0 items-center gap-[12px]">
@@ -70,7 +70,7 @@ export function JoinRequests() {
                     onClick={() => {
                       answer.run(() => api.approveJoin(request.name))
                     }}
-                    className={`${MENU_ITEM} text-cp-presence hover:opacity-75`}
+                    className={`${MENU_ITEM} text-cs-presence hover:opacity-75`}
                   >
                     Admit
                   </button>
@@ -81,7 +81,7 @@ export function JoinRequests() {
                     onClick={() => {
                       answer.run(() => api.rejectJoin(request.name))
                     }}
-                    className={`${MENU_ITEM} text-cp-destructive hover:opacity-75`}
+                    className={`${MENU_ITEM} text-cs-destructive hover:opacity-75`}
                   >
                     Decline
                   </button>
@@ -91,7 +91,7 @@ export function JoinRequests() {
           </div>
 
           {answer.error !== undefined && (
-            <span role="alert" className="pt-[9px] text-[11px] font-medium text-cp-text-primary">
+            <span role="alert" className="pt-[9px] text-[11px] font-medium text-cs-text-primary">
               {answer.error}
             </span>
           )}

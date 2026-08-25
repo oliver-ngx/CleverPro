@@ -7,16 +7,16 @@
  * listener here. Keeping both numbers in one module means the pairing with the
  * stylesheet is stated once rather than rediscovered in each overlay.
  *
- * Change a duration here, change its `--animate-cp-*-out` token to match.
+ * Change a duration here, change its `--animate-cs-*-out` token to match.
  */
 
-/** Matches `--animate-cp-sheet-out`. Shared by the Add Branch sheet and the Action window. */
+/** Matches `--animate-cs-sheet-out`. Shared by the Add Branch sheet and the Action window. */
 export const SHEET_EXIT_MS = 160
 
-/** Matches `--animate-cp-popover-out`. The branch menu. */
+/** Matches `--animate-cs-popover-out`. The branch menu. */
 export const POPOVER_EXIT_MS = 140
 
-/** Matches `--animate-cp-browser-out`. Main's expanded file browser. */
+/** Matches `--animate-cs-browser-out`. Main's expanded file browser. */
 export const BROWSER_EXIT_MS = 170
 
 /**

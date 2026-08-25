@@ -10,7 +10,7 @@ import type { CodeToken } from '../data/versionSource'
  * transcribe and the alternative to parsing is grey.
  *
  * So this produces the same `CodeToken` shape the transcription does, against the
- * same seven `--color-cp-code-*` values, and `CodeLines` cannot tell the two apart.
+ * same seven `--color-cs-code-*` values, and `CodeLines` cannot tell the two apart.
  * What it is not is a language server. It knows comments, strings, numbers and two
  * word lists, applied identically to every file type — enough that a preview reads
  * as code, and deliberately short of pretending to understand what it is reading. A

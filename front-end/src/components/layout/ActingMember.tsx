@@ -39,7 +39,7 @@ export function ActingMember({ members }: ActingMemberProps) {
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={onClick}
-          className="mx-[25px] flex cursor-pointer items-center gap-[8px] self-start border-none bg-transparent p-0 text-left text-[12px] font-medium text-cp-text-muted outline-none transition-colors duration-150 ease-out hover:text-cp-text-primary motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cp-accent"
+          className="mx-[25px] flex cursor-pointer items-center gap-[8px] self-start border-none bg-transparent p-0 text-left text-[12px] font-medium text-cs-text-muted outline-none transition-colors duration-150 ease-out hover:text-cs-text-primary motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cs-accent"
         >
           <Avatar person={actor} size={16} />
           <span className="truncate">Acting as {actor}</span>
@@ -48,11 +48,11 @@ export function ActingMember({ members }: ActingMemberProps) {
     >
       {(close) => (
         <div className="flex min-w-0 flex-col">
-          <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cp-text-tertiary">
+          <span className="truncate pb-[8px] text-[13px]/[130%] font-semibold text-cs-text-tertiary">
             Act as
           </span>
 
-          <div className="h-px bg-cp-hairline" />
+          <div className="h-px bg-cs-hairline" />
 
           <div className="flex flex-col items-stretch gap-[9px] pt-[9px]">
             {members.map((member) => (
@@ -67,14 +67,14 @@ export function ActingMember({ members }: ActingMemberProps) {
                 }}
                 className={`${MENU_ITEM} flex items-center justify-between gap-[16px] ${
                   member.name === actor
-                    ? 'text-cp-text-primary'
-                    : 'text-cp-text-branch hover:text-cp-text-primary'
+                    ? 'text-cs-text-primary'
+                    : 'text-cs-text-branch hover:text-cs-text-primary'
                 }`}
               >
                 <span className="truncate">{member.name}</span>
                 {/* The role, because it is the reason to switch: it decides
                     which sections a screen draws and which actions are live. */}
-                <span className="shrink-0 text-cp-text-tertiary">{member.role}</span>
+                <span className="shrink-0 text-cs-text-tertiary">{member.role}</span>
               </button>
             ))}
           </div>

@@ -107,14 +107,14 @@ export function PageHeader({
       {/* Sized rather than flexed, so it takes the history's width alongside the
           columns below it. */}
       <span
-        className={`flex w-full min-w-0 shrink-0 items-start justify-between gap-[16px] pr-[17px] pl-[22px] transition-[width] duration-300 ease-cp motion-reduce:transition-none ${
+        className={`flex w-full min-w-0 shrink-0 items-start justify-between gap-[16px] pr-[17px] pl-[22px] transition-[width] duration-300 ease-cs motion-reduce:transition-none ${
           split ? '@min-[860px]:w-[420px]' : ''
         }`}
       >
         {/* The heading is the page's either way. On a teammate's pane it is their
             profile, so the face and the name are one control rather than a picture
             beside a title — pressing either is pressing the person. */}
-        <h1 className="flex items-center gap-[10px] text-[15px] font-semibold text-cp-text-primary">
+        <h1 className="flex items-center gap-[10px] text-[15px] font-semibold text-cs-text-primary">
           {leading === undefined ? (
             name
           ) : (
@@ -125,7 +125,7 @@ export function PageHeader({
               // is drawn two-tone, and its outer band is a white line around the
               // photo. That utility also nulls the style our ring is drawn in, so
               // the focus-visible set restates it: solid, 2px, accent.
-              className="flex cursor-pointer items-center gap-[10px] border-none bg-transparent p-0 text-left font-semibold text-cp-text-primary outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cp-accent"
+              className="flex cursor-pointer items-center gap-[10px] border-none bg-transparent p-0 text-left font-semibold text-cs-text-primary outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cs-accent"
             >
               {leading}
               {name}
@@ -137,7 +137,7 @@ export function PageHeader({
             93% too -- which is why the face behind it showed through. The opacity now
             belongs to the pill alone, and the menu is its sibling. */}
         <span className={`relative shrink-0 ${split ? '@max-[860px]:hidden' : ''}`}>
-          <span className="inline-flex h-[26px] items-center gap-[12px] rounded-cp-pill bg-cp-pill-wide px-[11px] opacity-93">
+          <span className="inline-flex h-[26px] items-center gap-[12px] rounded-cs-pill bg-cs-pill-wide px-[11px] opacity-93">
             {actions.map((action) => (
               <IconButton
                 key={action}
@@ -145,7 +145,7 @@ export function PageHeader({
                 label={ACTION_LABEL[action] ?? action}
                 iconClassName={`${ACTION_SIZE[action] ?? 'size-[12px]'} ${
                   action === 'close' && closeAsPlus ? CLOSE_AS_PLUS : ''
-                } text-cp-text-primary`}
+                } text-cs-text-primary`}
                 onClick={
                   onAction === undefined
                     ? undefined
@@ -165,7 +165,7 @@ export function PageHeader({
             <span
               inert={!menuOpen}
               className={`absolute top-[32px] right-0 z-20 origin-top-right motion-reduce:animate-none ${
-                menuOpen ? 'animate-cp-popover-in' : 'animate-cp-popover-out'
+                menuOpen ? 'animate-cs-popover-in' : 'animate-cs-popover-out'
               }`}
             >
               {menu}

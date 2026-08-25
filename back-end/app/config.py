@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 
 
 def _origins() -> list[str]:
-    raw = os.getenv("CLEVERPRO_CORS_ORIGINS", "")
+    raw = os.getenv("CSEUDOCODE_CORS_ORIGINS", "")
     if not raw.strip():
         # The Vite dev server, on both spellings of loopback. Windows resolves
         # `localhost` to ::1 while a default uvicorn binds IPv4 only, so a
@@ -38,8 +38,8 @@ class Settings:
     # The project the frontend opens into. The design has no project picker
     # and no create flow, so without a seeded project under a known id every
     # screen renders a 404 on a cold start. Mirrored in front-end/src/config.ts.
-    demo_project_id: str = os.getenv("CLEVERPRO_DEMO_PROJECT_ID", "proj_1")
-    seed_demo_project: bool = os.getenv("CLEVERPRO_SEED", "1") != "0"
+    demo_project_id: str = os.getenv("CSEUDOCODE_DEMO_PROJECT_ID", "proj_1")
+    seed_demo_project: bool = os.getenv("CSEUDOCODE_SEED", "1") != "0"
 
     cors_origins: list[str] = field(default_factory=_origins)
 
@@ -51,13 +51,13 @@ class Settings:
     # These count characters where the picker counts bytes. UTF-8 never encodes
     # a character in fewer than one byte, so a selection under the byte ceiling
     # is always under the same number of characters, and the pairing holds.
-    max_tree_files: int = int(os.getenv("CLEVERPRO_MAX_TREE_FILES", "20000"))
-    max_file_chars: int = int(os.getenv("CLEVERPRO_MAX_FILE_CHARS", str(5 * 1024 * 1024)))
-    max_total_chars: int = int(os.getenv("CLEVERPRO_MAX_TOTAL_CHARS", str(50 * 1024 * 1024)))
+    max_tree_files: int = int(os.getenv("CSEUDOCODE_MAX_TREE_FILES", "20000"))
+    max_file_chars: int = int(os.getenv("CSEUDOCODE_MAX_FILE_CHARS", str(5 * 1024 * 1024)))
+    max_total_chars: int = int(os.getenv("CSEUDOCODE_MAX_TOTAL_CHARS", str(50 * 1024 * 1024)))
 
     # The import endpoint reads its whole body into memory before parsing, so
     # it needs a ceiling of its own.
-    max_upload_bytes: int = int(os.getenv("CLEVERPRO_MAX_UPLOAD_BYTES", str(2 * 1024 * 1024)))
+    max_upload_bytes: int = int(os.getenv("CSEUDOCODE_MAX_UPLOAD_BYTES", str(2 * 1024 * 1024)))
 
 
 settings = Settings()

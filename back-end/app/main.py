@@ -21,9 +21,9 @@ from .routers import routers
 
 def create_app(seed: bool | None = None) -> FastAPI:
     app = FastAPI(
-        title="CleverPro Compiler API",
+        title="Cseudocode Compiler API",
         version="1.0.0",
-        summary="Commits, versions and releases for the CleverPro client.",
+        summary="Commits, versions and releases for the Cseudocode client.",
     )
 
     # The dev setup proxies /api through Vite (see front-end/vite.config.ts),

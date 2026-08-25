@@ -69,7 +69,7 @@ def test_deploy_url_appears_only_after_a_release(client):
     push(client)
     assert client.get(f"{PROJECT}/overview").json()["deploy_url"] is None
     client.post(f"{PROJECT}/deploy", json={"actor": OWNER})
-    assert client.get(f"{PROJECT}/overview").json()["deploy_url"] == "orchid-lab.cleverpro.com"
+    assert client.get(f"{PROJECT}/overview").json()["deploy_url"] == "orchid-lab.cseudocode.com"
 
 
 def test_team_shape(client):

@@ -35,7 +35,7 @@ export interface BranchAttachment {
 }
 
 /** Every branch deploys to a subdomain, so the field only ever takes the prefix. */
-export const DEPLOY_SUFFIX = '.cleverpro.com'
+export const DEPLOY_SUFFIX = '.cseudocode.com'
 
 /**
  * What a new branch carries over. Still fixed in the source: the sheet has no

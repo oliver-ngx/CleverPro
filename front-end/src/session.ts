@@ -23,7 +23,7 @@ import { DEFAULT_USER } from './config'
  * every live read refetches as itself rather than showing the previous
  * member's answers until something else happens to invalidate them.
  */
-const KEY = 'cleverpro.acting-member'
+const KEY = 'cseudocode.acting-member'
 
 function stored(): string | undefined {
   // Storage throws outright in some contexts — a private window with site data

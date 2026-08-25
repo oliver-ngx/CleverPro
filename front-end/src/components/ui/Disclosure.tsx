@@ -56,7 +56,7 @@ export function Disclosure({ open, children }: DisclosureProps) {
   return (
     <div
       style={{ transitionDuration: `${String(DISCLOSURE_MS)}ms` }}
-      className={`grid transition-[grid-template-rows] ease-cp motion-reduce:transition-none ${
+      className={`grid transition-[grid-template-rows] ease-cs motion-reduce:transition-none ${
         expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
       }`}
     >

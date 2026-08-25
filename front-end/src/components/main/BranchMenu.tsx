@@ -18,11 +18,11 @@ export function BranchMenu({ current, branches, onSelect, onAdd }: BranchMenuPro
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between gap-[6px] pb-[8px]">
-        <span className="text-[13px] font-semibold text-cp-text-tertiary">{current}</span>
+        <span className="text-[13px] font-semibold text-cs-text-tertiary">{current}</span>
         <Icon name="chevron-up-down" className="h-[11px] w-[8px] shrink-0" />
       </div>
 
-      <div className="h-px bg-cp-hairline" />
+      <div className="h-px bg-cs-hairline" />
 
       <BranchList
         current={current}

@@ -1,4 +1,4 @@
-# CleverPro
+# Cseudocode
 
 A version-control surface for a single project. People propose changes to each
 other, promote changes into numbered versions, release a version to production,
@@ -227,7 +227,7 @@ is the source of truth for the UI and must be consulted before any visual change
 | Change the shape of data a screen receives | `front-end/src/api/adapters.ts` — and nowhere else |
 | Change what a screen looks like | The design system first, then `front-end/src/components/` |
 | Change the demo data every screen opens onto | `back-end/seed.py` |
-| Change colours, radii, motion | `front-end/src/index.css` (`cp-*` tokens) |
+| Change colours, radii, motion | `front-end/src/index.css` (`cs-*` tokens) |
 
 ---
 

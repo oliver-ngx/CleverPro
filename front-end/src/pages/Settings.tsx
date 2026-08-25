@@ -209,7 +209,7 @@ export default function Settings({ projectName }: SettingsProps) {
                         `${window.location.origin}/join/${data.invite_token}`,
                       )
                     }}
-                    className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cp-link-alt transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55]"
+                    className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cs-link-alt transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55]"
                   >
                     Copy link
                   </button>
@@ -299,7 +299,7 @@ export default function Settings({ projectName }: SettingsProps) {
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') event.currentTarget.blur()
                     }}
-                    className="min-w-0 border-none bg-transparent text-right text-[13px] font-medium text-cp-text-tertiary outline-none placeholder:text-cp-text-tertiary"
+                    className="min-w-0 border-none bg-transparent text-right text-[13px] font-medium text-cs-text-tertiary outline-none placeholder:text-cs-text-tertiary"
                   />
                 }
               />
@@ -320,7 +320,7 @@ export default function Settings({ projectName }: SettingsProps) {
                   onChange={(event) => {
                     setTypedName(event.target.value)
                   }}
-                  className="h-[37px] w-full rounded-cp-panel border-none bg-cp-card px-[19px] text-[13px] font-medium text-cp-text-primary outline-none placeholder:text-cp-text-tertiary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent"
+                  className="h-[37px] w-full rounded-cs-panel border-none bg-cs-card px-[19px] text-[13px] font-medium text-cs-text-primary outline-none placeholder:text-cs-text-tertiary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent"
                 />
               )}
               <Button

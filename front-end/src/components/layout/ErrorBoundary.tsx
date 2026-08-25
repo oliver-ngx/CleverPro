@@ -67,21 +67,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         role="alert"
         className={
           this.props.standalone === true
-            ? 'flex min-h-dvh items-center justify-center bg-cp-desktop p-[24px] font-ui'
+            ? 'flex min-h-[var(--cs-viewport-h)] items-center justify-center bg-cs-desktop p-[24px] font-ui'
             : 'flex min-h-0 flex-1 items-center justify-center p-[24px]'
         }
       >
         <div className="flex max-w-[320px] flex-col items-center gap-[10px] text-center">
-          <p className="m-0 text-[13px] font-semibold text-cp-text-primary">
+          <p className="m-0 text-[13px] font-semibold text-cs-text-primary">
             This screen stopped working.
           </p>
-          <p className="m-0 text-[11px]/[150%] font-medium text-cp-text-tertiary">{message}</p>
+          <p className="m-0 text-[11px]/[150%] font-medium text-cs-text-tertiary">{message}</p>
           <button
             type="button"
             onClick={() => {
               window.location.reload()
             }}
-            className="mt-[4px] h-[27px] cursor-pointer rounded-[8px] border-none bg-cp-button px-[14px] text-[11px] font-medium text-cp-text-primary outline-none transition-opacity duration-150 ease-out active:opacity-60 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent"
+            className="mt-[4px] h-[27px] cursor-pointer rounded-[8px] border-none bg-cs-button px-[14px] text-[11px] font-medium text-cs-text-primary outline-none transition-opacity duration-150 ease-out active:opacity-60 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent"
           >
             Reload
           </button>

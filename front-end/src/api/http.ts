@@ -17,7 +17,7 @@
  *
  * `VITE_API_BASE` overrides it for the case that arrangement does not cover —
  * a client deployed to a different host than the API. Setting it means the
- * backend's `CLEVERPRO_CORS_ORIGINS` has to name this origin, because those
+ * backend's `CSEUDOCODE_CORS_ORIGINS` has to name this origin, because those
  * requests genuinely are cross-origin.
  */
 const BASE = import.meta.env.VITE_API_BASE ?? '/api'

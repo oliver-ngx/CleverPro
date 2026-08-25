@@ -16,7 +16,7 @@ interface MobileNavProps {
 
 /** The rail's rows are wide and labelled; a tab is a glyph over its name. */
 const TAB =
-  'flex h-[46px] w-[62px] shrink-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-cp-nav border-none px-[4px] transition-colors duration-150 ease-out motion-reduce:transition-none'
+  'flex h-[46px] w-[62px] shrink-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-cs-nav border-none px-[4px] transition-colors duration-150 ease-out motion-reduce:transition-none'
 
 /**
  * The rail, rewritten for a phone. A 299px column beside the content would leave a
@@ -44,7 +44,7 @@ export function MobileNav({
       aria-label="Sections and team"
       // The safe-area inset keeps the tabs clear of a home indicator; on a phone the
       // window fills the screen, so this is the bottom edge of the display itself.
-      className="flex shrink-0 gap-[2px] overflow-x-auto border-t border-cp-hairline bg-cp-sidebar px-[8px] pt-[6px] pb-[calc(6px+env(safe-area-inset-bottom))] md:hidden"
+      className="flex shrink-0 gap-[2px] overflow-x-auto border-t border-cs-hairline bg-cs-sidebar px-[8px] pt-[6px] pb-[calc(6px+env(safe-area-inset-bottom))] md:hidden"
     >
       {navItems.map((item) => (
         <button
@@ -55,11 +55,11 @@ export function MobileNav({
             onSelectNav(item.label)
           }}
           className={`${TAB} ${
-            item.label === activeNav ? 'bg-cp-selected' : 'bg-transparent'
+            item.label === activeNav ? 'bg-cs-selected' : 'bg-transparent'
           }`}
         >
           <Icon name={item.icon} className="size-[16px]" />
-          <span className="truncate text-[10px] font-medium text-cp-text-primary">
+          <span className="truncate text-[10px] font-medium text-cs-text-primary">
             {item.label}
           </span>
         </button>
@@ -67,7 +67,7 @@ export function MobileNav({
 
       {/* The rail sets the team apart under its own heading; here there is no room
           for one, so the divider does that work. */}
-      <span aria-hidden="true" className="my-[7px] w-px shrink-0 bg-cp-hairline" />
+      <span aria-hidden="true" className="my-[7px] w-px shrink-0 bg-cs-hairline" />
 
       {team.map((person) => {
         const [first] = person.name.split(' ')
@@ -80,7 +80,7 @@ export function MobileNav({
               onSelectPerson(person)
             }}
             className={`${TAB} ${
-              person.id === activePerson ? 'bg-cp-selected' : 'bg-transparent'
+              person.id === activePerson ? 'bg-cs-selected' : 'bg-transparent'
             }`}
           >
             {/* `relative` so the presence dot can sit on the corner of the face,
@@ -92,11 +92,11 @@ export function MobileNav({
                 <span
                   role="status"
                   aria-label="Online"
-                  className="absolute -right-px -bottom-px size-[6px] rounded-full bg-cp-presence ring-2 ring-cp-sidebar"
+                  className="absolute -right-px -bottom-px size-[6px] rounded-full bg-cs-presence ring-2 ring-cs-sidebar"
                 />
               )}
             </span>
-            <span className="w-full truncate text-center text-[10px] font-medium text-cp-text-primary">
+            <span className="w-full truncate text-center text-[10px] font-medium text-cs-text-primary">
               {first}
             </span>
           </button>

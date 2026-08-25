@@ -18,7 +18,7 @@ interface OptionSelectProps {
 }
 
 /** Both halves grow and shrink the same way, so the row's height only ever changes once. */
-const TRACK = 'grid transition-[grid-template-rows] duration-300 ease-cp motion-reduce:transition-none'
+const TRACK = 'grid transition-[grid-template-rows] duration-300 ease-cs motion-reduce:transition-none'
 const FADE = 'transition-opacity duration-200 ease-out motion-reduce:transition-none'
 
 /**
@@ -67,7 +67,7 @@ export function OptionSelect({
   // meant for whatever is above it.
   useOverlayDismiss(close, open)
 
-  const text = 'text-[13px] font-medium text-cp-text-tertiary'
+  const text = 'text-[13px] font-medium text-cs-text-tertiary'
   const chevron = <Icon name="chevron-small" className="h-[7px] w-[4px] shrink-0 opacity-84" />
 
   // The value as a control, drawn identically closed and as the card's first line —
@@ -82,7 +82,7 @@ export function OptionSelect({
       onClick={() => {
         setOpen(!heading)
       }}
-      className={`cursor-pointer items-center gap-[9px] border-none bg-transparent p-0 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent disabled:cursor-default disabled:opacity-50 ${text} ${
+      className={`cursor-pointer items-center gap-[9px] border-none bg-transparent p-0 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent disabled:cursor-default disabled:opacity-50 ${text} ${
         heading ? 'flex w-full justify-between' : 'inline-flex'
       }`}
     >
@@ -115,7 +115,7 @@ export function OptionSelect({
             <div className={POPOVER_SURFACE}>
               <div className="pb-[8px]">{trigger(true)}</div>
 
-              <div className="h-px bg-cp-hairline" />
+              <div className="h-px bg-cs-hairline" />
 
               <div className="flex flex-col items-start gap-[9px] pt-[9px]">
                 {options
@@ -128,7 +128,7 @@ export function OptionSelect({
                         onSelect(option)
                         close()
                       }}
-                      className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px]/[130%] font-normal text-cp-text-branch transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-cp-text-primary"
+                      className="cursor-pointer border-none bg-transparent p-0 text-left text-[11px]/[130%] font-normal text-cs-text-branch transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-cs-text-primary"
                     >
                       {option}
                     </button>

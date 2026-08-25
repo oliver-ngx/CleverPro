@@ -18,7 +18,7 @@ interface CheckboxProps {
 export function Checkbox({
   checked,
   label,
-  accentColor = 'var(--color-cp-accent)',
+  accentColor = 'var(--color-cs-accent)',
   onChange,
 }: CheckboxProps) {
   return (
@@ -29,11 +29,11 @@ export function Checkbox({
       aria-label={label}
       onClick={onChange}
       style={{ background: checked ? accentColor : undefined }}
-      className={`relative inline-flex size-[14px] shrink-0 cursor-pointer items-center justify-center rounded-cp-checkbox border-none p-0 transition-colors duration-150 ease-out motion-reduce:transition-none pointer-coarse:after:absolute pointer-coarse:after:-inset-[5px] pointer-coarse:after:content-[''] ${
-        checked ? '' : 'bg-cp-white shadow-cp-checkbox-off'
+      className={`relative inline-flex size-[14px] shrink-0 cursor-pointer items-center justify-center rounded-cs-checkbox border-none p-0 transition-colors duration-150 ease-out motion-reduce:transition-none pointer-coarse:after:absolute pointer-coarse:after:-inset-[5px] pointer-coarse:after:content-[''] ${
+        checked ? '' : 'bg-cs-white shadow-cs-checkbox-off'
       }`}
     >
-      {checked && <Icon name="checkmark" className="size-[7px] animate-cp-check-in motion-reduce:animate-none" />}
+      {checked && <Icon name="checkmark" className="size-[7px] animate-cs-check-in motion-reduce:animate-none" />}
     </button>
   )
 }

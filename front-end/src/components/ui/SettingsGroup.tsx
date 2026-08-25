@@ -15,11 +15,11 @@ export function SettingsGroup({ label, children }: SettingsGroupProps) {
   return (
     <div>
       {label !== undefined && (
-        <div className="mb-[8px] ml-[22px] text-[12px] font-medium text-cp-text-section">
+        <div className="mb-[8px] ml-[22px] text-[12px] font-medium text-cs-text-section">
           {label}
         </div>
       )}
-      <div className="rounded-cp-panel bg-cp-card py-[9px]">{children}</div>
+      <div className="rounded-cs-panel bg-cs-card py-[9px]">{children}</div>
     </div>
   )
 }

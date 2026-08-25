@@ -146,7 +146,7 @@ export default function MemberSettings({ member, members, onRemoved }: MemberSet
                         onClick={() => {
                           setArmed('transfer')
                         }}
-                        className="flex h-[35px] cursor-pointer items-center border-none bg-transparent p-0 text-[13px] font-medium text-cp-text-tertiary outline-none transition-colors duration-150 ease-out hover:text-cp-text-primary motion-reduce:transition-none disabled:cursor-default disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent"
+                        className="flex h-[35px] cursor-pointer items-center border-none bg-transparent p-0 text-[13px] font-medium text-cs-text-tertiary outline-none transition-colors duration-150 ease-out hover:text-cs-text-primary motion-reduce:transition-none disabled:cursor-default disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent"
                       >
                         Hand over the project
                       </button>

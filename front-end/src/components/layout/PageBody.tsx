@@ -21,7 +21,7 @@ interface PageBodyProps {
 export function PageBody({ className, children }: PageBodyProps) {
   return (
     <div
-      className={`flex min-h-0 flex-1 flex-col overflow-auto animate-cp-page-in motion-reduce:animate-none ${className}`}
+      className={`flex min-h-0 flex-1 flex-col overflow-auto animate-cs-page-in motion-reduce:animate-none ${className}`}
     >
       {children}
     </div>

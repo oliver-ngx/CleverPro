@@ -48,10 +48,10 @@ export function Sidebar({
   members,
 }: SidebarProps) {
   return (
-    <div className="hidden w-[299px] shrink-0 overflow-hidden bg-cp-sidebar md:block">
+    <div className="hidden w-[299px] shrink-0 overflow-hidden bg-cs-sidebar md:block">
       <div className="flex h-full w-full shrink-0 flex-col pt-[14px]">
         <div className="flex h-[44px] items-center px-[18px]">
-          <span className="text-[14px] font-semibold text-cp-text-primary">{title}</span>
+          <span className="text-[14px] font-semibold text-cs-text-primary">{title}</span>
         </div>
 
         <div className="h-[21px]" />
@@ -73,7 +73,7 @@ export function Sidebar({
         <div className="h-[32px]" />
 
         <div className="mr-[30px] ml-[25px] flex h-[18px] items-center justify-between">
-          <span className="text-[12px] font-medium text-cp-text-label">Team</span>
+          <span className="text-[12px] font-medium text-cs-text-label">Team</span>
           {/* The glyph floats its card rather than unfolding one under the heading.
               The in-place pattern is for a row that *displays* a value -- the value
               collapses and the card's heading arrives where it was. A bare glyph
@@ -85,7 +85,7 @@ export function Sidebar({
                 icon="filter"
                 label="Sort the team list"
                 expanded={open}
-                iconClassName="h-[7px] w-[12px] text-cp-text-primary"
+                iconClassName="h-[7px] w-[12px] text-cs-text-primary"
                 onClick={onClick}
               />
             )}
@@ -123,7 +123,7 @@ export function Sidebar({
 
         <button
           type="button"
-          className="mx-[25px] cursor-pointer self-start border-none bg-transparent p-0 text-[12px] font-medium text-cp-text-muted transition-colors duration-150 hover:text-cp-text-primary motion-reduce:transition-none"
+          className="mx-[25px] cursor-pointer self-start border-none bg-transparent p-0 text-[12px] font-medium text-cs-text-muted transition-colors duration-150 hover:text-cs-text-primary motion-reduce:transition-none"
         >
           More
         </button>

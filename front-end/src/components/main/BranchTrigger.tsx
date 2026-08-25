@@ -40,7 +40,7 @@ export function BranchTrigger({
       aria-expanded={expanded}
       aria-controls={controls}
       onClick={onClick}
-      className={`cursor-pointer items-center gap-[6px] border-none bg-transparent p-0 text-[13px] font-semibold text-cp-text-tertiary ${
+      className={`cursor-pointer items-center gap-[6px] border-none bg-transparent p-0 text-[13px] font-semibold text-cs-text-tertiary ${
         heading ? 'flex w-full justify-between' : 'inline-flex'
       }`}
     >

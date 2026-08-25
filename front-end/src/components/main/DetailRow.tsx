@@ -40,7 +40,7 @@ export function DetailRow({
             down the moment the value opened. */}
         <span
           style={grows ? { height } : undefined}
-          className={`shrink-0 text-[13px] font-medium text-cp-text-primary ${
+          className={`shrink-0 text-[13px] font-medium text-cs-text-primary ${
             grows ? 'flex items-center' : ''
           }`}
         >
@@ -48,7 +48,7 @@ export function DetailRow({
         </span>
         {children}
       </div>
-      {divider && <div className="mx-[10px] h-px bg-cp-hairline md:mx-[26px]" />}
+      {divider && <div className="mx-[10px] h-px bg-cs-hairline md:mx-[26px]" />}
     </>
   )
 }

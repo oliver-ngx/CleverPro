@@ -47,8 +47,8 @@ export function VersionRow({
   // A selected row is already the colour the hover wash lands on, so lifting it again
   // would read as fading towards white under the pointer. It stays put.
   const fill = selected
-    ? 'bg-cp-row-active'
-    : 'bg-cp-field hover:bg-cp-row-hover active:bg-cp-row-active'
+    ? 'bg-cs-row-active'
+    : 'bg-cs-field hover:bg-cs-row-hover active:bg-cs-row-active'
 
   return (
     <button
@@ -58,16 +58,16 @@ export function VersionRow({
       // `outline-none` suppresses the browser's own two-tone focus ring, and nulls
       // the style ours is drawn in as a side effect — hence `outline-solid` below.
       // Without it the ring is 2px of nothing and a keyboard user sees no focus.
-      className={`flex w-full shrink-0 cursor-pointer items-center gap-[16px] border-none pr-[13px] pl-[16px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent ${
-        tall ? 'h-[50px] rounded-cp-attachment' : 'h-[41px] rounded-cp-pill'
+      className={`flex w-full shrink-0 cursor-pointer items-center gap-[16px] border-none pr-[13px] pl-[16px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent ${
+        tall ? 'h-[50px] rounded-cs-attachment' : 'h-[41px] rounded-cs-pill'
       } ${fill}`}
     >
       <Icon name={icon} className="h-auto shrink-0" style={{ width: iconSize }} />
 
       <span className="flex min-w-0 flex-1 flex-col gap-[4px]">
-        <span className="truncate text-[11px] font-medium text-cp-text-secondary">{title}</span>
+        <span className="truncate text-[11px] font-medium text-cs-text-secondary">{title}</span>
         {subtitle !== undefined && (
-          <span className="truncate text-[9px] font-normal text-cp-text-subtle">{subtitle}</span>
+          <span className="truncate text-[9px] font-normal text-cs-text-subtle">{subtitle}</span>
         )}
       </span>
 

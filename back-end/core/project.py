@@ -205,7 +205,7 @@ class Project:
         # Identity and the deploy URL. `domain` is auto-provisioned from the
         # name; `custom_domain` is optional and overrides it once set.
         self.name: str = name or f"{owner_name}'s project"
-        self.domain: str = self._slugify(self.name) + ".cleverpro.com"
+        self.domain: str = self._slugify(self.name) + ".cseudocode.com"
         self.preview_image: str | None = None
 
         # Settings surface.
@@ -274,7 +274,7 @@ class Project:
         if not cleaned:
             raise ValueError("A project name cannot be empty.")
         self.name = cleaned
-        self.domain = self._slugify(cleaned) + ".cleverpro.com"
+        self.domain = self._slugify(cleaned) + ".cseudocode.com"
         self._log_event(actor, "settings_changed", f"Project renamed to {cleaned}")
 
     @synchronized

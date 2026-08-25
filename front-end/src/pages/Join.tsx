@@ -43,7 +43,7 @@ export function Join({ token, onJoined }: JoinProps) {
   const cleaned = name.trim()
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-cp-desktop p-[24px] font-ui">
+    <div className="flex min-h-[var(--cs-viewport-h)] items-center justify-center bg-cs-desktop p-[24px] font-ui">
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -63,14 +63,14 @@ export function Join({ token, onJoined }: JoinProps) {
             },
           )
         }}
-        className="flex w-full max-w-[420px] flex-col gap-[18px] rounded-cp-overlay bg-cp-window p-[32px] shadow-cp-window"
+        className="flex w-full max-w-[420px] flex-col gap-[18px] rounded-cs-overlay bg-cs-window p-[32px] shadow-cs-window"
       >
         {pending ? (
           <>
-            <h1 className="m-0 text-[15px] font-semibold text-cp-text-primary">
+            <h1 className="m-0 text-[15px] font-semibold text-cs-text-primary">
               Asked to join {project}
             </h1>
-            <p className="m-0 text-[13px]/[150%] font-normal text-cp-text-tertiary">
+            <p className="m-0 text-[13px]/[150%] font-normal text-cs-text-tertiary">
               This project does not let people in on the link alone, so {cleaned} is
               waiting for its Owner to answer. Nothing else happens here — come back
               through the same link once they have.
@@ -78,10 +78,10 @@ export function Join({ token, onJoined }: JoinProps) {
           </>
         ) : (
           <>
-            <h1 className="m-0 text-[15px] font-semibold text-cp-text-primary">
+            <h1 className="m-0 text-[15px] font-semibold text-cs-text-primary">
               Join {project}
             </h1>
-            <p className="m-0 text-[13px]/[150%] font-normal text-cp-text-tertiary">
+            <p className="m-0 text-[13px]/[150%] font-normal text-cs-text-tertiary">
               Your name is how everyone here will know you, and how the project
               addresses work to you.
             </p>
@@ -105,7 +105,7 @@ export function Join({ token, onJoined }: JoinProps) {
                 <button
                   type="button"
                   onClick={onJoined}
-                  className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cp-link-alt outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cp-accent"
+                  className="cursor-pointer border-none bg-transparent p-0 text-[13px] font-medium text-cs-link-alt outline-none transition-opacity duration-150 ease-out motion-reduce:transition-none active:opacity-[0.55] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-cs-accent"
                 >
                   Open {project}
                 </button>

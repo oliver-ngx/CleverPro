@@ -34,7 +34,7 @@ export function ResourceState({ loading, error, empty, emptyWhen }: ResourceStat
     <div
       role={error === undefined ? 'status' : 'alert'}
       className={`px-[6px] py-[10px] text-[11px] font-medium ${
-        error === undefined ? 'text-cp-text-tertiary' : 'text-cp-text-primary'
+        error === undefined ? 'text-cs-text-tertiary' : 'text-cs-text-primary'
       }`}
     >
       {message}

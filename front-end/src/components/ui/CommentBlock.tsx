@@ -18,9 +18,9 @@ export function CommentBlock({ author, items }: CommentBlockProps) {
     <div>
       <div className="mb-[8px] flex items-center gap-[15px]">
         <Icon name="comment" className="h-[15px] w-[16px] shrink-0 opacity-45" />
-        <span className="text-[11px] font-normal text-cp-text-tertiary">by {author}</span>
+        <span className="text-[11px] font-normal text-cs-text-tertiary">by {author}</span>
       </div>
-      <ul className="m-0 list-disc pl-[19px] text-[13px]/[130%] font-normal text-cp-text-primary">
+      <ul className="m-0 list-disc pl-[19px] text-[13px]/[130%] font-normal text-cs-text-primary">
         {/* Index, because a note may repeat a line and the list is a fixed,
             ordered rendering of `items` rather than something reordered in place. */}
         {items.map((item, index) => (

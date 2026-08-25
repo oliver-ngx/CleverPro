@@ -88,31 +88,31 @@ export function VersionToolbar({
             }
             disabled={!retractable}
             onClick={onRetract}
-            iconClassName="h-[11px] w-[10px] text-cp-text-primary"
+            iconClassName="h-[11px] w-[10px] text-cs-text-primary"
           />
           <IconButton
             icon="message"
             label="Comment"
-            iconClassName="size-[11px] text-cp-text-primary"
+            iconClassName="size-[11px] text-cs-text-primary"
           />
         </span>
         <span className="flex items-center gap-[12px]">
           <IconButton
             icon="commit"
             label="Forward"
-            iconClassName="h-[10px] w-[15px] text-cp-text-primary"
+            iconClassName="h-[10px] w-[15px] text-cs-text-primary"
           />
           <IconButton
             icon="push"
             label="Push"
             disabled={!pushable}
             onClick={onPush}
-            iconClassName="h-[11px] w-[16px] text-cp-text-primary"
+            iconClassName="h-[11px] w-[16px] text-cs-text-primary"
           />
           <IconButton
             icon="export"
             label="Export"
-            iconClassName="h-[11px] w-[13px] text-cp-text-primary"
+            iconClassName="h-[11px] w-[13px] text-cs-text-primary"
           />
         </span>
       </span>
@@ -134,17 +134,17 @@ export function VersionToolbar({
         <IconButton
           icon="bell-slash"
           label="Mute"
-          iconClassName="size-[10px] text-cp-text-primary"
+          iconClassName="size-[10px] text-cs-text-primary"
         />
         <IconButton
           icon="ellipsis"
           label="More version actions"
-          iconClassName="h-[3px] w-[11px] text-cp-text-primary"
+          iconClassName="h-[3px] w-[11px] text-cs-text-primary"
         />
         <IconButton
           icon="close"
           label="Close version"
-          iconClassName="size-[8px] text-cp-text-primary"
+          iconClassName="size-[8px] text-cs-text-primary"
           onClick={onClose}
         />
       </span>

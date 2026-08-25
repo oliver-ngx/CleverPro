@@ -355,7 +355,7 @@ const VECTOR_GLYPHS: Record<VectorName, VectorGlyph> = {
      in this repo was a black version of the same glyph, which is why Main was the one
      nav item drawn untinted while Activity, Archive and Settings each carried theirs.
      Baked in rather than inherited, the way every other tinted glyph here works, and
-     close to but not the same as --color-cp-destructive (#FF6161), which is a
+     close to but not the same as --color-cs-destructive (#FF6161), which is a
      different red for a different job. */
   'nav-main': {
     viewBox: '0 0 215 203',

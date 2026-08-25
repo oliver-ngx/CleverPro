@@ -77,7 +77,7 @@ export function Avatar({ person, label, size = 19 }: AvatarProps) {
           // the 16px switcher and the 43px pane header without a size table.
           fontSize: Math.max(8, Math.round(size * 0.4)),
         }}
-        className="inline-flex shrink-0 items-center justify-center rounded-cp-pill bg-cp-field font-medium text-cp-text-tertiary select-none"
+        className="inline-flex shrink-0 items-center justify-center rounded-cs-pill bg-cs-field font-medium text-cs-text-tertiary select-none"
       >
         {initialsFor(person)}
       </span>
@@ -92,7 +92,7 @@ export function Avatar({ person, label, size = 19 }: AvatarProps) {
         height: size,
         backgroundImage: `url(/assets/avatars/${slug}.png)`,
       }}
-      className="inline-block shrink-0 rounded-cp-pill bg-cover bg-center bg-no-repeat"
+      className="inline-block shrink-0 rounded-cs-pill bg-cover bg-center bg-no-repeat"
     />
   )
 }

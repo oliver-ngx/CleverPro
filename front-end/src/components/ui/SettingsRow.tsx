@@ -62,14 +62,14 @@ export function SettingsRow({
           the row's closed height rather than against the row — otherwise it would
           slide down the moment the value opened. */}
       <span
-        className={`shrink-0 text-[13px] font-medium text-cp-text-primary ${
+        className={`shrink-0 text-[13px] font-medium text-cs-text-primary ${
           grows ? 'flex h-[35px] items-center' : ''
         }`}
       >
         {label}
       </span>
       <span
-        className={`flex min-w-0 text-[13px] font-medium text-cp-text-tertiary ${
+        className={`flex min-w-0 text-[13px] font-medium text-cs-text-tertiary ${
           grows ? 'flex-col items-end' : 'items-center gap-[9px]'
         }`}
       >
@@ -91,12 +91,12 @@ export function SettingsRow({
           // `outline-none` kills the browser's own ring and nulls the style ours
           // is drawn in as a side effect, hence `outline-solid` — the same pair
           // VersionRow needs for the same reason.
-          className={`${LAYOUT} cursor-pointer border-none bg-transparent text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-cp-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cp-accent disabled:cursor-default disabled:opacity-50`}
+          className={`${LAYOUT} cursor-pointer border-none bg-transparent text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-cs-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cs-accent disabled:cursor-default disabled:opacity-50`}
         >
           {content}
         </button>
       )}
-      {divider && <div className="mx-[22px] h-px bg-cp-hairline" />}
+      {divider && <div className="mx-[22px] h-px bg-cs-hairline" />}
     </>
   )
 }

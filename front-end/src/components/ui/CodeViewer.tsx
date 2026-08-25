@@ -26,13 +26,13 @@ interface CodeViewerProps {
  */
 export function CodeViewer({ filename, icon = 'swift', lines, startLine = 1 }: CodeViewerProps) {
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-cp-code bg-cp-field px-[8px] pt-[10px] pb-[10px]">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-cs-code bg-cs-field px-[8px] pt-[10px] pb-[10px]">
       <div className="flex shrink-0 items-center gap-[8px] pb-[11px] pl-[11px]">
         <Icon name={icon} className="size-[13px] shrink-0" />
-        <span className="truncate text-[13px] font-normal text-cp-text-file">{filename}</span>
+        <span className="truncate text-[13px] font-normal text-cs-text-file">{filename}</span>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-cp-code bg-cp-white px-[14px] py-[8px]">
+      <div className="min-h-0 flex-1 overflow-auto rounded-cs-code bg-cs-white px-[14px] py-[8px]">
         <CodeLines lines={lines} startLine={startLine} />
       </div>
     </div>

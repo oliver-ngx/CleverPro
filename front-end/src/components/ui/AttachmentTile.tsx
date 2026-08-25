@@ -31,9 +31,9 @@ export function AttachmentTile({ icon, name, branch, iconSize }: AttachmentTileP
       <div className="flex h-[94px] items-center justify-center">
         <Icon name={icon} className="h-auto" style={{ width: iconSize }} />
       </div>
-      <div className="mt-[9px] text-[11px]/[100%] font-medium text-cp-text-tertiary">{name}</div>
+      <div className="mt-[9px] text-[11px]/[100%] font-medium text-cs-text-tertiary">{name}</div>
       {branch !== undefined && (
-        <div className="mt-[5px] text-[9px]/[100%] font-medium text-cp-text-tertiary">{branch}</div>
+        <div className="mt-[5px] text-[9px]/[100%] font-medium text-cs-text-tertiary">{branch}</div>
       )}
     </div>
   )

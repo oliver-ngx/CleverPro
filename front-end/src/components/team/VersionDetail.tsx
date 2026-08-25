@@ -122,7 +122,7 @@ export const VersionDetail = memo(function VersionDetail({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto pt-[13px] pr-[11px] pb-[24px] pl-[14px]">
-      <span className="mb-[8px] shrink-0 self-end text-[11px] font-normal text-cp-text-stamp">
+      <span className="mb-[8px] shrink-0 self-end text-[11px] font-normal text-cs-text-stamp">
         {entry.stamp}
       </span>
 

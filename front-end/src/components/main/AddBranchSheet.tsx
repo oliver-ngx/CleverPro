@@ -167,7 +167,7 @@ export function AddBranchSheet({
           >
             Attachment
           </FieldLabel>
-          <div className="flex flex-wrap gap-[29px] rounded-[20px] bg-cp-field px-[24px] py-[15px]">
+          <div className="flex flex-wrap gap-[29px] rounded-[20px] bg-cs-field px-[24px] py-[15px]">
             {BRANCH_ATTACHMENTS.map((attachment) => (
               <AttachmentTile
                 key={attachment.name}
@@ -196,10 +196,10 @@ export function AddBranchSheet({
             onClick={() => {
               setTeamOpen((current) => !current)
             }}
-            className="flex h-[50px] w-full cursor-pointer items-center justify-between rounded-[18px] border-none bg-cp-field px-[19px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cp-accent"
+            className="flex h-[50px] w-full cursor-pointer items-center justify-between rounded-[18px] border-none bg-cs-field px-[19px] text-left outline-none transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-cs-accent"
           >
-            <span className="text-[14px]/[100%] font-medium text-cp-text-primary">Team</span>
-            <span className="inline-flex items-center gap-[8px] text-[11px]/[100%] font-medium text-cp-text-tertiary">
+            <span className="text-[14px]/[100%] font-medium text-cs-text-primary">Team</span>
+            <span className="inline-flex items-center gap-[8px] text-[11px]/[100%] font-medium text-cs-text-tertiary">
               {everyone
                 ? `All from ${sourceBranch}`
                 : `${String(team.size)} of ${String(members.length)}`}
@@ -229,10 +229,10 @@ export function AddBranchSheet({
                         return next
                       })
                     }}
-                    className={`cursor-pointer rounded-cp-pill border-none px-[10px] py-[4px] text-[11px] font-medium transition-colors duration-150 ease-out motion-reduce:transition-none ${
+                    className={`cursor-pointer rounded-cs-pill border-none px-[10px] py-[4px] text-[11px] font-medium transition-colors duration-150 ease-out motion-reduce:transition-none ${
                       on
-                        ? 'bg-cp-row-active text-cp-text-primary'
-                        : 'bg-cp-field text-cp-text-subtle hover:bg-cp-row-hover'
+                        ? 'bg-cs-row-active text-cs-text-primary'
+                        : 'bg-cs-field text-cs-text-subtle hover:bg-cs-row-hover'
                     }`}
                   >
                     {member.name}

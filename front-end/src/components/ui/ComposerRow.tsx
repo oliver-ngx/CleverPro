@@ -39,10 +39,10 @@ export function ComposerRow({
           grows ? 'min-h-[50px] pb-[14px]' : 'h-[50px]'
         }`}
       >
-        <span className="shrink-0 text-[14px] font-medium text-cp-text-composer">{label}</span>
+        <span className="shrink-0 text-[14px] font-medium text-cs-text-composer">{label}</span>
         {children}
       </div>
-      {divider && <div className="h-px shrink-0 bg-cp-hairline" />}
+      {divider && <div className="h-px shrink-0 bg-cs-hairline" />}
     </>
   )
 }

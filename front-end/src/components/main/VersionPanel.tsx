@@ -40,19 +40,19 @@ export function VersionPanel({
   onExpand,
 }: VersionPanelProps) {
   return (
-    <div className="relative mb-[35px] rounded-cp-panel bg-cp-card px-[22px] pt-[21px] pb-[25px]">
+    <div className="relative mb-[35px] rounded-cs-panel bg-cs-card px-[22px] pt-[21px] pb-[25px]">
       {/* Behind everything, and inset to the card's own radius so its focus ring and
           hover wash follow the card's silhouette rather than boxing it. */}
       <button
         type="button"
         onClick={onExpand}
         aria-label={`Browse the files in ${projectName}`}
-        className="absolute inset-0 z-0 cursor-pointer rounded-cp-panel border-none bg-transparent p-0 outline-none transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-cp-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cp-accent"
+        className="absolute inset-0 z-0 cursor-pointer rounded-cs-panel border-none bg-transparent p-0 outline-none transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-cs-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-cs-accent"
       />
 
       <div className="pointer-events-none relative z-10">
-        <div className="text-[13px] font-medium text-cp-text-primary">{projectName}</div>
-        <div className="mt-[7px] mb-[16px] text-[11px] font-medium text-cp-text-tertiary">
+        <div className="text-[13px] font-medium text-cs-text-primary">{projectName}</div>
+        <div className="mt-[7px] mb-[16px] text-[11px] font-medium text-cs-text-tertiary">
           {branch}
         </div>
       </div>

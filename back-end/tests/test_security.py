@@ -283,7 +283,7 @@ def test_a_renamed_project_reprovisions_its_domain(client):
                  "tree_snapshot": {"a.txt": "a"}, "comment": "v1", "name": "V1"}
     client.post(f"{PROJECT}/push", json=push_body)
     client.post(f"{PROJECT}/deploy", json={"actor": OWNER})
-    assert client.get(f"{PROJECT}/overview").json()["deploy_url"] == "violet-works.cleverpro.com"
+    assert client.get(f"{PROJECT}/overview").json()["deploy_url"] == "violet-works.cseudocode.com"
 
 
 def test_a_project_cannot_be_renamed_to_nothing(client):

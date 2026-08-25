@@ -22,7 +22,7 @@ interface FieldLabelProps {
  * `htmlFor` it renders a real label, so clicking the caption focuses the field.
  */
 export function FieldLabel({ children, htmlFor, action }: FieldLabelProps) {
-  const text = 'text-[14px]/[100%] font-medium text-cp-text-primary'
+  const text = 'text-[14px]/[100%] font-medium text-cs-text-primary'
 
   return (
     <div className="mb-[8px] flex items-center justify-between">
