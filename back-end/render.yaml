@@ -1,0 +1,38 @@
+# Render blueprint for the Cseudocode API.
+#
+# Vercel cannot host this service: it runs serverless functions, and this
+# backend keeps every project in a dictionary in the process (app/store.py).
+# On serverless each cold start rebuilds the demo seed and every write is
+# lost when the instance recycles. It needs a process that stays alive.
+#
+# To use: Render dashboard -> New -> Blueprint -> point at this repo.
+services:
+  - type: web
+    name: cseudocode-api
+    runtime: python
+    # The service lives in back-end/, not at the repo root.
+    rootDir: back-end
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # $PORT is assigned by the host; 0.0.0.0 so it is reachable from outside
+    # the container. No --reload here -- that is a development affordance and
+    # it spawns a second process.
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # pyproject.toml targets py312; the tooling and syntax used here (PEP 695
+      # generics in core/project.py) require 3.12 or newer.
+      - key: PYTHON_VERSION
+        value: "3.12"
+      # The client reaches the API through a same-origin rewrite from Vercel
+      # (see front-end/vercel.json), so no request is ever cross-origin and
+      # this can stay empty. Set it only if you point the client straight at
+      # this host with VITE_API_BASE instead, in which case it must name that
+      # client's exact origin.
+      - key: CSEUDOCODE_CORS_ORIGINS
+        value: ""
+      # Leave the demo project seeded: the client has no create-project flow
+      # and PROJECT_ID in front-end/src/config.ts must match a project that
+      # exists, or every screen renders a 404.
+      - key: CSEUDOCODE_SEED
+        value: "1"
