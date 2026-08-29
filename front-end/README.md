@@ -7,6 +7,12 @@ New to the project? Read the root [`README.md`](../README.md) first — especial
 the vocabulary table, because *commit*, *merge* and *push* do not mean here what
 they mean in git, and the components are named after the product's meanings.
 
+Then read [`SHELL.md`](../SHELL.md). **This file describes `App.tsx` and
+everything under it — the Compiler, one project.** It is no longer the root of
+the client: `Shell.tsx` is, and it draws Home and the project list above any
+project. SHELL.md is the boundary between the two, and says which files belong
+to which layer.
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173 — /api proxied to 127.0.0.1:8000

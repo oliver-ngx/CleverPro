@@ -8,11 +8,17 @@ collapsed into "latest".
 A React client and a FastAPI service. The client is transcribed from a Figma
 prototype; the service enforces the rules the client draws.
 
-Two documents sit beside this one and answer different questions.
+Three documents sit beside this one and answer different questions.
 [FEATURES.md](FEATURES.md) is the status — every feature, with separate columns
 for the API and the UI, because the two are not at the same place.
 [NEXT-STEPS.md](NEXT-STEPS.md) is what to do about it, in order, with the
 decisions that need making first.
+
+[SHELL.md](SHELL.md) is the newest and the one to read before touching the
+client. **Compiler is no longer the whole application** — it is one module of
+Cseudocode, reached through a Home screen and a project list that sit above it.
+Everything below this line describes what is *inside* a project; SHELL.md
+describes the layer above, and the seam between the two.
 
 ---
 

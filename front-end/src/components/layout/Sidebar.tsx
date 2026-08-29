@@ -25,6 +25,12 @@ interface SidebarProps {
   onSortTeam: (order: TeamSort) => void
   /** Everyone on the project, for the acting-member switch beneath "More". */
   members: MemberDto[]
+  /**
+   * Leave the project for the Cseudocode shell. Set when the app is running
+   * inside that shell, which is always now; left optional so the rail still
+   * renders standalone, as it did when App was the root.
+   */
+  onExit?: () => void
 }
 
 /**
@@ -46,12 +52,28 @@ export function Sidebar({
   teamSort,
   onSortTeam,
   members,
+  onExit,
 }: SidebarProps) {
   return (
     <div className="hidden w-[299px] shrink-0 overflow-hidden bg-cs-sidebar md:block">
       <div className="flex h-full w-full shrink-0 flex-col pt-[14px]">
+        {/* The project's name is also the way out of it, back to Cseudocode --
+            the same affordance the shell's own rail gives its wordmark, so the
+            top-left of the rail means "up a level" on both. It stays plain text
+            when nothing was passed to leave to. */}
         <div className="flex h-[44px] items-center px-[18px]">
-          <span className="text-[14px] font-semibold text-cs-text-primary">{title}</span>
+          {onExit === undefined ? (
+            <span className="text-[14px] font-semibold text-cs-text-primary">{title}</span>
+          ) : (
+            <button
+              type="button"
+              onClick={onExit}
+              title="Back to Cseudocode"
+              className="cursor-pointer border-none bg-transparent p-0 text-[14px] font-semibold text-cs-text-primary"
+            >
+              {title}
+            </button>
+          )}
         </div>
 
         <div className="h-[21px]" />

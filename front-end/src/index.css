@@ -51,6 +51,25 @@
      ones on the Add Branch sheet. */
   --color-cs-text-file: #737373;
 
+  /* The Cseudocode shell's own four values, transcribed from the Home and
+     Compiler frames the same way everything above was.
+
+     `action` is the one blue every control on the Compiler toolbar shares --
+     Open Folder, New Folder, Sync from GitHub, the filter glyph and Home's
+     "Start One". It is #0088ff and none of the three blues above it is: link is
+     #1f84ff, link-alt #0090ff, presence #008cff. Four points apart and still
+     four different decisions, so it gets its own name rather than borrowing
+     the nearest.
+
+     The two greys are likewise a hair off `text-tertiary` (#ababab) and named
+     for where they are drawn rather than collapsed into it. `monogram-lab` is
+     the green of the first project's initial; the other two initials are drawn
+     in presence blue and text-tertiary, which already exist. */
+  --color-cs-action: #0088ff;
+  --color-cs-text-search: #a8a8a8;
+  --color-cs-text-branchline: #9e9e9e;
+  --color-cs-monogram-lab: #629f00;
+
   --color-cs-hairline: #e3e3e3;
   --color-cs-accent: #2781ff;
   --color-cs-presence: #008cff;
@@ -76,6 +95,11 @@
     "Segoe UI", Roboto, sans-serif;
   --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
   --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Only the project initials on the Compiler list are set in this. It is a
+     system face on macOS and absent everywhere else, so the fallback is the UI
+     stack rather than a webfont -- a single bold letter is the one place a
+     substituted face costs nothing. */
+  --font-rounded: "SF Pro Rounded", "SF Pro Display", -apple-system, sans-serif;
 
   --radius-cs-checkbox: 6px;
   --radius-cs-nav: 11px;

@@ -91,6 +91,16 @@ function headerFor(
   }
 }
 
+interface AppProps {
+  /**
+   * Leave this project for the Cseudocode shell, which is what the project's
+   * name in the rail does. Optional because nothing in here depends on there
+   * being somewhere to go: without it the rail's title is plain text and the
+   * app is the whole application, exactly as it was before the shell existed.
+   */
+  onExit?: () => void
+}
+
 /**
  * The window and its rail, with one view inside. The rail's nav items open a page;
  * its teammates open that person's pane, which is why the view is a union rather
@@ -99,7 +109,7 @@ function headerFor(
  * Branches live here rather than on Main because two screens choose from the same
  * list — Main's detail row and the Action window on your own pane.
  */
-function App() {
+function App({ onExit }: AppProps) {
   const [view, setView] = useState<View>({ kind: 'page', label: 'Main' })
   // Main's expanded file browser. It lives up here rather than in the page because
   // the frame closes it from the header pill, and the pill is App's.
@@ -244,7 +254,7 @@ function App() {
 
   return (
     <AppWindow>
-      <Sidebar title={project.name} {...navigation} />
+      <Sidebar title={project.name} onExit={onExit} {...navigation} />
 
       {/*
         `relative` so a view's overlay covers this pane and not the rail beside it,

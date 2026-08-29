@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import App from './App'
+import { Shell } from './Shell'
 import { Join } from './pages/Join'
 
 /**
@@ -32,6 +32,9 @@ export function Entry() {
     setToken(undefined)
   }
 
-  if (token === undefined) return <App />
+  // Everything that is not a join link is Cseudocode itself, which now opens on
+  // its own Home rather than straight into a project — `Shell` is what decides
+  // which, and hands off to the project app once one is opened.
+  if (token === undefined) return <Shell />
   return <Join token={token} onJoined={done} />
 }
