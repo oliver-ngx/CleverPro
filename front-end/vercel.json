@@ -2,12 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "//": "The API, deployed from back-end/render.yaml. Reproduces what vite.config.ts does in development: the browser only ever sees one origin, so no request is cross-origin and CORS never applies -- which is why CSEUDOCODE_CORS_ORIGINS is left empty on the service. The destination drops the /api prefix, because the API's own routes start at /projects/..., just as the dev proxy's rewrite strips it.",
       "source": "/api/:path*",
       "destination": "https://cseudocode-api.onrender.com/:path*"
     },
     {
-      "//": "SPA fallback, and it is load-bearing rather than boilerplate. /join/<token> is the only URL this product mints, and it is answered by Entry.tsx reading window.location.pathname -- there is no file at that path, so without this a shared invite link 404s on the host before the app ever loads. Rewrites are evaluated only after the filesystem is checked, so real assets still serve themselves. Must stay below the /api rule: the first match wins.",
       "source": "/:path*",
       "destination": "/index.html"
     }
