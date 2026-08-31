@@ -1,7 +1,7 @@
 import type { IconName } from '../ui/Icon'
 import { Icon } from '../ui/Icon'
 
-interface CompilerToolbarProps {
+interface ProjectsToolbarProps {
   query: string
   onQuery: (value: string) => void
 }
@@ -41,8 +41,13 @@ function ToolbarAction({
 }
 
 /**
- * The row over the project list: a search field on the left, three actions and
- * a filter glyph on the right, and a hairline under the lot.
+ * The row over a project list: a search field on the left, three actions and a
+ * filter glyph on the right, and a hairline under the lot.
+ *
+ * Drawn identically on the Compiler and Configs frames -- same controls, same
+ * two paddings, same rule -- so it is one component with two callers rather
+ * than a copy per module. It knows about neither: it takes a query and hands
+ * one back.
  *
  * Only the search works. The other four are drawn and inert — see ToolbarAction.
  *
@@ -51,7 +56,7 @@ function ToolbarAction({
  * the right edge here), while the controls sit 25px inside that. Hence a rule
  * that is wider than the row above it.
  */
-export function CompilerToolbar({ query, onQuery }: CompilerToolbarProps) {
+export function ProjectsToolbar({ query, onQuery }: ProjectsToolbarProps) {
   return (
     <div className="px-[68px] pt-[56px]">
       <div className="flex items-center justify-between px-[25px]">

@@ -9,7 +9,10 @@ export default defineConfig([
   // The design-system export is reference material, not source: its .jsx.txt /
   // .types.ts files sit outside every tsconfig project on purpose, so typed linting
   // cannot parse them. Read them; don't lint them.
-  globalIgnores(['dist', 'design-system']),
+  //
+  // Globbed rather than named at the root because the base path is now the repo
+  // and not this folder — see eslint.config.js one level up.
+  globalIgnores(['**/dist', '**/design-system']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

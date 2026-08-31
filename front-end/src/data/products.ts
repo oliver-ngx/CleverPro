@@ -9,16 +9,17 @@ import type { IconName } from '../components/ui/Icon'
  * underneath. They look alike on purpose and mean different things, which is
  * why they are two files rather than one list with a mode flag.
  *
- * Only Compiler is built. The rest are named here because the design draws
- * them at full strength and the rail would read wrong with holes in it — they
- * are labels, and pressing one does nothing until the module behind it exists.
+ * Compiler and Configs are built. The other four are named here because the
+ * design draws them at full strength and the rail would read wrong with holes
+ * in it — they are labels, and pressing one does nothing until the module
+ * behind it exists.
  */
 export type ModuleLabel = 'IDE' | 'Configs' | 'Compiler' | 'Library' | 'Trash' | 'Settings'
 
 export interface ModuleItem {
   label: ModuleLabel
   icon: IconName
-  /** Whether pressing it goes anywhere. Only Compiler does. */
+  /** Whether pressing it goes anywhere. Compiler and Configs do. */
   built: boolean
 }
 
@@ -31,7 +32,7 @@ export interface ModuleItem {
 export const MODULE_GROUPS: ModuleItem[][] = [
   [
     { label: 'IDE', icon: 'ide', built: false },
-    { label: 'Configs', icon: 'configs', built: false },
+    { label: 'Configs', icon: 'configs', built: true },
     { label: 'Compiler', icon: 'compiler', built: true },
   ],
   [

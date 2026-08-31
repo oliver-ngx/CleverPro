@@ -1,3 +1,4 @@
+import type { ProjectRowData } from '../components/projects/ProjectRow'
 import { PROJECT_ID } from '../config'
 
 /**
@@ -20,17 +21,13 @@ import { PROJECT_ID } from '../config'
  * seeds (see back-end/seed.py) and so the only one that opens; the other two
  * are drawn with nothing behind them, so they are listed and inert rather than
  * invented.
+ *
+ * This is Compiler's list and only Compiler's. Configs keeps its own in
+ * `configs-front-end/src/data/projects.ts`, and the two are not the same list
+ * even where they name the same project: opening Orchid Lab here opens
+ * Compiler, and opening a row called Orchid Lab there would open Configs.
  */
-export interface ProjectEntry {
-  /** Row identity. Not the API's id — two rows may share one project. */
-  key: string
-  name: string
-  /** The branch it is on. Drawn under the name in grey. */
-  branch: string
-  /** The initial(s) struck across the document icon. */
-  monogram: string
-  /** That initial's colour, as a `cs-*` text class. */
-  monogramClass: string
+export interface ProjectEntry extends ProjectRowData {
   /** Set only when the API really holds this project. Unset rows do not open. */
   projectId?: string
 }
@@ -59,15 +56,3 @@ export const PROJECTS: ProjectEntry[] = [
     monogramClass: 'text-cs-presence',
   },
 ]
-
-/**
- * The search field's filter. Matches the name or the branch: the branch is on
- * screen under every row, and a word somebody can read there ought to find it.
- */
-export function matchesQuery(entry: ProjectEntry, query: string): boolean {
-  const needle = query.trim().toLowerCase()
-  if (needle === '') return true
-  return (
-    entry.name.toLowerCase().includes(needle) || entry.branch.toLowerCase().includes(needle)
-  )
-}

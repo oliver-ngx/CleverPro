@@ -21,7 +21,26 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Configs is a module of this application whose source sits in the sibling
+       `configs-front-end` folder, so that it is all in one place until it is
+       ready to be merged in. These two paths mirror the aliases in
+       vite.config.ts and must stay in step with them. No `baseUrl`: it is
+       deprecated in TypeScript 6, and these are resolved relative to this file
+       without it. */
+    "paths": {
+      "@cs/*": ["./src/*"],
+      "@configs/*": ["../configs-front-end/src/*"],
+
+      /* `configs-front-end` is outside this folder, so walking up from a file in
+         it never reaches this `node_modules`. The only bare specifier that
+         reaches it is the one the compiler inserts itself for JSX, so that one
+         is pointed back here and nothing else is: mapping `react` wholesale
+         resolves it to the package rather than its types and unmoors every
+         file in the project. */
+      "react/jsx-runtime": ["./node_modules/@types/react/jsx-runtime"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../configs-front-end/src"]
 }

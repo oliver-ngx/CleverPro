@@ -1,11 +1,55 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
+/**
+ * Configs lives in its own pair of folders beside this one — `configs-front-end`
+ * and `configs-back-end` — so that everything belonging to it can be found, and
+ * later merged in, in one move. It is not a second application: Cseudocode is
+ * one window with several modules in it, and Configs is one of those modules,
+ * so its source is built by this build rather than served by a second dev
+ * server.
+ *
+ * Two aliases join them, and they are the whole arrangement:
+ *
+ *   `@cs`      the Cseudocode shell and Compiler — this folder's `src`
+ *   `@configs` Configs — the sibling folder's `src`
+ *
+ * When Configs stops being a mockup, the folders fold into `front-end` and
+ * these two aliases become ordinary relative imports. Nothing else has to
+ * change, which is the point of doing it this way.
+ */
+const cs = fileURLToPath(new URL('./src', import.meta.url))
+const configs = fileURLToPath(new URL('../configs-front-end/src', import.meta.url))
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@cs': cs,
+      '@configs': configs,
+    },
+    /**
+     * A file in `configs-front-end` is outside this folder, so resolving a bare
+     * import from it walks up past the repo and never finds this
+     * `node_modules`. The only bare import those files make is the one the JSX
+     * transform inserts for them, and this is what makes it — and any React
+     * import added later — resolve from here instead of from the importer.
+     *
+     * Which also means there is one React in the bundle rather than two, the
+     * usual reason to reach for this.
+     */
+    dedupe: ['react', 'react-dom'],
+  },
   server: {
+    /**
+     * `configs-front-end` is outside this project's root, and Vite will not
+     * serve files from outside it without being told. The parent is the repo,
+     * so this allows the repo.
+     */
+    fs: { allow: ['..'] },
     /**
      * The API runs as a separate process on :8000. Proxying it through Vite
      * rather than calling it directly means the browser only ever talks to

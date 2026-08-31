@@ -2,6 +2,14 @@
    can start fetching them without waiting on this stylesheet — see the comment there. */
 @import "tailwindcss";
 
+/* Configs is a module of this application whose source sits in the sibling
+   `configs-front-end` folder. Tailwind scans the project it is imported from and
+   stops there, so without this line every class used only by a Configs screen —
+   its orange monogram, its window title, its panel toggle — is absent from the
+   stylesheet and those screens render half-styled, with no error anywhere to say
+   so. When the folders merge into this one, this line goes. */
+@source "../../configs-front-end/src";
+
 /* Cseudocode — Compiler design tokens. Values are literal transcriptions from the
    design system; nothing here is a generated scale. */
 @theme {
@@ -64,11 +72,16 @@
      The two greys are likewise a hair off `text-tertiary` (#ababab) and named
      for where they are drawn rather than collapsed into it. `monogram-lab` is
      the green of the first project's initial; the other two initials are drawn
-     in presence blue and text-tertiary, which already exist. */
+     in presence blue and text-tertiary, which already exist.
+
+     `monogram-configs` is the orange of the Configs project's initial on the
+     Configs list. It is the only colour that frame introduces — its other two
+     initials are the same green and the same grey as Compiler's. */
   --color-cs-action: #0088ff;
   --color-cs-text-search: #a8a8a8;
   --color-cs-text-branchline: #9e9e9e;
   --color-cs-monogram-lab: #629f00;
+  --color-cs-monogram-configs: #ff700a;
 
   --color-cs-hairline: #e3e3e3;
   --color-cs-accent: #2781ff;

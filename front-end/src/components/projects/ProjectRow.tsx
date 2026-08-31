@@ -1,14 +1,36 @@
-import type { ProjectEntry } from '../../data/projects'
 import { Icon } from '../ui/Icon'
 
+/**
+ * What a row draws, and nothing else.
+ *
+ * Deliberately not `ProjectEntry`. Compiler and Configs keep separate lists —
+ * the same project can appear in both and means a different thing in each, and
+ * a row that opens in one may be inert in the other — so the row is given the
+ * five things it paints and is told whether it opens, rather than reading a
+ * field that belongs to one module's fixture.
+ */
+export interface ProjectRowData {
+  /** Row identity. Not the API's id — two rows may share one project. */
+  key: string
+  name: string
+  /** The branch it is on. Drawn under the name in grey. */
+  branch: string
+  /** The initial(s) struck across the document icon. */
+  monogram: string
+  /** That initial's colour, as a `cs-*` text class. */
+  monogramClass: string
+}
+
 interface ProjectRowProps {
-  entry: ProjectEntry
+  entry: ProjectRowData
+  /** Whether pressing it goes anywhere. Each module decides for itself. */
+  openable: boolean
   onOpen: () => void
 }
 
 /**
- * One project in the Compiler list: a document with its initial struck across
- * it, then the name and the branch it is on.
+ * One project in a module's list: a document with its initial struck across it,
+ * then the name and the branch it is on.
  *
  * The document is the existing `file-blank` glyph, not a new asset. The one the
  * design exports for this row is byte-identical to the one already in
@@ -19,13 +41,11 @@ interface ProjectRowProps {
  * letter larger than a pair, which is the only reading that makes its 48/43/43
  * consistent, since two of those three are the same letter at different sizes.
  *
- * A row with no `projectId` is drawn and does not open. That is not a disabled
- * state — the design has none — it is a row whose project does not exist on the
- * server, and pressing it does nothing rather than failing somewhere later.
+ * A row that is not `openable` is drawn and does nothing. That is not a
+ * disabled state — the design has none — it is a row whose module cannot open
+ * that project yet, and pressing it does nothing rather than failing later.
  */
-export function ProjectRow({ entry, onOpen }: ProjectRowProps) {
-  const openable = entry.projectId !== undefined
-
+export function ProjectRow({ entry, openable, onOpen }: ProjectRowProps) {
   return (
     <button
       type="button"
