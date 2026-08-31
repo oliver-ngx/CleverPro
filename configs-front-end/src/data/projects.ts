@@ -7,8 +7,8 @@ import type { ProjectRowData } from '@cs/components/projects/ProjectRow'
  * accident. The two modules are not two views of one thing: a project can sit
  * in both lists and mean something different in each, because opening it in
  * Compiler opens Compiler and opening it in Configs opens Configs. Orchid Lab
- * is the case that proves it — the same name appears on both frames, opens in
- * one and not the other, and nothing about Compiler's row should decide what
+ * is the case that proves it — it is the row that opens on both lists, and it
+ * opens a different module from each. Nothing about Compiler's row decides what
  * happens on this one.
  *
  * So this file does not import Compiler's fixture and does not reuse its
@@ -20,21 +20,20 @@ import type { ProjectRowData } from '@cs/components/projects/ProjectRow'
  */
 export interface ConfigsProjectEntry extends ProjectRowData {
   /**
-   * Whether Configs can open this project. Only Configs itself, for now: the
-   * other two rows are drawn because the design draws them, and they wait for
-   * Configs to be able to do anything with a project that is not its own.
+   * Whether Configs can open this project. Only Orchid Lab, for now: the other
+   * two rows are drawn because the design draws them, and they wait for Configs
+   * to be able to do anything with a project it has not been pointed at.
    */
   opens?: boolean
 }
 
 export const CONFIGS_PROJECTS: ConfigsProjectEntry[] = [
   {
-    key: 'configs-main',
-    name: 'Configs',
+    key: 'binary-main',
+    name: 'Binary',
     branch: 'Main',
-    monogram: 'C',
+    monogram: 'B',
     monogramClass: 'text-cs-monogram-configs',
-    opens: true,
   },
   {
     key: 'myos-main',
@@ -49,5 +48,6 @@ export const CONFIGS_PROJECTS: ConfigsProjectEntry[] = [
     branch: 'Main',
     monogram: 'O',
     monogramClass: 'text-cs-monogram-lab',
+    opens: true,
   },
 ]

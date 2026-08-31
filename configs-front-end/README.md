@@ -43,9 +43,9 @@ identically. One toolbar with two callers cannot drift; two copies would.
 
 It does **not** borrow Compiler's fixture or Compiler's idea of what "open"
 means. The two lists name some of the same projects and answer differently:
-Orchid Lab opens under Compiler and does not open here. Compiler's `projectId`
-means "the Compiler API holds this project", which is the wrong question to ask
-on this screen, so this list has its own `opens` instead.
+Orchid Lab opens on both, and opens a different module from each. Compiler's
+`projectId` means "the Compiler API holds this project", which is the wrong
+question to ask on this screen, so this list has its own `opens` instead.
 
 ## Where Configs is real, and where it is drawn
 

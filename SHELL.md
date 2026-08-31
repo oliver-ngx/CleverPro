@@ -93,7 +93,7 @@ type Opened =
 
 Because the project does not decide what opens — **the list you pressed it on
 does.** Both modules list a project called Orchid Lab, and they mean different
-things by it: under Compiler it opens Compiler, and under Configs it would open
+things by it: under Compiler it opens Compiler, and under Configs it opens
 Configs. Deriving the editor from the project would make that impossible to
 express, and would quietly make one module's fixture authoritative over the
 other's.
@@ -218,7 +218,7 @@ change once its behaviour is specified.
 | --- | --- | --- |
 | Search | **Works.** Filters on name and branch, on both lists. | Client-side, needs nothing. |
 | Project row → Compiler | **Works** for Orchid Lab. | It is the one project the API seeds. |
-| Project row → Configs | **Works** for Configs. | The only row Configs can do anything with. Orchid Lab is listed there too and does *not* open — see the note on `opened` above. |
+| Project row → Configs | **Works** for Orchid Lab. | The only row Configs can do anything with. Orchid Lab is on both lists and opens a different module from each — see the note on `opened` above. |
 | `Cseudocode` / project name / `Configs` | **Works.** All three go Home. | |
 | Configs' sidebar toggle | Drawn, pressable, inert | What it would reveal is not designed. |
 | Open Folder · New Folder · Sync from GitHub · filter | Drawn, pressable, inert | Three unspecified features. Guessing puts undesigned behaviour on screen. |
