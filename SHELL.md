@@ -22,19 +22,19 @@ Entry.tsx                     /join/<token> ? Join : Shell
    │
    └── Shell.tsx  ─────────────────────────── THE CSEUDOCODE SHELL
          │                                    above any project
-         ├── ProductRail        Cseudocode · IDE · Configs · Compiler
+         ├── ProductRail        Cseudocode · Interpreter · Configs · Compiler
          │                                  · Library · Trash · Settings
          ├── Home               the greeting and "Start One"
          ├── CompilerProjects   the projects Compiler can work on
          └── ConfigsProjects    the projects Configs can open
+                   │           (lists only — no row opens yet)
                    │
                    │  opening a project replaces everything above
                    ▼
-       App.tsx  ─────────────┬─────────────  ConfigsApp.tsx
-       THE COMPILER          │               CONFIGS
-       inside one project    │               inside one project
-                             │
-   Main · Activity · Archive · Settings · panes   │   a title and a toggle
+                App.tsx  ──────────────────  THE COMPILER
+                                             inside one project
+
+   Main · Activity · Archive · Settings · panes
 ```
 
 The shell is **above** a project. A module is **inside** one. They never render
@@ -43,11 +43,11 @@ and nothing of the shell is on screen.
 
 | | The shell | Compiler | Configs |
 | --- | --- | --- | --- |
-| Scope | All of Cseudocode | One project | One project |
-| Rail | `ProductRail`, 210px, six modules | `Sidebar`, 299px, four pages + team | none |
-| Title, top-left | `Cseudocode` | the project's name | `Configs` |
-| Data | A fixture, no network | The API, on every screen | Nothing yet |
-| Root | `Shell.tsx` | `App.tsx` | `ConfigsApp.tsx` |
+| Scope | All of Cseudocode | One project | A list, above any project |
+| Rail | `ProductRail`, 210px, six modules | `Sidebar`, 299px, four pages + team | `ProductRail` — it is a shell screen |
+| Title, top-left | `Cseudocode` | the project's name | `Cseudocode` |
+| Data | A fixture, no network | The API, on every screen | A fixture, no network |
+| Root | `Shell.tsx` | `App.tsx` | none — it has no inside yet |
 | Backend needed | **No** | **Yes** | **No** |
 | Source | `front-end/src` | `front-end/src` | `configs-front-end/src` |
 
@@ -66,9 +66,7 @@ if (token === undefined) return <Shell />
 **2. `Shell` renders the open project's module bare.**
 
 ```tsx
-if (opened !== undefined) {
-  return opened.module === 'Compiler' ? <App onExit={goHome} /> : <ConfigsApp onExit={goHome} />
-}
+if (opened !== undefined) return <App onExit={goHome} />
 ```
 
 Bare, and not inside `AppWindow` — each module draws its own window, and `App`
@@ -77,26 +75,23 @@ is what "do not rebuild the existing Compiler" means in code.
 
 **3. `onExit` is the only prop that crosses.** It is optional on `App` and
 `Sidebar`, so removing the shell entirely would leave Compiler working with a
-rail title that is plain text again. It is required on `ConfigsApp`, which was
-never a root and so has no such history to keep.
+rail title that is plain text again.
 
 ### What `opened` holds, and why it is not just the project
 
-The one thing that widened when Configs arrived. `opened` carries the module
-alongside the row:
+`opened` carries the module alongside the row:
 
 ```tsx
-type Opened =
-  | { module: 'Compiler'; entry: ProjectEntry }
-  | { module: 'Configs'; entry: ConfigsProjectEntry }
+type Opened = { module: 'Compiler'; entry: ProjectEntry }
 ```
 
-Because the project does not decide what opens — **the list you pressed it on
-does.** Both modules list a project called Orchid Lab, and they mean different
-things by it: under Compiler it opens Compiler, and under Configs it opens
-Configs. Deriving the editor from the project would make that impossible to
-express, and would quietly make one module's fixture authoritative over the
-other's.
+One member today, and a union of one on purpose. Configs was briefly the second
+before its blank window was removed, and the shape is what it left behind:
+**the project does not decide what opens — the list you pressed it on does.**
+Both modules list a project called Orchid Lab and they mean different things by
+it. Deriving the module from the project would make that impossible to express,
+and would quietly make one module's fixture authoritative over the other's, so
+the next module goes in here rather than into a field on a row.
 
 ### The two rules
 
@@ -155,8 +150,7 @@ aliases, and nothing calls the second yet.
 
 | File | What it is |
 | --- | --- |
-| [`configs-front-end/src/ConfigsApp.tsx`](configs-front-end/src/ConfigsApp.tsx) | Configs inside one project. Blank, deliberately. |
-| [`configs-front-end/src/pages/ConfigsProjects.tsx`](configs-front-end/src/pages/ConfigsProjects.tsx) | Configs' list: its fixture and its own rule for opening a row. |
+| [`configs-front-end/src/pages/ConfigsProjects.tsx`](configs-front-end/src/pages/ConfigsProjects.tsx) | Configs' list. Every row inert — `canOpen` is a constant `false`. |
 | [`configs-front-end/src/data/projects.ts`](configs-front-end/src/data/projects.ts) | That fixture. Separate from Compiler's on purpose. |
 
 The split is a **delete boundary, not an architecture**: when Configs stops
@@ -218,14 +212,13 @@ change once its behaviour is specified.
 | --- | --- | --- |
 | Search | **Works.** Filters on name and branch, on both lists. | Client-side, needs nothing. |
 | Project row → Compiler | **Works** for Orchid Lab. | It is the one project the API seeds. |
-| Project row → Configs | **Works** for Orchid Lab. | The only row Configs can do anything with. Orchid Lab is on both lists and opens a different module from each — see the note on `opened` above. |
-| `Cseudocode` / project name / `Configs` | **Works.** All three go Home. | |
-| Configs' sidebar toggle | Drawn, pressable, inert | What it would reveal is not designed. |
+| Project row → Configs | Drawn, pressable, inert | Configs has no inside yet. A blank window stood behind Orchid Lab until 2026-09-05 and was removed: it was a placeholder for an editor that has not been designed. |
+| `Cseudocode` / project name | **Works.** Both go Home. | |
 | Open Folder · New Folder · Sync from GitHub · filter | Drawn, pressable, inert | Three unspecified features. Guessing puts undesigned behaviour on screen. |
 | `Start One` | Drawn, inert | The frame does not say where it leads. |
-| IDE · Library · Trash · Settings | Pressable, no-op | Not built. Drawn at full strength in the design, so not greyed out. |
+| Interpreter · Library · Trash · Settings | Pressable, no-op | Not built. Drawn at full strength in the design, so not greyed out. |
 | Machine Learning · HelloWorld rows | Drawn, do not open | No project behind them. Listed, not invented. |
-| MyOS · OrchidLab on Configs' list | Drawn, do not open | Configs cannot do anything with a project that is not its own yet. |
+| Binary · MyOS · OrchidLab on Configs' list | Drawn, do not open | Nothing to open them into. |
 
 **The empty state is not a second screen.** The "no projects" frame is the same
 frame with the rows removed, so it is `ProjectsScreen` with an empty list — for
@@ -280,7 +273,7 @@ check that, which is why it is written down here.
 | Add, remove or re-order a **Compiler** row | `front-end/src/data/projects.ts` |
 | Add, remove or re-order a **Configs** row | `configs-front-end/src/data/projects.ts` |
 | Make a Compiler row open | give it a `projectId` in its fixture |
-| Make a Configs row open | give it `opens: true` in its fixture |
+| Make a Configs row open | `ConfigsProjects.tsx` — the `canOpen` constant, and a root for it to land in |
 | Change the toolbar over either list | `components/projects/ProjectsToolbar.tsx` — changes both |
 | Change how a project row looks | `components/projects/ProjectRow.tsx` — changes both |
 | Add a module to the shell's rail | `data/products.ts` |
@@ -302,7 +295,7 @@ Figma file `En35pb5T6YT7m8HBzTxERa`:
 | Compiler with projects | `230:144` | `pages/CompilerProjects.tsx` |
 | Compiler, no projects | `230:141` | the same file, empty list |
 | Configs with projects | `281:45` | `configs-front-end/src/pages/ConfigsProjects.tsx` |
-| Configs blank (temporarily) | `282:152` | `configs-front-end/src/ConfigsApp.tsx` |
+| Configs blank (temporarily) | `282:152` | built, then removed — see below |
 
 Metrics follow the same rule as the rest of the client: **source frames are
 2204px wide and the app renders at 1400, so values are multiplied by ≈0.635.**
@@ -320,12 +313,13 @@ in the component that does it:
   that makes its three values consistent.
 - **No traffic lights.** Every frame in the file is drawn as a macOS window and
   not one of them is transcribed with its three dots — `ProductRail` drops the
-  ones above the wordmark and starts at the title, and `ConfigsApp` does the
-  same. They are the mockup's chrome, not the product's.
-- **The Configs title moves left.** It sits at 133 in `282:152` only because the
-  dots occupy the 109 before it. With them gone it takes the window's own left
-  inset, `ProductRail`'s 18, so the word lands where the rail's title lands —
-  which is where the eye already looks for the way back.
+  ones above the wordmark and starts at the title. They are the mockup's chrome,
+  not the product's.
+
+`282:152`, *Configs blank (temporarily)*, was built and then removed on
+2026-09-05. The frame is a window, a title and a panel toggle and nothing else;
+built, it was a blank room a project row led into. It goes back when there is an
+editor to put in it, and the frame is still the source for its header.
 
 `281:3`, the third frame given for Configs, is a bare rounded rectangle with no
 rail, no toolbar and no text. It is read as a background layer rather than as a

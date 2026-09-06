@@ -9,12 +9,30 @@ import type { IconName } from '../components/ui/Icon'
  * underneath. They look alike on purpose and mean different things, which is
  * why they are two files rather than one list with a mode flag.
  *
- * Compiler and Configs are built. The other four are named here because the
+ * Compiler, Configs and Interpreter are built. The other three are named here
+ * because the
  * design draws them at full strength and the rail would read wrong with holes
  * in it — they are labels, and pressing one does nothing until the module
  * behind it exists.
+ *
+ * Interpreter held the label IDE until 2026-09-05. It was never a code editor:
+ * it is the layer that records every change twice, as code and as English, and
+ * answers what happened here months later. The rail slot and its glyph are
+ * unchanged — only the name was wrong.
+ *
+ * It is also the one module with no project list between the rail and itself.
+ * Compiler and Configs ask which project first; Interpreter opens on every
+ * project's changes at once, because what happened rarely respects a project
+ * boundary and choosing first would hide the entries you did not know to look
+ * for. `Shell` has that branch.
  */
-export type ModuleLabel = 'IDE' | 'Configs' | 'Compiler' | 'Library' | 'Trash' | 'Settings'
+export type ModuleLabel =
+  | 'Interpreter'
+  | 'Configs'
+  | 'Compiler'
+  | 'Library'
+  | 'Trash'
+  | 'Settings'
 
 export interface ModuleItem {
   label: ModuleLabel
@@ -31,7 +49,7 @@ export interface ModuleItem {
  */
 export const MODULE_GROUPS: ModuleItem[][] = [
   [
-    { label: 'IDE', icon: 'ide', built: false },
+    { label: 'Interpreter', icon: 'interpreter', built: true },
     { label: 'Configs', icon: 'configs', built: true },
     { label: 'Compiler', icon: 'compiler', built: true },
   ],

@@ -1,0 +1,23 @@
+# Tooling configuration only, mirroring back-end/pyproject.toml. The package is
+# run from this directory rather than installed, so there is no [project] table
+# and no build backend.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # import sorting
+    "B",    # bugbear: mutable defaults, shadowed builtins, silent except
+    "UP",   # pyupgrade
+    "SIM",  # simplifiable constructs
+    "RUF",
+]

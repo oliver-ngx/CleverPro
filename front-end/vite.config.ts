@@ -11,17 +11,19 @@ import react from '@vitejs/plugin-react'
  * so its source is built by this build rather than served by a second dev
  * server.
  *
- * Two aliases join them, and they are the whole arrangement:
+ * Three aliases join them, and they are the whole arrangement:
  *
  *   `@cs`      the Cseudocode shell and Compiler — this folder's `src`
  *   `@configs` Configs — the sibling folder's `src`
+ *   `@interp`  Interpreter — the other sibling's `src`
  *
- * When Configs stops being a mockup, the folders fold into `front-end` and
- * these two aliases become ordinary relative imports. Nothing else has to
- * change, which is the point of doing it this way.
+ * When a module stops being a mockup, its folder folds into `front-end` and its
+ * alias becomes an ordinary relative import. Nothing else has to change, which
+ * is the point of doing it this way.
  */
 const cs = fileURLToPath(new URL('./src', import.meta.url))
 const configs = fileURLToPath(new URL('../configs-front-end/src', import.meta.url))
+const interp = fileURLToPath(new URL('../interpreter-front-end/src', import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -30,6 +32,7 @@ export default defineConfig({
     alias: {
       '@cs': cs,
       '@configs': configs,
+      '@interp': interp,
     },
     /**
      * A file in `configs-front-end` is outside this folder, so resolving a bare

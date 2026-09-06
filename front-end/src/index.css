@@ -9,6 +9,24 @@
    stylesheet and those screens render half-styled, with no error anywhere to say
    so. When the folders merge into this one, this line goes. */
 @source "../../configs-front-end/src";
+@source "../../interpreter-front-end/src";
+
+/*
+ * A pane that scrolls without saying so.
+ *
+ * Neither the Cseudocode frames nor Interpreter's draw a scrollbar, and on
+ * Windows the default one is a wide opaque channel that changes the width of
+ * whatever is beside it. This hides the furniture and keeps the behaviour:
+ * wheel, trackpad, keyboard and the scrollbar's own drag all still work, and
+ * the pane stays reachable for anyone navigating by keyboard.
+ */
+@utility scroll-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
 
 /* Cseudocode — Compiler design tokens. Values are literal transcriptions from the
    design system; nothing here is a generated scale. */
@@ -82,6 +100,37 @@
   --color-cs-text-branchline: #9e9e9e;
   --color-cs-monogram-lab: #629f00;
   --color-cs-monogram-configs: #ff700a;
+
+  /* Interpreter's colours, read off frames 321:133 and 321:63 rather than from
+     the prototype -- the two disagree and the frame wins. Three of the four
+     symbols are a meaning rather than a decoration, so nothing else in that
+     module is coloured: orange questions, purple warns, blue is build and
+     repair. The mark on every card is black, not a colour.
+
+     `interp-card` is the entry card's own grey, half a step off the shell's
+     `cs-card`; the frame is explicit about it, so it is its own token rather
+     than a near-enough reuse. */
+  --color-interp-card: #f4f4f4;
+  --color-interp-day: #a4a4a4;
+  --color-interp-chevron: #b2b2b2;
+  --color-interp-flag: #ff6600;
+  --color-interp-flag-tint: #ffeae3;
+  --color-interp-risk: #b57cff;
+  --color-interp-risk-tint: #f6e6ff;
+  --color-interp-build: #1f84ff;
+  --color-interp-build-tint: #e3f1ff;
+
+  /* The map's four bands, from 321:132. A coloured header over a grey body
+     rather than a tinted node, so the band a thing belongs to reads before its
+     name does. The vertical order -- seen, checked, run, stored -- is how the
+     stack reads and is never sorted or configured. */
+  --color-interp-band-see: #a9dcf7;
+  --color-interp-band-check: #f79939;
+  --color-interp-band-run: #e3a6f7;
+  --color-interp-band-store: #e3a6f7;
+
+  /* One project monogram with no equivalent in the shell's palette. */
+  --color-interp-py: #c8a02c;
 
   --color-cs-hairline: #e3e3e3;
   --color-cs-accent: #2781ff;

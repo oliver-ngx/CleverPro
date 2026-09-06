@@ -32,15 +32,21 @@
     "paths": {
       "@cs/*": ["./src/*"],
       "@configs/*": ["../configs-front-end/src/*"],
+      "@interp/*": ["../interpreter-front-end/src/*"],
 
-      /* `configs-front-end` is outside this folder, so walking up from a file in
-         it never reaches this `node_modules`. The only bare specifier that
-         reaches it is the one the compiler inserts itself for JSX, so that one
-         is pointed back here and nothing else is: mapping `react` wholesale
-         resolves it to the package rather than its types and unmoors every
-         file in the project. */
+      /* A module folder is outside this one, so walking up from a file in it
+         never reaches this `node_modules`. Three bare specifiers have to be
+         pointed back here by hand: the one the compiler inserts itself for JSX,
+         and `react`/`react-dom` for the modules that call hooks.
+
+         Each points at the **types**, not the package. Mapping `react` to
+         `./node_modules/react` resolves it to the JavaScript, which ships no
+         declarations, and every file in the project loses its types at once —
+         that failure is why these are spelled out rather than globbed. */
+      "react": ["./node_modules/@types/react"],
+      "react-dom": ["./node_modules/@types/react-dom"],
       "react/jsx-runtime": ["./node_modules/@types/react/jsx-runtime"]
     }
   },
-  "include": ["src", "../configs-front-end/src"]
+  "include": ["src", "../configs-front-end/src", "../interpreter-front-end/src"]
 }

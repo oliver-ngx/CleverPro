@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import ConfigsApp from '@configs/ConfigsApp'
-import type { ConfigsProjectEntry } from '@configs/data/projects'
 import ConfigsProjects from '@configs/pages/ConfigsProjects'
+import InterpreterApp from '@interp/InterpreterApp'
 import App from './App'
 import { AppWindow } from './components/layout/AppWindow'
 import { ErrorBoundary } from './components/layout/ErrorBoundary'
@@ -19,10 +18,13 @@ import Home from './pages/Home'
  * both modules, and opening Orchid Lab under Compiler opens Compiler while
  * opening a row of that name under Configs would open Configs. A project does
  * not carry an editor around with it — the list you pressed it on does.
+ *
+ * One member today, and the shape is kept anyway. Configs was briefly the
+ * second, then its blank window was removed; the union is what stops the next
+ * module being added by making the project decide, which is the mistake this
+ * comment exists to prevent.
  */
-type Opened =
-  | { module: 'Compiler'; entry: ProjectEntry }
-  | { module: 'Configs'; entry: ConfigsProjectEntry }
+type Opened = { module: 'Compiler'; entry: ProjectEntry }
 
 /**
  * Cseudocode, one level above a project.
@@ -41,9 +43,9 @@ type Opened =
  *
  * Going back up a level is the top-left of whatever is on screen, and it is the
  * same gesture everywhere: inside a Compiler project the rail's title is that
- * project's name; inside Configs it is the word Configs; in the shell it is the
- * wordmark. All three land on Home rather than on the list, so leaving a
- * project and clearing the module are the one action.
+ * project's name, and in the shell it is the wordmark. Both land on Home rather
+ * than on the list, so leaving a project and clearing the module are the one
+ * action.
  */
 export function Shell() {
   const [module, setModule] = useState<ModuleLabel | undefined>(undefined)
@@ -60,14 +62,13 @@ export function Shell() {
     setModule(undefined)
   }
 
-  // The project takes the window. See the note above on why neither is wrapped.
-  if (opened !== undefined) {
-    return opened.module === 'Compiler' ? (
-      <App onExit={goHome} />
-    ) : (
-      <ConfigsApp onExit={goHome} />
-    )
-  }
+  // The project takes the window. See the note above on why it is not wrapped.
+  if (opened !== undefined) return <App onExit={goHome} />
+
+  // Interpreter has no list between the rail and itself: it opens on every
+  // project's changes at once, so there is nothing to choose first. It takes the
+  // window the same way an opened project does, and its wordmark comes back.
+  if (module === 'Interpreter') return <InterpreterApp onExit={goHome} />
 
   return (
     <AppWindow>
@@ -75,11 +76,11 @@ export function Shell() {
         active={module}
         onHome={goHome}
         onSelect={(label) => {
-          // Compiler and Configs are built. The other four are pressable and go
-          // nowhere -- they are drawn at full strength in the design, so they
-          // are not greyed out, and selecting one would light a rail row over a
-          // body that has nothing in it.
-          if (label === 'Compiler' || label === 'Configs') setModule(label)
+          // Compiler, Configs and Interpreter are built. The other three are
+          // pressable and go nowhere -- they are drawn at full strength in the
+          // design, so they are not greyed out, and selecting one would light a
+          // rail row over a body that has nothing in it.
+          if (label === 'Compiler' || label === 'Configs' || label === 'Interpreter') setModule(label)
         }}
       />
 
@@ -95,11 +96,7 @@ export function Shell() {
               }}
             />
           ) : module === 'Configs' ? (
-            <ConfigsProjects
-              onOpen={(entry) => {
-                setOpened({ module: 'Configs', entry })
-              }}
-            />
+            <ConfigsProjects />
           ) : (
             <Home />
           )}

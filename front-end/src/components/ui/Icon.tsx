@@ -52,7 +52,7 @@ export type IconName =
   | 'gear'
   | 'gear-plain'
   | 'git-sync'
-  | 'ide'
+  | 'interpreter'
   | 'image'
   | 'library'
   | 'merge'
@@ -60,7 +60,6 @@ export type IconName =
   | 'nav-main'
   | 'push'
   | 'search'
-  | 'sidebar'
   | 'swift'
   | 'text-lines'
   | 'trash'
@@ -76,7 +75,7 @@ const RASTER_GLYPHS = {
   // The Cseudocode rail's own three product glyphs, and two of the Compiler
   // toolbar's, are bitmaps in the source the same way `swift` is — the designer
   // pasted them rather than drawing paths, so there is nothing to trace.
-  ide: '/assets/icons/ide.png',
+  interpreter: '/assets/icons/interpreter.png',
   configs: '/assets/icons/configs.png',
   compiler: '/assets/icons/compiler.png',
   'folder-open': '/assets/icons/open-folder.png',
@@ -431,16 +430,6 @@ const VECTOR_GLYPHS: Record<VectorName, VectorGlyph> = {
     ),
   },
 
-  /** The panel toggle beside the Configs title, from the frame's own export. */
-  sidebar: {
-    viewBox: '0 0 23 18',
-    body: (
-      <path
-        fill="currentColor"
-        d="M4.18445 18C1.53398 18 0 16.4759 0 13.8424V4.15755C0 1.51447 1.53398 0 4.18445 0H19.0097C21.5242 0 23 1.51447 23 4.15755V13.8424C23 16.4759 21.5242 18 19.0097 18H4.18445ZM4.29124 16.1093H7.71842V1.88103H4.29124C2.77669 1.88103 1.90291 2.75884 1.90291 4.25401V13.746C1.90291 15.2411 2.77669 16.1093 4.29124 16.1093ZM18.7087 1.88103H9.52425V16.1093H18.7087C20.2135 16.1093 21.097 15.2411 21.097 13.746V4.25401C21.097 2.75884 20.2135 1.88103 18.7087 1.88103ZM5.81552 5.42122H3.82522C3.47572 5.42122 3.18446 5.13183 3.18446 4.80386C3.18446 4.47588 3.47572 4.19614 3.82522 4.19614H5.81552C6.15531 4.19614 6.44657 4.47588 6.44657 4.80386C6.44657 5.13183 6.15531 5.42122 5.81552 5.42122ZM5.81552 8.00642H3.82522C3.47572 8.00642 3.18446 7.71704 3.18446 7.38906C3.18446 7.06109 3.47572 6.78135 3.82522 6.78135H5.81552C6.15531 6.78135 6.44657 7.06109 6.44657 7.38906C6.44657 7.71704 6.15531 8.00642 5.81552 8.00642ZM5.81552 10.582H3.82522C3.47572 10.582 3.18446 10.3022 3.18446 9.97427C3.18446 9.64631 3.47572 9.36655 3.82522 9.36655H5.81552C6.15531 9.36655 6.44657 9.64631 6.44657 9.97427C6.44657 10.3022 6.15531 10.582 5.81552 10.582Z"
-      />
-    ),
-  },
 
   library: {
     viewBox: '0 0 21 18',
